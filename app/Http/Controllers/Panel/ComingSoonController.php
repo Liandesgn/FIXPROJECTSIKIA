@@ -13,8 +13,8 @@ class ComingSoonController extends Controller
      * @var array<string, array{0: string, 1: string}>
      */
     public const MODULES = [
-        'wilayah-kerja' => ['Wilayah Kerja', 'Kelola master data wilayah kerja posyandu.'],
-        'jadwal-kegiatan' => ['Jadwal Kegiatan', 'Atur jadwal kegiatan posyandu dan pemeriksaan.'],
+        'wilayah-kerja' => ['Data Wilayah Kerja', 'Kelola master data wilayah kerja posyandu.'],
+        'jadwal-kegiatan' => ['Kelola Jadwal', 'Atur jadwal kegiatan posyandu dan pemeriksaan.'],
         'laporan' => ['Laporan', 'Unduh laporan sistem dan rekapitulasi data.'],
         'data-ibu' => ['Data Ibu', 'Data induk ibu hamil dan ibu menyusui.'],
         'data-anak' => ['Data Anak', 'Data induk anak dan balita.'],

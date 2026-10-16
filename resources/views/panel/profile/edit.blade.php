@@ -60,7 +60,7 @@
         @if ($isOrangTua)
             <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
                 <h2 class="mb-1 text-lg font-semibold text-slate-800">Data Ibu</h2>
-                <p class="mb-6 text-sm text-slate-500">Data registrasi orang tua Anda. Wajib milik Anda sendiri.</p>
+                <p class="mb-6 text-sm text-slate-500">Data registrasi ibu Anda. Wajib milik Anda sendiri.</p>
 
                 <form method="POST" action="{{ route('profile.update') }}" class="space-y-4">
                     @csrf
@@ -71,12 +71,6 @@
                             <label for="nik" class="{{ $labelClass }}">NIK</label>
                             <input id="nik" type="text" name="nik" maxlength="16" value="{{ old('nik', $user->nik) }}" class="{{ $inputClass }}">
                             @error('nik') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
-                        </div>
-
-                        <div>
-                            <label for="nama_ibu" class="{{ $labelClass }}">Nama Ibu</label>
-                            <input id="nama_ibu" type="text" name="nama_ibu" value="{{ old('nama_ibu', $user->nama_ibu) }}" class="{{ $inputClass }}">
-                            @error('nama_ibu') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
                         </div>
 
                         <div>
@@ -149,38 +143,6 @@
                 </form>
             </div>
         @endif
-
-        <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 class="mb-1 text-lg font-semibold text-slate-800">Ubah Password</h2>
-            <p class="mb-6 text-sm text-slate-500">Gunakan password yang kuat dan mudah Anda ingat.</p>
-
-            <form method="POST" action="{{ route('profile.password') }}" class="space-y-4">
-                @csrf
-                @method('PUT')
-
-                <div>
-                    <label for="current_password" class="{{ $labelClass }}">Password Saat Ini</label>
-                    <input id="current_password" type="password" name="current_password" required class="{{ $inputClass }}">
-                    @error('current_password') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
-                </div>
-
-                <div>
-                    <label for="password" class="{{ $labelClass }}">Password Baru</label>
-                    <input id="password" type="password" name="password" required class="{{ $inputClass }}">
-                    @error('password') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
-                </div>
-
-                <div>
-                    <label for="password_confirmation" class="{{ $labelClass }}">Konfirmasi Password Baru</label>
-                    <input id="password_confirmation" type="password" name="password_confirmation" required class="{{ $inputClass }}">
-                </div>
-
-                <button type="submit"
-                        class="rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-900">
-                    Ubah Password
-                </button>
-            </form>
-        </div>
     </div>
 @endsection
 

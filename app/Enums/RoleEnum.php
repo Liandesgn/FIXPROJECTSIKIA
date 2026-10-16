@@ -13,7 +13,7 @@ enum RoleEnum: string
     {
         return match ($this) {
             self::Admin => 'Admin',
-            self::OrangTua => 'Orang Tua',
+            self::OrangTua => 'Ibu',
             self::Bidan => 'Bidan',
             self::Kader => 'Kader',
         };

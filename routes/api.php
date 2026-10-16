@@ -19,7 +19,6 @@ Route::prefix('auth')->group(function () {
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('profile', [ProfileController::class, 'show']);
     Route::put('profile', [ProfileController::class, 'update']);
-    Route::put('profile/password', [ProfileController::class, 'updatePassword']);
 
     Route::get('roles', [RoleController::class, 'index'])->middleware('permission:user.assign-role');
     Route::get('wilayah-kerja', [WilayahKerjaController::class, 'index'])->middleware('permission:user.view');

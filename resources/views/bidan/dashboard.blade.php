@@ -14,7 +14,7 @@
 
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                <p class="text-sm font-medium text-slate-500">Orang Tua Terdaftar</p>
+                <p class="text-sm font-medium text-slate-500">Ibu Terdaftar</p>
                 <p class="mt-2 text-3xl font-bold text-sky-600">{{ $stats['orang_tua'] }}</p>
             </div>
             <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">

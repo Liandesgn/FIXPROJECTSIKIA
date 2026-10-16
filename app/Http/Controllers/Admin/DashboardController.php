@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\RoleEnum;
+use App\Enums\StatusKehamilanEnum;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\WilayahKerja;
@@ -15,8 +16,12 @@ class DashboardController extends Controller
         $stats = [
             'bidan' => User::role(RoleEnum::Bidan->value)->count(),
             'kader' => User::role(RoleEnum::Kader->value)->count(),
-            'orang_tua' => User::role(RoleEnum::OrangTua->value)->count(),
+            'ibu_hamil' => User::role(RoleEnum::OrangTua->value)
+                ->where('status_kehamilan', StatusKehamilanEnum::Hamil->value)
+                ->count(),
+            'anak' => 0,
             'wilayah' => WilayahKerja::count(),
+            'jadwal' => 0,
         ];
 
         $latestUsers = User::with(['roles', 'wilayahKerja'])

@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Http\Requests\OrangTua;
+namespace App\Http\Requests\Admin;
 
 use App\Enums\StatusKehamilanEnum;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class StoreOrangTuaRequest extends FormRequest
+class UpdateIbuRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -18,15 +18,13 @@ class StoreOrangTuaRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
-            // Form 1 — Data Akun
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        $userId = $this->route('ibu')?->id;
 
-            // Form 2 — Data Ibu
+        return [
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($userId)],
+            'password' => ['nullable', 'string', 'min:8', 'confirmed'],
             'nik' => ['required', 'string', 'digits:16'],
-            'nama_ibu' => ['required', 'string', 'max:255'],
             'tempat_lahir' => ['required', 'string', 'max:255'],
             'tanggal_lahir' => ['required', 'date', 'before:today'],
             'phone' => ['nullable', 'string', 'max:20'],
@@ -57,6 +55,7 @@ class StoreOrangTuaRequest extends FormRequest
             'password.confirmed' => 'Konfirmasi password tidak cocok.',
             'nik.digits' => 'NIK harus terdiri dari 16 digit.',
             'wilayah_kerja_id.required' => 'Wilayah (desa) wajib dipilih.',
+            'status_kehamilan.required' => 'Status kehamilan wajib dipilih.',
             'hpl.required' => 'HPL wajib diisi untuk status kehamilan Hamil.',
             'usia_kehamilan.required' => 'Usia kehamilan wajib diisi untuk status kehamilan Hamil.',
         ];

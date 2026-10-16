@@ -1,10 +1,8 @@
 @php
-    $selectedRole = old('role', $user?->primaryRole()?->value);
-    $selectedStatus = old('status', $user?->status?->value ?? \App\Enums\UserStatusEnum::Active->value);
-    $selectedWilayah = old('wilayah_kerja_id', $user?->wilayah_kerja_id);
     $inputClass = 'w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200';
     $labelClass = 'mb-1 block text-sm font-medium text-slate-700';
     $errorClass = 'mt-1 text-xs text-red-600';
+    $selectedWilayah = old('wilayah_kerja_id', $user?->wilayah_kerja_id);
 @endphp
 
 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -27,43 +25,20 @@
     </div>
 
     <div>
-        <label for="role" class="{{ $labelClass }}">Role</label>
-        <select id="role" name="role" required class="{{ $inputClass }}">
-            <option value="">-- Pilih Role --</option>
-            @foreach ($roles as $role)
-                <option value="{{ $role }}" @selected($selectedRole === $role)>
-                    {{ \App\Enums\RoleEnum::from($role)->label() }}
-                </option>
-            @endforeach
-        </select>
-        @error('role') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
-    </div>
-
-    <div>
-        <label for="wilayah_kerja_id" class="{{ $labelClass }}">
-            Wilayah Kerja <span class="font-normal text-slate-400">(wajib untuk Bidan/Kader)</span>
-        </label>
-        <select id="wilayah_kerja_id" name="wilayah_kerja_id" class="{{ $inputClass }}">
-            <option value="">-- Tidak ada --</option>
-            @foreach ($wilayahs as $wilayah)
-                <option value="{{ $wilayah->id }}" @selected((string) $selectedWilayah === (string) $wilayah->id)>
-                    {{ $wilayah->nama }}
-                </option>
+        <label for="wilayah_kerja_id" class="{{ $labelClass }}">Wilayah Kerja</label>
+        <select id="wilayah_kerja_id" name="wilayah_kerja_id" required class="{{ $inputClass }}">
+            <option value="">-- Pilih Wilayah --</option>
+            @foreach ($wilayahs->groupBy('kecamatan') as $kecamatan => $desas)
+                <optgroup label="Kec. {{ $kecamatan ?: '-' }}">
+                    @foreach ($desas as $wilayah)
+                        <option value="{{ $wilayah->id }}" @selected((string) $selectedWilayah === (string) $wilayah->id)>
+                            Desa {{ $wilayah->desa }}
+                        </option>
+                    @endforeach
+                </optgroup>
             @endforeach
         </select>
         @error('wilayah_kerja_id') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
-    </div>
-
-    <div>
-        <label for="status" class="{{ $labelClass }}">Status</label>
-        <select id="status" name="status" class="{{ $inputClass }}">
-            @foreach ($statuses as $status)
-                <option value="{{ $status->value }}" @selected($selectedStatus === $status->value)>
-                    {{ $status->label() }}
-                </option>
-            @endforeach
-        </select>
-        @error('status') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
     </div>
 
     <div>

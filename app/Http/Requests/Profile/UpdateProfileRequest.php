@@ -27,7 +27,6 @@ class UpdateProfileRequest extends FormRequest
         if ($this->user()?->isOrangTua()) {
             $rules += [
                 'nik' => ['nullable', 'string', 'digits:16'],
-                'nama_ibu' => ['nullable', 'string', 'max:255'],
                 'tempat_lahir' => ['nullable', 'string', 'max:255'],
                 'tanggal_lahir' => ['nullable', 'date', 'before:today'],
                 'status_kehamilan' => ['nullable', Rule::in(StatusKehamilanEnum::values())],

@@ -1,13 +1,14 @@
 <?php
 
+use App\Http\Controllers\Admin\BidanController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
-use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\IbuController;
+use App\Http\Controllers\Admin\KaderController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Bidan\DashboardController as BidanDashboardController;
 use App\Http\Controllers\Kader\DashboardController as KaderDashboardController;
 use App\Http\Controllers\OrangTua\DashboardController as OrangTuaDashboardController;
 use App\Http\Controllers\Panel\ComingSoonController;
-use App\Http\Controllers\Panel\KelolaOrangTuaController;
 use App\Http\Controllers\Panel\ProfileController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -32,29 +33,21 @@ Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
 Route::middleware('auth')->group(function () {
     Route::get('profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::put('profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
 
     Route::get('modul/{module}', [ComingSoonController::class, 'show'])->name('panel.module');
-
-    Route::middleware('role:admin|bidan|kader')
-        ->prefix('kelola-orang-tua')
-        ->name('panel.kelola-orang-tua.')
-        ->group(function () {
-            Route::get('/', [KelolaOrangTuaController::class, 'index'])->name('index');
-            Route::get('create', [KelolaOrangTuaController::class, 'create'])->name('create');
-            Route::post('/', [KelolaOrangTuaController::class, 'store'])->name('store');
-            Route::get('{orangTua}', [KelolaOrangTuaController::class, 'show'])->name('show');
-            Route::get('{orangTua}/edit', [KelolaOrangTuaController::class, 'edit'])->name('edit');
-            Route::put('{orangTua}', [KelolaOrangTuaController::class, 'update'])->name('update');
-            Route::delete('{orangTua}', [KelolaOrangTuaController::class, 'destroy'])->name('destroy');
-        });
 
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
 
-        Route::patch('users/{user}/activate', [UserController::class, 'activate'])->name('users.activate');
-        Route::patch('users/{user}/deactivate', [UserController::class, 'deactivate'])->name('users.deactivate');
-        Route::resource('users', UserController::class);
+        Route::resource('bidan', BidanController::class)->except('show');
+        Route::resource('kader', KaderController::class)->except('show');
+
+        Route::get('ibu', [IbuController::class, 'index'])->name('ibu.index');
+        Route::get('ibu/create', [IbuController::class, 'create'])->name('ibu.create');
+        Route::post('ibu', [IbuController::class, 'store'])->name('ibu.store');
+        Route::get('ibu/{ibu}/edit', [IbuController::class, 'edit'])->name('ibu.edit');
+        Route::put('ibu/{ibu}', [IbuController::class, 'update'])->name('ibu.update');
+        Route::patch('ibu/{ibu}/toggle-status', [IbuController::class, 'toggleStatus'])->name('ibu.toggle-status');
     });
 
     Route::middleware('role:bidan')->prefix('bidan')->name('bidan.')->group(function () {

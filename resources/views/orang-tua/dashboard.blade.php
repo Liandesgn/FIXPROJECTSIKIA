@@ -1,29 +1,24 @@
 @extends('layouts.app')
 
-@section('title', 'Dashboard Orang Tua')
+@section('title', 'Dashboard Ibu')
 
 @section('content')
     <div class="space-y-6">
         <div class="rounded-xl bg-gradient-to-r from-sky-600 to-sky-500 p-6 text-white shadow-sm">
-            <h2 class="text-xl font-semibold">Halo, {{ $user->nama_ibu ?? $user->name }} 👋</h2>
-            <p class="mt-1 text-sm text-sky-50">
-                Pantau kesehatan ibu dan anak Anda.
-                @if ($user->wilayahKerja)
-                    Wilayah: {{ $user->wilayahKerja->desa }}, Kec. {{ $user->wilayahKerja->kecamatan }}, {{ $user->wilayahKerja->kabupaten }}.
-                @else
-                    Wilayah belum ditetapkan.
-                @endif
+            <h2 class="text-xl font-semibold">Halo, {{ $user->name }} 👋</h2>
+            <p class="mt-1 text-sm text-white/80">
+                Silakan gunakan menu layanan berikut untuk memantau kesehatan ibu dan anak Anda.
             </p>
         </div>
 
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                <p class="text-xs uppercase tracking-wide text-slate-400">Bidan Wilayah Anda</p>
+                <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Bidan Wilayah Anda</p>
                 <p class="mt-1 font-semibold text-slate-800">{{ $user->bidanWilayah?->name ?? 'Belum ada' }}</p>
                 <p class="text-sm text-slate-500">{{ $user->bidanWilayah?->phone ?? '-' }}</p>
             </div>
             <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                <p class="text-xs uppercase tracking-wide text-slate-400">Kader Wilayah Anda</p>
+                <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Kader Wilayah Anda</p>
                 <p class="mt-1 font-semibold text-slate-800">{{ $user->kaderWilayah?->name ?? 'Belum ada' }}</p>
                 <p class="text-sm text-slate-500">{{ $user->kaderWilayah?->phone ?? '-' }}</p>
             </div>

@@ -9,29 +9,37 @@
             <p class="text-sm text-slate-500">Selamat datang kembali, {{ auth()->user()->name }}.</p>
         </div>
 
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                <p class="text-sm font-medium text-slate-500">Akun Bidan</p>
+                <p class="text-sm font-medium text-slate-500">Jumlah Bidan</p>
                 <p class="mt-2 text-3xl font-bold text-sky-600">{{ $stats['bidan'] }}</p>
             </div>
             <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                <p class="text-sm font-medium text-slate-500">Akun Kader</p>
+                <p class="text-sm font-medium text-slate-500">Jumlah Kader</p>
                 <p class="mt-2 text-3xl font-bold text-emerald-600">{{ $stats['kader'] }}</p>
             </div>
             <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                <p class="text-sm font-medium text-slate-500">Akun Orang Tua</p>
-                <p class="mt-2 text-3xl font-bold text-amber-600">{{ $stats['orang_tua'] }}</p>
+                <p class="text-sm font-medium text-slate-500">Jumlah Ibu Hamil</p>
+                <p class="mt-2 text-3xl font-bold text-pink-600">{{ $stats['ibu_hamil'] }}</p>
             </div>
             <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                <p class="text-sm font-medium text-slate-500">Wilayah Kerja</p>
+                <p class="text-sm font-medium text-slate-500">Jumlah Anak</p>
+                <p class="mt-2 text-3xl font-bold text-amber-600">{{ $stats['anak'] }}</p>
+            </div>
+            <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                <p class="text-sm font-medium text-slate-500">Jumlah Wilayah Kerja</p>
                 <p class="mt-2 text-3xl font-bold text-violet-600">{{ $stats['wilayah'] }}</p>
+            </div>
+            <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                <p class="text-sm font-medium text-slate-500">Jumlah Jadwal Posyandu</p>
+                <p class="mt-2 text-3xl font-bold text-cyan-600">{{ $stats['jadwal'] }}</p>
             </div>
         </div>
 
         <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
             <div class="flex items-center justify-between border-b border-slate-200 px-5 py-4">
                 <h3 class="font-semibold text-slate-800">User Terbaru</h3>
-                <a href="{{ route('admin.users.index') }}" class="text-sm font-medium text-sky-600 hover:text-sky-700">
+                <a href="{{ route('admin.ibu.index') }}" class="text-sm font-medium text-sky-600 hover:text-sky-700">
                     Lihat semua
                 </a>
             </div>
@@ -52,7 +60,7 @@
                                 <td class="px-5 py-3 text-slate-600">{{ $user->email }}</td>
                                 <td class="px-5 py-3 text-slate-600">{{ $user->primaryRole()?->label() ?? '-' }}</td>
                                 <td class="px-5 py-3">
-                                    @include('admin.users.partials.status', ['status' => $user->status])
+                                    @include('admin.partials.status', ['status' => $user->status])
                                 </td>
                             </tr>
                         @empty

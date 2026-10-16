@@ -6,7 +6,7 @@
     <div class="w-full max-w-md">
         <div class="mb-6 text-center text-white">
             <h1 class="text-3xl font-bold tracking-wide">SI-KIA</h1>
-            <p class="mt-1 text-sm text-white/80">Sistem Informasi Kesehatan Ibu &amp; Anak</p>
+            <p class="mt-1 text-sm text-white/80">Sistem Informasi Kesehatan Ibu & Anak</p>
         </div>
 
         <div class="rounded-2xl bg-white p-8 shadow-2xl">
@@ -33,12 +33,6 @@
                     <input id="password" type="password" name="password" required
                            class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200">
                 </div>
-
-                <label class="flex items-center gap-2 text-sm text-slate-600">
-                    <input type="checkbox" name="remember" value="1"
-                           class="rounded border-slate-300 text-sky-600 focus:ring-sky-500">
-                    Ingat saya
-                </label>
 
                 <button type="submit"
                         class="w-full rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-sky-700">

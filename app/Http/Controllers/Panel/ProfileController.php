@@ -4,11 +4,9 @@ namespace App\Http\Controllers\Panel;
 
 use App\Enums\StatusKehamilanEnum;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Profile\ChangePasswordRequest;
 use App\Http\Requests\Profile\UpdateProfileRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 
 class ProfileController extends Controller
@@ -35,21 +33,5 @@ class ProfileController extends Controller
         $user->save();
 
         return back()->with('success', 'Profil berhasil diperbarui.');
-    }
-
-    public function updatePassword(ChangePasswordRequest $request): RedirectResponse
-    {
-        $user = $request->user();
-
-        if (! Hash::check($request->validated('current_password'), $user->password)) {
-            return back()->withErrors([
-                'current_password' => 'Password saat ini tidak sesuai.',
-            ]);
-        }
-
-        $user->update(['password' => $request->validated('password')]);
-        $user->tokens()->delete();
-
-        return back()->with('success', 'Password berhasil diubah.');
     }
 }

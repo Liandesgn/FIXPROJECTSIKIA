@@ -6,7 +6,6 @@ use App\Enums\RoleEnum;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -45,33 +44,5 @@ class ProfileTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.name', 'Nama Diubah')
             ->assertJsonPath('data.phone', '089876543210');
-    }
-
-    public function test_user_can_change_password(): void
-    {
-        $user = User::factory()->create();
-        Sanctum::actingAs($user);
-
-        $this->putJson('/api/profile/password', [
-            'current_password' => 'password',
-            'password' => 'password-baru',
-            'password_confirmation' => 'password-baru',
-        ])->assertOk();
-
-        $this->assertTrue(Hash::check('password-baru', $user->fresh()->password));
-    }
-
-    public function test_change_password_fails_with_wrong_current_password(): void
-    {
-        $user = User::factory()->create();
-        Sanctum::actingAs($user);
-
-        $this->putJson('/api/profile/password', [
-            'current_password' => 'password-salah',
-            'password' => 'password-baru',
-            'password_confirmation' => 'password-baru',
-        ])
-            ->assertStatus(422)
-            ->assertJsonValidationErrors('current_password');
     }
 }

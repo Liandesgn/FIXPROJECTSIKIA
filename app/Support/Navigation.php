@@ -49,10 +49,11 @@ class Navigation
                 ],
             ],
             [
-                'heading' => 'Manajemen',
+                'heading' => 'Manajemen User',
                 'items' => [
-                    self::link('Manajemen User', 'admin.users.index', 'admin.users.*'),
-                    self::link('Kelola Orang Tua', 'panel.kelola-orang-tua.index', 'panel.kelola-orang-tua.*'),
+                    self::link('Kelola Bidan', 'admin.bidan.index', 'admin.bidan.*'),
+                    self::link('Kelola Kader', 'admin.kader.index', 'admin.kader.*'),
+                    self::link('Kelola Ibu', 'admin.ibu.index', 'admin.ibu.*'),
                 ],
             ],
             [
@@ -61,8 +62,8 @@ class Navigation
                     self::soon('Data Ibu', 'data-ibu'),
                     self::soon('Data Anak', 'data-anak'),
                     self::soon('Data Posyandu', 'data-posyandu'),
-                    self::soon('Wilayah Kerja', 'wilayah-kerja'),
-                    self::soon('Jadwal Kegiatan', 'jadwal-kegiatan'),
+                    self::soon('Data Wilayah Kerja', 'wilayah-kerja'),
+                    self::soon('Kelola Jadwal', 'jadwal-kegiatan'),
                     self::soon('Laporan', 'laporan'),
                 ],
             ],
@@ -88,30 +89,12 @@ class Navigation
                 ],
             ],
             [
-                'heading' => 'Wilayah Kerja',
+                'heading' => 'Menu',
                 'items' => [
-                    self::link('Kelola Orang Tua', 'panel.kelola-orang-tua.index', 'panel.kelola-orang-tua.*'),
                     self::soon('Data Ibu', 'data-ibu'),
                     self::soon('Data Anak', 'data-anak'),
-                ],
-            ],
-            [
-                'heading' => 'Pemeriksaan',
-                'items' => [
-                    self::soon('Pemeriksaan Ibu Hamil', 'pemeriksaan-ibu'),
-                    self::soon('Pemeriksaan Anak & Balita', 'pemeriksaan-anak'),
-                    self::soon('Riwayat Pemeriksaan', 'riwayat-pemeriksaan'),
-                    self::soon('Monitoring Status Kesehatan', 'monitoring-status'),
-                    self::soon('Grafik Perkembangan', 'grafik-perkembangan'),
-                ],
-            ],
-            [
-                'heading' => 'Layanan',
-                'items' => [
-                    self::soon('Konsultasi Bidan', 'konsultasi'),
-                    self::soon('Jadwal Pemeriksaan', 'jadwal-pemeriksaan'),
-                    self::soon('Jadwal Posyandu', 'jadwal-posyandu'),
-                    self::soon('Laporan Kesehatan Wilayah', 'laporan-wilayah'),
+                    self::soon('Jadwal', 'jadwal-pemeriksaan'),
+                    self::soon('Laporan', 'laporan'),
                 ],
             ],
             [
@@ -146,7 +129,6 @@ class Navigation
             [
                 'heading' => 'Pengukuran',
                 'items' => [
-                    self::link('Kelola Orang Tua', 'panel.kelola-orang-tua.index', 'panel.kelola-orang-tua.*'),
                     self::soon('Cari Data Ibu', 'cari-ibu'),
                     self::soon('Data Anak', 'data-anak'),
                     self::soon('Input Hasil Pengukuran', 'input-pengukuran'),
