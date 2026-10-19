@@ -3,90 +3,240 @@
 @section('title', 'Kelola Kader')
 
 @section('content')
-    <div class="space-y-4">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-            <div>
-                <h2 class="text-lg font-semibold text-slate-800">Kelola Kader</h2>
-                <p class="text-sm text-slate-500">Kelola akun kader beserta wilayah kerjanya.</p>
-            </div>
-            <a href="{{ route('admin.kader.create') }}"
-               class="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700">
-                + Tambah Kader
-            </a>
+@php
+    $total   = method_exists($kaders, 'total') ? $kaders->total() : $kaders->count();
+    $nextUrl = method_exists($kaders, 'nextPageUrl') ? ($kaders->nextPageUrl() ?? '') : '';
+@endphp
+
+<div class="mx-auto w-full max-w-[96rem] space-y-5">
+
+    {{-- Header --}}
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+            <h1 class="text-2xl font-bold tracking-tight text-[#542D3D] sm:text-3xl">Kelola Kader</h1>
+            <p class="mt-1 text-sm font-medium text-slate-700">Manajemen User / Kelola Kader</p>
         </div>
 
-        <form method="GET" action="{{ route('admin.kader.index') }}" class="flex flex-wrap items-center gap-2">
-            <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama kader..."
-                   class="w-52 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200">
+        <a href="{{ route('admin.kader.create') }}"
+           class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#C9517E] px-5 py-3 text-sm font-semibold text-white shadow-md shadow-[#C9517E]/25 transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40">
+            <span class="text-lg leading-none">+</span> Tambah Kader
+        </a>
+    </div>
 
-            <select name="wilayah_kerja_id"
-                    class="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200">
-                <option value="">Semua Wilayah</option>
-                @foreach ($wilayahs->groupBy('kecamatan') as $kecamatan => $desas)
-                    <optgroup label="Kec. {{ $kecamatan ?: '-' }}">
-                        @foreach ($desas as $wilayah)
-                            <option value="{{ $wilayah->id }}" @selected((string) request('wilayah_kerja_id') === (string) $wilayah->id)>
-                                Desa {{ $wilayah->desa }}
-                            </option>
-                        @endforeach
-                    </optgroup>
-                @endforeach
-            </select>
+    {{-- Pesan berhasil / gagal ditampilkan sebagai popup SweetAlert dari layout --}}
 
-            <button type="submit" class="rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-900">
-                Filter
-            </button>
-            @if (request()->filled('search') || request()->filled('wilayah_kerja_id'))
-                <a href="{{ route('admin.kader.index') }}" class="text-sm text-slate-500 hover:text-slate-700">Reset</a>
-            @endif
-        </form>
+    {{-- Ringkasan (ringkas) --}}
+    <div class="inline-flex items-center gap-3 rounded-xl border border-[#F1D5E0] bg-white px-4 py-2.5 shadow-sm">
+        <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-[#FCE7F0] text-[#C9517E]">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16 11a3 3 0 1 0 0-6m-8 6a3 3 0 1 0 0-6m-6 13a6 6 0 0 1 12 0m2-5a6 6 0 0 1 6 5"/>
+            </svg>
+        </span>
+        <div class="leading-tight">
+            <p class="text-xs font-semibold text-slate-700">Total data kader</p>
+            <p class="text-xl font-bold text-[#C9517E]">{{ $total }}</p>
+        </div>
+    </div>
 
-        <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm">
-                    <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+    {{-- Daftar --}}
+    <div class="overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm">
+
+        {{-- Bar cari + filter --}}
+        <div class="border-b border-[#E99AB7] bg-[#FCE7F0] p-3 sm:p-4">
+            <div class="flex flex-col gap-3 sm:flex-row">
+                <div class="relative flex-1">
+                    <label for="searchInput" class="sr-only">Cari kader</label>
+                    <svg class="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-[#C9517E]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="m20 20-3.5-3.5"/></svg>
+                    <input id="searchInput" type="search" autocomplete="off"
+                           placeholder="Cari nama, email, atau wilayah"
+                           class="w-full rounded-xl border-2 border-[#C9517E]/60 bg-white py-2.5 pl-11 pr-3 text-sm font-medium text-gray-900 outline-none transition placeholder:text-slate-500 focus:border-[#C9517E] focus:ring-4 focus:ring-[#E99AB7]/40">
+                </div>
+
+                <div class="sm:w-64">
+                    <label for="wilayahFilter" class="sr-only">Filter wilayah kerja</label>
+                    <select id="wilayahFilter"
+                            class="w-full rounded-xl border-2 border-[#C9517E]/60 bg-white px-3 py-2.5 text-sm font-semibold text-gray-900 outline-none transition focus:border-[#C9517E] focus:ring-4 focus:ring-[#E99AB7]/40">
+                        <option value="">Semua wilayah kerja</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        {{-- Tabel (virtual scrolling) --}}
+        <div id="listWrap" data-next="{{ $nextUrl }}">
+            <div id="listScroll" class="max-h-[28rem] overflow-y-auto overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead class="sticky top-0 z-10 bg-[#FCE7F0] text-xs font-bold uppercase tracking-wide text-[#542D3D]">
                         <tr>
-                            <th class="px-5 py-3">Nama</th>
-                            <th class="px-5 py-3">Email</th>
-                            <th class="px-5 py-3">No. HP</th>
-                            <th class="px-5 py-3">Wilayah Kerja</th>
-                            <th class="px-5 py-3 text-right">Aksi</th>
+                            <th class="whitespace-nowrap bg-[#FCE7F0] px-3 py-3 lg:px-4">No</th>
+                            <th class="whitespace-nowrap bg-[#FCE7F0] px-3 py-3 lg:px-4">Nama Kader</th>
+                            <th class="hidden whitespace-nowrap bg-[#FCE7F0] px-4 py-3 2xl:table-cell">Email</th>
+                            <th class="hidden whitespace-nowrap bg-[#FCE7F0] px-4 py-3 xl:table-cell">No. Telepon</th>
+                            <th class="whitespace-nowrap bg-[#FCE7F0] px-3 py-3 lg:px-4">Wilayah Kerja</th>
+                            <th class="whitespace-nowrap bg-[#FCE7F0] px-3 py-3 text-center lg:px-4">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100">
+
+                    <tbody id="listBody" class="divide-y divide-[#F7E6ED]">
                         @forelse ($kaders as $kader)
-                            <tr class="hover:bg-slate-50">
-                                <td class="px-5 py-3 font-medium text-slate-800">{{ $kader->name }}</td>
-                                <td class="px-5 py-3 text-slate-600">{{ $kader->email }}</td>
-                                <td class="px-5 py-3 text-slate-600">{{ $kader->phone ?? '-' }}</td>
-                                <td class="px-5 py-3 text-slate-600">
-                                    {{ $kader->wilayahKerja?->desa ?? '-' }}
-                                    <div class="text-xs text-slate-400">{{ $kader->wilayahKerja?->kecamatan ?? '' }}</div>
+                            @php $wilayah = optional($kader->wilayahKerja)->desa ?? '-'; @endphp
+                            <tr class="row-item transition hover:bg-[#FCE7F0]/50"
+                                data-wilayah="{{ $wilayah }}"
+                                data-search="{{ mb_strtolower(($kader->name ?? '') . ' ' . ($kader->email ?? '') . ' ' . ($kader->phone ?? '') . ' ' . $wilayah) }}">
+                                <td class="px-3 py-3 text-sm font-semibold text-slate-700 lg:px-4"><span class="row-no">{{ $loop->iteration }}</span></td>
+
+                                {{-- Nama (+ email & HP ditumpuk di layar yang lebih kecil) --}}
+                                <td class="px-3 py-3 lg:px-4">
+                                    <div class="flex items-center gap-3">
+                                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#C9517E] text-sm font-bold text-white">
+                                            {{ strtoupper(substr($kader->name ?? 'K', 0, 1)) }}
+                                        </span>
+                                        <div class="min-w-0">
+                                            <p class="break-words text-sm font-bold text-[#542D3D] lg:whitespace-nowrap">{{ $kader->name ?? '-' }}</p>
+                                            <p class="break-all text-xs text-slate-700 lg:break-normal lg:whitespace-nowrap 2xl:hidden">{{ $kader->email ?? '-' }}</p>
+                                            <p class="text-xs text-slate-700 xl:hidden">{{ $kader->phone ?? '-' }}</p>
+                                        </div>
+                                    </div>
                                 </td>
-                                <td class="px-5 py-3">
-                                    <div class="flex items-center justify-end gap-3 text-xs font-medium">
-                                        <a href="{{ route('admin.kader.edit', $kader) }}" class="text-sky-600 hover:text-sky-700">Edit</a>
-                                        <form method="POST" action="{{ route('admin.kader.destroy', $kader) }}"
-                                              onsubmit="return confirm('Yakin ingin menghapus data kader ini?');">
+
+                                <td class="hidden whitespace-nowrap px-4 py-3 text-sm text-slate-800 2xl:table-cell">{{ $kader->email ?? '-' }}</td>
+                                <td class="hidden whitespace-nowrap px-4 py-3 text-sm text-slate-800 xl:table-cell">{{ $kader->phone ?? '-' }}</td>
+                                <td class="px-3 py-3 text-sm font-semibold text-slate-800 lg:whitespace-nowrap lg:px-4">{{ $wilayah }}</td>
+
+                                <td class="whitespace-nowrap px-3 py-3 lg:px-4">
+                                    <div class="flex flex-nowrap items-center justify-center gap-2">
+                                        {{-- EDIT: pink tua solid --}}
+                                        <a href="{{ route('admin.kader.edit', $kader->id) }}"
+                                           class="inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-[#C9517E] px-3 text-xs font-bold text-white shadow-sm transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40 sm:px-3.5">
+                                            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 20h4L19 9l-4-4L4 16v4Zm9-13 4 4"/></svg>
+                                            Edit
+                                        </a>
+
+                                        {{-- HAPUS: merah solid. Konfirmasi memakai SweetAlert (diatur di layout) --}}
+                                        <form action="{{ route('admin.kader.destroy', $kader->id) }}" method="POST" class="m-0"
+                                              data-confirm-delete data-name="{{ $kader->name }}">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="text-red-600 hover:text-red-700">Hapus</button>
+                                            <button type="submit"
+                                                    class="inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-red-600 px-3 text-xs font-bold text-white shadow-sm transition hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-200 sm:px-3.5">
+                                                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 7h14M10 11v6m4-6v6M6 7l1 12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-12M9 7V4h6v3"/></svg>
+                                                Hapus
+                                            </button>
                                         </form>
                                     </div>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="px-5 py-8 text-center text-slate-500">Belum ada data kader.</td>
+                                <td colspan="6" class="px-5 py-12 text-center">
+                                    <p class="font-bold text-[#542D3D]">Belum ada data kader.</p>
+                                    <p class="mt-1 text-sm text-slate-700">Tambahkan data kader melalui tombol Tambah Kader.</p>
+                                </td>
                             </tr>
                         @endforelse
                     </tbody>
                 </table>
+
+                <div id="emptySearch" class="hidden px-5 py-10 text-center text-sm font-semibold text-slate-700">
+                    Data kader yang dicari tidak ditemukan.
+                </div>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-between gap-2 border-t border-[#F1D5E0] bg-white px-4 py-3">
+                <span id="listInfo" class="text-xs font-semibold text-slate-700"></span>
+                <span class="text-xs text-slate-600">Gulir ke bawah untuk melihat data lainnya</span>
             </div>
         </div>
-
-        <div>
-            {{ $kaders->links() }}
-        </div>
     </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const body = document.getElementById('listBody');
+    const wrap = document.getElementById('listWrap');
+    const scroller = document.getElementById('listScroll');
+    const q = document.getElementById('searchInput');
+    const sel = document.getElementById('wilayahFilter');
+    const info = document.getElementById('listInfo');
+    const empty = document.getElementById('emptySearch');
+
+    const CHUNK = 20;
+    let limit = CHUNK;
+    let lastMatched = 0;
+    let next = wrap.dataset.next || '';
+    let loading = false;
+
+    const rows = () => Array.from(body.querySelectorAll('tr.row-item'));
+
+    function buildOptions() {
+        const cur = sel.value;
+        const set = new Set();
+        rows().forEach(r => { const w = r.dataset.wilayah; if (w && w !== '-') set.add(w); });
+        sel.length = 1;
+        Array.from(set).sort((a, b) => a.localeCompare(b, 'id')).forEach(w => {
+            const o = document.createElement('option');
+            o.value = o.textContent = w;
+            sel.appendChild(o);
+        });
+        sel.value = cur;
+    }
+
+    function apply() {
+        const kw = q.value.trim().toLowerCase();
+        const wl = sel.value;
+        let matched = 0, shown = 0;
+
+        rows().forEach(r => {
+            const ok = (!kw || (r.dataset.search || '').includes(kw)) && (!wl || r.dataset.wilayah === wl);
+            let show = false;
+            if (ok) {
+                matched++;
+                if (matched <= limit) {
+                    show = true; shown++;
+                    const no = r.querySelector('.row-no');
+                    if (no) no.textContent = matched;
+                }
+            }
+            r.classList.toggle('hidden', !show);
+        });
+
+        lastMatched = matched;
+        empty.classList.toggle('hidden', matched !== 0 || rows().length === 0);
+        info.textContent = 'Menampilkan ' + shown + ' dari ' + matched + ' data' + (loading ? ' · memuat data...' : '');
+    }
+
+    // Muat sisa halaman di latar belakang agar pencarian & filter mencakup semua data
+    async function loadAll() {
+        if (loading) return;
+        loading = true; apply();
+        try {
+            while (next) {
+                const res = await fetch(next, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' });
+                if (!res.ok) break;
+                const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+                doc.querySelectorAll('tr.row-item').forEach(r => body.appendChild(document.importNode(r, true)));
+                const w = doc.getElementById('listWrap');
+                next = (w && w.dataset.next) || '';
+            }
+        } catch (e) { /* abaikan: data yang sudah termuat tetap tampil */ }
+        loading = false;
+        buildOptions();
+        apply();
+    }
+
+    // Virtual scrolling: tampilkan 20 baris tambahan setiap kali mendekati dasar daftar
+    scroller.addEventListener('scroll', function () {
+        const nearBottom = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 80;
+        if (nearBottom && limit < lastMatched) { limit += CHUNK; apply(); }
+    });
+
+    const reset = () => { limit = CHUNK; scroller.scrollTop = 0; apply(); };
+    q.addEventListener('input', reset);
+    sel.addEventListener('change', reset);
+
+    buildOptions();
+    apply();
+    if (next) loadAll();
+});
+</script>
 @endsection

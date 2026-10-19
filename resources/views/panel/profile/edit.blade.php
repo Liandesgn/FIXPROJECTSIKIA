@@ -1,169 +1,130 @@
 @extends('layouts.app')
 
-@section('title', 'Profil')
+@section('title', 'Profil Saya')
 
 @section('content')
-    @php
-        $inputClass = 'w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200';
-        $labelClass = 'mb-1 block text-sm font-medium text-slate-700';
-        $errorClass = 'mt-1 text-xs text-red-600';
-        $isOrangTua = $user->isOrangTua();
-        $selectedStatus = old('status_kehamilan', $user->status_kehamilan?->value);
-    @endphp
+@php
+    $roleKey   = \Illuminate\Support\Str::before($user->primaryRole()?->dashboard() ?? '', '.');
+    $roleLabel = $roleKey === 'orang-tua' ? 'Ibu' : ($user->primaryRole()?->label() ?? '-');
+    $isIbu     = $user->isOrangTua();
+    $isAdmin   = $roleKey === 'admin';
+    $wk        = $user->wilayahKerja;
+    $initial   = \Illuminate\Support\Str::upper(\Illuminate\Support\Str::substr($user->name, 0, 1));
 
-    <div class="mx-auto max-w-3xl space-y-6">
-        <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div class="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                    <h2 class="text-lg font-semibold text-slate-800">Informasi Profil</h2>
-                    <p class="mt-1 text-sm text-slate-500">Perbarui nama, email, dan nomor HP akun Anda.</p>
-                </div>
-                <div class="text-right text-sm">
-                    <span class="inline-flex rounded-full bg-sky-50 px-3 py-1 font-medium text-sky-700">
-                        {{ $user->primaryRole()?->label() ?? '-' }}
-                    </span>
-                    <p class="mt-1 text-xs text-slate-500">
-                        {{ $user->wilayahKerja?->nama ?? 'Tanpa wilayah kerja' }}
-                    </p>
-                </div>
-            </div>
+    $hamil = $isIbu && method_exists($user, 'sedangHamil') ? $user->sedangHamil() : false;
 
-            <form method="POST" action="{{ route('profile.update') }}" class="mt-6 space-y-4">
-                @csrf
-                @method('PUT')
+    // Satu baris informasi: label kecil berwarna + nilai tegas
+    $field = fn (string $label, $value) =>
+        '<div class="min-w-0 rounded-xl border border-[#F1D5E0] bg-[#FFF7FA] px-4 py-3">'
+        . '<dt class="text-xs font-bold uppercase tracking-wide text-[#C9517E]">' . e($label) . '</dt>'
+        . '<dd class="mt-1 break-words text-sm font-semibold text-[#542D3D]">' . e(filled($value) ? $value : '-') . '</dd>'
+        . '</div>';
+@endphp
 
-                <div>
-                    <label for="name" class="{{ $labelClass }}">Nama Lengkap</label>
-                    <input id="name" type="text" name="name" value="{{ old('name', $user->name) }}" required class="{{ $inputClass }}">
-                    @error('name') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
-                </div>
+<div class="mx-auto w-full max-w-4xl space-y-5">
 
-                <div>
-                    <label for="email" class="{{ $labelClass }}">Email</label>
-                    <input id="email" type="email" name="email" value="{{ old('email', $user->email) }}" required class="{{ $inputClass }}">
-                    @error('email') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
-                </div>
+    {{-- Judul --}}
+    <div>
+        <h1 class="text-2xl font-bold tracking-tight text-[#542D3D] sm:text-3xl">Profil Saya</h1>
+        <p class="mt-1 text-sm font-medium text-slate-700">Informasi akun yang terdaftar di SI-KIA</p>
+    </div>
 
-                <div>
-                    <label for="phone" class="{{ $labelClass }}">Nomor HP</label>
-                    <input id="phone" type="text" name="phone" value="{{ old('phone', $user->phone) }}" class="{{ $inputClass }}">
-                    @error('phone') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
-                </div>
+    {{-- Kartu profil utama --}}
+    <section class="overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm">
 
-                <button type="submit"
-                        class="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700">
-                    Simpan Profil
-                </button>
-            </form>
+        {{-- Banner + identitas --}}
+        <div class="relative bg-gradient-to-r from-[#C9517E] to-[#E99AB7] px-5 pb-16 pt-6 sm:px-8">
+            <div class="pointer-events-none absolute -right-10 -top-14 h-40 w-40 rounded-full border border-white/25"></div>
+            <div class="pointer-events-none absolute -bottom-16 right-28 h-32 w-32 rounded-full bg-white/10"></div>
+            <p class="relative text-xs font-semibold uppercase tracking-wider text-white">Akun SI-KIA</p>
         </div>
 
-        @if ($isOrangTua)
-            <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 class="mb-1 text-lg font-semibold text-slate-800">Data Ibu</h2>
-                <p class="mb-6 text-sm text-slate-500">Data registrasi ibu Anda. Wajib milik Anda sendiri.</p>
-
-                <form method="POST" action="{{ route('profile.update') }}" class="space-y-4">
-                    @csrf
-                    @method('PUT')
-
-                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        <div>
-                            <label for="nik" class="{{ $labelClass }}">NIK</label>
-                            <input id="nik" type="text" name="nik" maxlength="16" value="{{ old('nik', $user->nik) }}" class="{{ $inputClass }}">
-                            @error('nik') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
-                        </div>
-
-                        <div>
-                            <label for="tempat_lahir" class="{{ $labelClass }}">Tempat Lahir</label>
-                            <input id="tempat_lahir" type="text" name="tempat_lahir" value="{{ old('tempat_lahir', $user->tempat_lahir) }}" class="{{ $inputClass }}">
-                            @error('tempat_lahir') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
-                        </div>
-
-                        <div>
-                            <label for="tanggal_lahir" class="{{ $labelClass }}">Tanggal Lahir</label>
-                            <input id="tanggal_lahir" type="date" name="tanggal_lahir" value="{{ old('tanggal_lahir', $user->tanggal_lahir?->format('Y-m-d')) }}" class="{{ $inputClass }}">
-                            @error('tanggal_lahir') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
-                        </div>
-
-                        <div>
-                            <label for="status_kehamilan" class="{{ $labelClass }}">Status Kehamilan</label>
-                            <select id="status_kehamilan" name="status_kehamilan" class="{{ $inputClass }}" data-status-kehamilan>
-                                <option value="">-- Pilih Status --</option>
-                                @foreach (\App\Enums\StatusKehamilanEnum::cases() as $status)
-                                    <option value="{{ $status->value }}" @selected($selectedStatus === $status->value)>{{ $status->label() }}</option>
-                                @endforeach
-                            </select>
-                            @error('status_kehamilan') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
-                        </div>
+        <div class="relative px-5 pb-6 sm:px-8">
+            <div class="-mt-12 flex flex-col gap-4 sm:-mt-14 sm:flex-row sm:items-end sm:justify-between">
+                <div class="flex items-end gap-4">
+                    <span class="flex h-24 w-24 shrink-0 items-center justify-center rounded-full border-4 border-white bg-[#C9517E] text-4xl font-bold text-white shadow-lg sm:h-28 sm:w-28">
+                        {{ $initial }}
+                    </span>
+                    <div class="min-w-0 pb-1">
+                        <h2 class="break-words text-xl font-bold text-[#542D3D] sm:text-2xl">{{ $user->name }}</h2>
+                        <p class="break-all text-sm font-medium text-slate-700">{{ $user->email }}</p>
                     </div>
+                </div>
 
-                    <div data-hamil-fields class="grid grid-cols-1 gap-4 md:grid-cols-2 {{ $selectedStatus === \App\Enums\StatusKehamilanEnum::Hamil->value ? '' : 'hidden' }}">
-                        <div>
-                            <label for="hpl" class="{{ $labelClass }}">HPL (Hari Perkiraan Lahir)</label>
-                            <input id="hpl" type="date" name="hpl" value="{{ old('hpl', $user->hpl?->format('Y-m-d')) }}" class="{{ $inputClass }}">
-                            @error('hpl') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
-                        </div>
-                        <div>
-                            <label for="usia_kehamilan" class="{{ $labelClass }}">Usia Kehamilan (minggu)</label>
-                            <input id="usia_kehamilan" type="number" min="1" max="42" name="usia_kehamilan" value="{{ old('usia_kehamilan', $user->usia_kehamilan) }}" class="{{ $inputClass }}">
-                            @error('usia_kehamilan') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
-                        </div>
-                    </div>
-
-                    <div class="rounded-lg border border-slate-200 p-4">
-                        <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Wilayah &amp; Petugas</p>
-                        <div class="grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
-                            <div>
-                                <p class="text-xs text-slate-400">Kabupaten</p>
-                                <p class="font-medium text-slate-700">{{ $user->wilayahKerja?->kabupaten ?? '-' }}</p>
-                            </div>
-                            <div>
-                                <p class="text-xs text-slate-400">Kecamatan</p>
-                                <p class="font-medium text-slate-700">{{ $user->wilayahKerja?->kecamatan ?? '-' }}</p>
-                            </div>
-                            <div>
-                                <p class="text-xs text-slate-400">Desa</p>
-                                <p class="font-medium text-slate-700">{{ $user->wilayahKerja?->desa ?? '-' }}</p>
-                            </div>
-                            <div>
-                                <p class="text-xs text-slate-400">Bidan</p>
-                                <p class="font-medium text-slate-700">{{ $user->bidanWilayah?->name ?? '-' }}</p>
-                            </div>
-                            <div>
-                                <p class="text-xs text-slate-400">Kader</p>
-                                <p class="font-medium text-slate-700">{{ $user->kaderWilayah?->name ?? '-' }}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <button type="submit"
-                            class="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700">
-                        Simpan Data Ibu
-                    </button>
-                </form>
+                <span class="inline-flex w-fit items-center gap-2 rounded-full bg-[#FCE7F0] px-4 py-1.5 text-sm font-bold text-[#C9517E]">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-3Z"/></svg>
+                    {{ $roleLabel }}
+                </span>
             </div>
-        @endif
-    </div>
+
+            <h3 class="mb-3 mt-7 text-sm font-bold text-[#542D3D]">Data Akun</h3>
+            <dl class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {!! $field('Nama Lengkap', $user->name) !!}
+                {!! $field('Email', $user->email) !!}
+                {!! $field('Nomor HP', $user->phone) !!}
+                {!! $field('Role', $roleLabel) !!}
+            </dl>
+        </div>
+    </section>
+
+    {{-- Data Ibu (khusus role Ibu) --}}
+    @if ($isIbu)
+        <section class="rounded-2xl border border-[#F1D5E0] bg-white p-5 shadow-sm sm:p-8">
+            <h3 class="text-base font-bold text-[#542D3D]">Data Ibu</h3>
+            <p class="mt-0.5 text-sm text-slate-700">Data registrasi ibu yang tercatat di sistem.</p>
+
+            <dl class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {!! $field('NIK', $user->nik) !!}
+                {!! $field('Tempat, Tanggal Lahir', $user->ttl()) !!}
+                {!! $field('Status Kehamilan', $user->status_kehamilan?->label()) !!}
+                @if ($hamil)
+                    {!! $field('Usia Kehamilan', $user->usia_kehamilan ? $user->usia_kehamilan . ' minggu' : null) !!}
+                    {!! $field('HPL (Hari Perkiraan Lahir)', $user->hpl?->format('d-m-Y')) !!}
+                @endif
+            </dl>
+        </section>
+    @endif
+
+    {{-- Wilayah (tidak ditampilkan untuk Admin) --}}
+    @unless ($isAdmin)
+        <section class="rounded-2xl border border-[#F1D5E0] bg-white p-5 shadow-sm sm:p-8">
+            <h3 class="text-base font-bold text-[#542D3D]">{{ $isIbu ? 'Wilayah & Petugas' : 'Wilayah Kerja' }}</h3>
+            <p class="mt-0.5 text-sm text-slate-700">
+                {{ $isIbu ? 'Wilayah tempat tinggal dan petugas yang menangani Anda.' : 'Wilayah yang ditugaskan kepada Anda.' }}
+            </p>
+
+            <dl class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                {!! $field('Kabupaten', $wk?->kabupaten) !!}
+                {!! $field('Kecamatan', $wk?->kecamatan) !!}
+                {!! $field('Desa', $wk?->desa) !!}
+            </dl>
+
+            @if ($isIbu)
+                <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div class="flex items-center gap-4 rounded-xl border border-[#F1D5E0] bg-[#FCE7F0] p-4">
+                        <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-[#C9517E] shadow-sm">
+                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 9a7 7 0 0 1 14 0M12 15v4m-2-2h4"/></svg>
+                        </span>
+                        <div class="min-w-0">
+                            <p class="text-xs font-bold uppercase tracking-wide text-[#C9517E]">Bidan</p>
+                            <p class="break-words text-sm font-bold text-[#542D3D]">{{ $user->bidanWilayah?->name ?? 'Belum ada' }}</p>
+                            <p class="text-xs font-medium text-slate-700">{{ $user->bidanWilayah?->phone ?? '-' }}</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-4 rounded-xl border border-[#F1D5E0] bg-[#FCE7F0] p-4">
+                        <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-[#C9517E] shadow-sm">
+                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16 11a3 3 0 1 0 0-6m-8 6a3 3 0 1 0 0-6m-6 13a6 6 0 0 1 12 0m2-5a6 6 0 0 1 6 5"/></svg>
+                        </span>
+                        <div class="min-w-0">
+                            <p class="text-xs font-bold uppercase tracking-wide text-[#C9517E]">Kader</p>
+                            <p class="break-words text-sm font-bold text-[#542D3D]">{{ $user->kaderWilayah?->name ?? 'Belum ada' }}</p>
+                            <p class="text-xs font-medium text-slate-700">{{ $user->kaderWilayah?->phone ?? '-' }}</p>
+                        </div>
+                    </div>
+                </div>
+            @endif
+        </section>
+    @endunless
+</div>
 @endsection
-
-@if ($isOrangTua)
-    @push('scripts')
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                const statusSelect = document.querySelector('[data-status-kehamilan]');
-                const hamilFields = document.querySelector('[data-hamil-fields]');
-                const hplInput = document.querySelector('#hpl');
-                const usiaInput = document.querySelector('#usia_kehamilan');
-
-                function toggleHamil() {
-                    const isHamil = statusSelect?.value === 'hamil';
-                    hamilFields?.classList.toggle('hidden', !isHamil);
-                    hplInput?.toggleAttribute('required', isHamil);
-                    usiaInput?.toggleAttribute('required', isHamil);
-                }
-                statusSelect?.addEventListener('change', toggleHamil);
-                toggleHamil();
-            });
-        </script>
-    @endpush
-@endif
