@@ -33,11 +33,6 @@
     </div>
 
     <div>
-        <label for="password_confirmation" class="{{ $labelClass }}">Konfirmasi Password @unless ($ibu) {!! $star !!} @endunless</label>
-        <input id="password_confirmation" type="password" name="password_confirmation" @required(! $ibu) placeholder="{{ $ibu ? '' : 'Ulangi password' }}" class="{{ $inputClass }}">
-    </div>
-
-    <div>
         <label for="nik" class="{{ $labelClass }}">NIK {!! $star !!}</label>
         <input id="nik" type="text" name="nik" value="{{ old('nik', $ibu?->nik) }}" maxlength="16" inputmode="numeric" required placeholder="16 digit NIK" class="{{ $inputClass }}">
         @error('nik') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror

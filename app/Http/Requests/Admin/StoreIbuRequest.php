@@ -21,7 +21,7 @@ class StoreIbuRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'password' => ['required', 'string', 'min:8'],
             'nik' => ['required', 'string', 'digits:16'],
             'tempat_lahir' => ['required', 'string', 'max:255'],
             'tanggal_lahir' => ['required', 'date', 'before:today'],
@@ -50,7 +50,6 @@ class StoreIbuRequest extends FormRequest
     {
         return [
             'email.unique' => 'Email sudah terdaftar.',
-            'password.confirmed' => 'Konfirmasi password tidak cocok.',
             'nik.digits' => 'NIK harus terdiri dari 16 digit.',
             'wilayah_kerja_id.required' => 'Wilayah (desa) wajib dipilih.',
             'status_kehamilan.required' => 'Status kehamilan wajib dipilih.',

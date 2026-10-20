@@ -48,9 +48,4 @@
         <input id="password" type="password" name="password" @required(! $user) class="{{ $inputClass }}">
         @error('password') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
     </div>
-
-    <div>
-        <label for="password_confirmation" class="{{ $labelClass }}">Konfirmasi Password</label>
-        <input id="password_confirmation" type="password" name="password_confirmation" @required(! $user) class="{{ $inputClass }}">
-    </div>
 </div>

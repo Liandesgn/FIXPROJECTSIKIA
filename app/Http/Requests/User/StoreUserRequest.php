@@ -22,7 +22,7 @@ class StoreUserRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'password' => ['required', 'string', 'min:8'],
             'phone' => ['nullable', 'string', 'max:20'],
             'role' => ['required', Rule::in(RoleEnum::manageable())],
             'status' => ['nullable', Rule::in(UserStatusEnum::values())],
@@ -45,7 +45,6 @@ class StoreUserRequest extends FormRequest
     {
         return [
             'email.unique' => 'Email sudah terdaftar.',
-            'password.confirmed' => 'Konfirmasi password tidak cocok.',
             'role.in' => 'Role tidak valid.',
             'wilayah_kerja_id.required_if' => 'Wilayah kerja wajib diisi untuk Bidan dan Kader.',
         ];

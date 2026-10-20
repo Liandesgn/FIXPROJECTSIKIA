@@ -49,6 +49,7 @@ class User extends Authenticatable
             'tanggal_lahir' => 'date',
             'hpl' => 'date',
             'status_kehamilan' => StatusKehamilanEnum::class,
+             'last_login_at' => 'datetime', 
         ];
     }
 

@@ -24,7 +24,7 @@ class UpdateUserRequest extends FormRequest
         return [
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'email' => ['sometimes', 'required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($userId)],
-            'password' => ['nullable', 'string', 'min:8', 'confirmed'],
+            'password' => ['nullable', 'string', 'min:8'],
             'phone' => ['nullable', 'string', 'max:20'],
             'role' => ['sometimes', 'required', Rule::in(RoleEnum::manageable())],
             'status' => ['sometimes', Rule::in(UserStatusEnum::values())],
@@ -47,7 +47,6 @@ class UpdateUserRequest extends FormRequest
     {
         return [
             'email.unique' => 'Email sudah terdaftar.',
-            'password.confirmed' => 'Konfirmasi password tidak cocok.',
             'role.in' => 'Role tidak valid.',
             'wilayah_kerja_id.required_if' => 'Wilayah kerja wajib diisi untuk Bidan dan Kader.',
         ];

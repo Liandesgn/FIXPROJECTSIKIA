@@ -22,7 +22,7 @@ class UpdatePetugasRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($userId)],
-            'password' => ['nullable', 'string', 'min:8', 'confirmed'],
+            'password' => ['nullable', 'string', 'min:8'],
             'phone' => ['nullable', 'string', 'max:20'],
             'wilayah_kerja_id' => ['required', 'integer', Rule::exists('wilayah_kerja', 'id')],
         ];
@@ -35,7 +35,6 @@ class UpdatePetugasRequest extends FormRequest
     {
         return [
             'email.unique' => 'Email sudah terdaftar.',
-            'password.confirmed' => 'Konfirmasi password tidak cocok.',
             'wilayah_kerja_id.required' => 'Wilayah kerja wajib dipilih.',
         ];
     }
