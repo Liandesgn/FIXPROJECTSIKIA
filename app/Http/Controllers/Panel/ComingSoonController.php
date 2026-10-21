@@ -19,6 +19,7 @@ public const MODULES = [
         'laporan' => ['Laporan', 'Unduh laporan sistem dan rekapitulasi data.'],
         'data-ibu' => ['Data Ibu', 'Data induk ibu hamil dan ibu menyusui.'],
         'data-anak' => ['Data Anak', 'Data induk anak dan balita.'],
+        'jadwal' => ['Jadwal', 'Jadwal pemeriksaan dan kegiatan posyandu.'],
         'data-posyandu' => ['Data Posyandu', 'Data induk posyandu dan wilayah pelayanannya.'],
         'pemeriksaan-ibu' => ['Pemeriksaan Ibu Hamil', 'Catat hasil pemeriksaan kesehatan ibu hamil.'],
         'pemeriksaan-anak' => ['Pemeriksaan Anak & Balita', 'Catat hasil pemeriksaan anak dan balita.'],

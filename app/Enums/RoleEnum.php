@@ -5,7 +5,7 @@ namespace App\Enums;
 enum RoleEnum: string
 {
     case Admin = 'admin';
-    case OrangTua = 'orang_tua';
+    case Ibu = 'ibu';
     case Bidan = 'bidan';
     case Kader = 'kader';
 
@@ -13,7 +13,7 @@ enum RoleEnum: string
     {
         return match ($this) {
             self::Admin => 'Admin',
-            self::OrangTua => 'Ibu',
+            self::Ibu => 'Ibu',
             self::Bidan => 'Bidan',
             self::Kader => 'Kader',
         };
@@ -27,7 +27,7 @@ enum RoleEnum: string
     public static function manageable(): array
     {
         return [
-            self::OrangTua->value,
+            self::Ibu->value,
             self::Bidan->value,
             self::Kader->value,
         ];
@@ -40,7 +40,7 @@ enum RoleEnum: string
     {
         return match ($this) {
             self::Admin => 'admin.dashboard',
-            self::OrangTua => 'orang-tua.dashboard',
+            self::Ibu => 'ibu.dashboard',
             self::Bidan => 'bidan.dashboard',
             self::Kader => 'kader.dashboard',
         };

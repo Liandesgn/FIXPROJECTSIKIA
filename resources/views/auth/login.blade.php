@@ -24,7 +24,7 @@
                     </div>
 
                     <h1 class="mt-6 text-4xl font-bold tracking-wide sm:text-5xl">SI-KIA</h1>
-                    <p class="mt-2 text-base font-medium text-white sm:text-lg">Sistem Monitoring Ibu &amp; Anak</p>
+                    <p class="mt-2 text-base font-medium text-white sm:text-lg">Sistem Monitoring Kesehatan Ibu & Anak</p>
 
                     {{-- Poin singkat --}}
                     <ul class="mt-7 w-full space-y-2.5 text-left text-sm">
@@ -38,7 +38,7 @@
                             <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white text-[#C9517E]">
                                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm-4 14v-6l-2-4h12l-2 4v6"/></svg>
                             </span>
-                            <span class="font-semibold">Catat tumbuh kembang bayi &amp; balita</span>
+                            <span class="font-semibold">Catat tumbuh kembang bayi & balita</span>
                         </li>
                         <li class="flex items-center gap-3 rounded-2xl bg-white/15 px-4 py-3 backdrop-blur-sm">
                             <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white text-[#C9517E]">

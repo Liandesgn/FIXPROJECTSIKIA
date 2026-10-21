@@ -38,7 +38,7 @@ class MultiRolePanelTest extends TestCase
             'admin' => [RoleEnum::Admin->value, '/admin', 'Ringkasan Sistem'],
             'bidan' => [RoleEnum::Bidan->value, '/bidan', 'Dashboard Bidan'],
             'kader' => [RoleEnum::Kader->value, '/kader', 'Dashboard Kader'],
-            'orang_tua' => [RoleEnum::OrangTua->value, '/orang-tua', 'Layanan untuk Anda'],
+            'orang_tua' => [RoleEnum::Ibu->value, '/orang-tua', 'Layanan untuk Anda'],
         ];
     }
 
@@ -73,13 +73,13 @@ class MultiRolePanelTest extends TestCase
         $admin = $this->userWithRole(RoleEnum::Admin);
         $this->actingAs($admin)->get('/bidan')->assertStatus(403);
 
-        $orangTua = $this->userWithRole(RoleEnum::OrangTua);
+        $orangTua = $this->userWithRole(RoleEnum::Ibu);
         $this->actingAs($orangTua)->get('/kader')->assertStatus(403);
     }
 
     public function test_every_role_can_open_shared_profile(): void
     {
-        foreach ([RoleEnum::Admin, RoleEnum::Bidan, RoleEnum::Kader, RoleEnum::OrangTua] as $role) {
+        foreach ([RoleEnum::Admin, RoleEnum::Bidan, RoleEnum::Kader, RoleEnum::Ibu] as $role) {
             $this->actingAs($this->userWithRole($role))
                 ->get('/profile')
                 ->assertOk()

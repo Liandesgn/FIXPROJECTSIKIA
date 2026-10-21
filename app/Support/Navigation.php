@@ -16,7 +16,7 @@ class Navigation
             RoleEnum::Admin => self::admin(),
             RoleEnum::Bidan => self::bidan(),
             RoleEnum::Kader => self::kader(),
-            RoleEnum::OrangTua => self::orangTua(),
+            RoleEnum::Ibu => self::orangTua(),
             default => [],
         };
     }

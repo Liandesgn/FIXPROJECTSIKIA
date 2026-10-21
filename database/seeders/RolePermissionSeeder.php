@@ -24,7 +24,7 @@ class RolePermissionSeeder extends Seeder
         $admin = Role::findOrCreate(RoleEnum::Admin->value, $guard);
         $admin->syncPermissions(PermissionEnum::values());
 
-        foreach ([RoleEnum::OrangTua, RoleEnum::Bidan, RoleEnum::Kader] as $role) {
+        foreach ([RoleEnum::Ibu, RoleEnum::Bidan, RoleEnum::Kader] as $role) {
             Role::findOrCreate($role->value, $guard);
         }
 

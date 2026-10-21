@@ -19,7 +19,7 @@ class IbuController extends Controller
     public function index(Request $request): View
     {
         $ibus = User::query()
-            ->role(RoleEnum::OrangTua->value)
+            ->role(RoleEnum::Ibu->value)
             ->with('wilayahKerja')
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = '%'.$request->string('search').'%';

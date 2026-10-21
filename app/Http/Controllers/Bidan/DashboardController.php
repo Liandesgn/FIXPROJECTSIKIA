@@ -15,7 +15,7 @@ class DashboardController extends Controller
         $user = $request->user()->load('wilayahKerja');
 
         $stats = [
-            'orang_tua' => User::role(RoleEnum::OrangTua->value)->count(),
+            'orang_tua' => User::role(RoleEnum::Ibu->value)->count(),
             'pemeriksaan' => 0,
             'konsultasi' => 0,
             'jadwal' => 0,

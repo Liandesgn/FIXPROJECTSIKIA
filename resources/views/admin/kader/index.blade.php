@@ -16,11 +16,12 @@
             <h1 class="text-2xl font-bold tracking-tight text-[#542D3D] sm:text-3xl">Kelola Kader</h1>
             <p class="mt-1 text-sm font-medium text-slate-700">Manajemen User / Kelola Kader</p>
         </div>
-
+@can('user.create')
         <a href="{{ route('admin.kader.create') }}"
            class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#C9517E] px-5 py-3 text-sm font-semibold text-white shadow-md shadow-[#C9517E]/25 transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40">
             <span class="text-lg leading-none">+</span> Tambah Kader
         </a>
+@endcan
     </div>
 
     {{-- Pesan berhasil / gagal ditampilkan sebagai popup SweetAlert dari layout --}}
@@ -106,13 +107,16 @@
                                 <td class="whitespace-nowrap px-3 py-3 lg:px-4">
                                     <div class="flex flex-nowrap items-center justify-center gap-2">
                                         {{-- EDIT: pink tua solid --}}
+                                        @can('user.update')
                                         <a href="{{ route('admin.kader.edit', $kader->id) }}"
                                            class="inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-[#C9517E] px-3 text-xs font-bold text-white shadow-sm transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40 sm:px-3.5">
                                             <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 20h4L19 9l-4-4L4 16v4Zm9-13 4 4"/></svg>
                                             Edit
                                         </a>
+                                        @endcan
 
                                         {{-- HAPUS: merah solid. Konfirmasi memakai SweetAlert (diatur di layout) --}}
+                                        @can('user.delete')
                                         <form action="{{ route('admin.kader.destroy', $kader->id) }}" method="POST" class="m-0"
                                               data-confirm-delete data-name="{{ $kader->name }}">
                                             @csrf
@@ -123,6 +127,7 @@
                                                 Hapus
                                             </button>
                                         </form>
+                                        @endcan
                                     </div>
                                 </td>
                             </tr>

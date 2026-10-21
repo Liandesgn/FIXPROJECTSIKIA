@@ -104,7 +104,7 @@
         };
     };
 
-    // ===== MENU PER ROLE =====
+// ===== MENU PER ROLE =====
     if ($roleKey === 'admin') {
         $menu = [
             ['label' => 'Dashboard', 'icon' => 'home', 'href' => $to('admin.dashboard', 'dashboard'), 'exact' => true],
@@ -112,6 +112,10 @@
                 ['label' => 'Kelola Bidan', 'icon' => 'user', 'href' => $to('admin.bidan.index', 'kelola-bidan')],
                 ['label' => 'Kelola Kader', 'icon' => 'user', 'href' => $to('admin.kader.index', 'kelola-kader')],
                 ['label' => 'Kelola Ibu',   'icon' => 'user', 'href' => $to('admin.ibu.index', 'kelola-ibu')],
+            ]],
+            ['label' => 'Akses & Hak', 'icon' => 'shield', 'items' => [
+                ['label' => 'Kelola Role',       'icon' => 'shield', 'href' => $to('admin.roles.index', 'kelola-role')],
+                ['label' => 'Kelola Permission', 'icon' => 'key',    'href' => $to('admin.permissions.index', 'kelola-permission')],
             ]],
             ['label' => 'Data Master', 'icon' => 'building', 'items' => [
                 ['label' => 'Data Ibu',            'icon' => 'user',     'href' => $to('admin.data-ibu.index', 'data-ibu')],
@@ -131,20 +135,20 @@
             ['label' => 'Laporan',   'icon' => 'report',   'href' => $to('bidan.laporan.index', 'laporan')],
         ];
     } else {
-        // Kader & Ibu: tetap memakai Navigation bawaan project, dirapikan di sini
+        // Kader & Ibu: tetap memakai Navigation bawaan project
         $menu = [
             ['label' => 'Dashboard', 'icon' => 'home', 'href' => $dashboardUrl, 'exact' => true],
         ];
 
         foreach (\App\Support\Navigation::for($user) as $section) {
             $heading = trim($section['heading'] ?? '');
-            if (preg_match('/akun|profil/i', $heading)) continue;      // profil sudah ada di navbar
+            if (preg_match('/akun|profil/i', $heading)) continue;
 
             $items = [];
             foreach ($section['items'] as $item) {
                 $label = trim($item['label']);
-                if (preg_match('/^(dashboard|beranda|utama)$/i', $label)) continue; // sudah ada di atas
-                if (preg_match('/profil|akun/i', $label)) continue;                  // profil sudah ada di navbar
+                if (preg_match('/^(dashboard|beranda|utama)$/i', $label)) continue;
+                if (preg_match('/profil|akun/i', $label)) continue;
 
                 $items[] = [
                     'label'  => $label,
@@ -156,11 +160,20 @@
             if (! $items) continue;
 
             if (preg_match('/^(utama|dashboard|beranda)$/i', $heading) || $heading === '') {
-                foreach ($items as $i) $menu[] = $i;                    // tampil rata, tanpa judul grup
+                foreach ($items as $i) $menu[] = $i;
             } else {
                 $menu[] = ['label' => $heading, 'icon' => $iconFor($heading), 'items' => $items];
             }
         }
+    }
+
+    // Jika non-admin punya permission user.view, tampilkan Manajemen User
+    if ($roleKey !== 'admin' && $user->can('user.view')) {
+        $menu[] = ['label' => 'Manajemen User', 'icon' => 'users', 'items' => [
+            ['label' => 'Kelola Bidan', 'icon' => 'user', 'href' => $to('admin.bidan.index', 'kelola-bidan')],
+            ['label' => 'Kelola Kader', 'icon' => 'user', 'href' => $to('admin.kader.index', 'kelola-kader')],
+            ['label' => 'Kelola Ibu',   'icon' => 'user', 'href' => $to('admin.ibu.index', 'kelola-ibu')],
+        ]];
     }
 
     $isActive = function (array $item) {

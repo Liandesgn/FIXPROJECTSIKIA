@@ -16,7 +16,7 @@ class DashboardController extends Controller
         $stats = [
             'bidan' => User::role(RoleEnum::Bidan->value)->count(),
             'kader' => User::role(RoleEnum::Kader->value)->count(),
-            'ibu_hamil' => User::role(RoleEnum::OrangTua->value)
+            'ibu_hamil' => User::role(RoleEnum::Ibu->value)
                 ->where('status_kehamilan', StatusKehamilanEnum::Hamil->value)
                 ->count(),
             'anak' => 0,
