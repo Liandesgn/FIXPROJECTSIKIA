@@ -80,6 +80,8 @@
         'chat'     => 'M21 11.5a8.5 8.5 0 0 1-12.8 7.3L3 20l1.2-4.2A8.5 8.5 0 1 1 21 11.5Z',
         'book'     => 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z',
         'bell'     => 'M6 9a6 6 0 1 1 12 0c0 5 2 6.5 2 6.5H4S6 14 6 9Zm4 9.5a2 2 0 0 0 4 0',
+        'shield'   => 'M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-3Z',
+        'key'      => 'M21 2l-2 2m-7.6 7.6a5.5 5.5 0 1 1-7.8 7.8 5.5 5.5 0 0 1 7.8-7.8Zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4',
     ];
 
     // Tautan: pakai route asli jika sudah ada, kalau belum arahkan ke halaman "modul"
@@ -104,7 +106,7 @@
         };
     };
 
-// ===== MENU PER ROLE =====
+    // ===== MENU PER ROLE =====
     if ($roleKey === 'admin') {
         $menu = [
             ['label' => 'Dashboard', 'icon' => 'home', 'href' => $to('admin.dashboard', 'dashboard'), 'exact' => true],
@@ -112,10 +114,6 @@
                 ['label' => 'Kelola Bidan', 'icon' => 'user', 'href' => $to('admin.bidan.index', 'kelola-bidan')],
                 ['label' => 'Kelola Kader', 'icon' => 'user', 'href' => $to('admin.kader.index', 'kelola-kader')],
                 ['label' => 'Kelola Ibu',   'icon' => 'user', 'href' => $to('admin.ibu.index', 'kelola-ibu')],
-            ]],
-            ['label' => 'Akses & Hak', 'icon' => 'shield', 'items' => [
-                ['label' => 'Kelola Role',       'icon' => 'shield', 'href' => $to('admin.roles.index', 'kelola-role')],
-                ['label' => 'Kelola Permission', 'icon' => 'key',    'href' => $to('admin.permissions.index', 'kelola-permission')],
             ]],
             ['label' => 'Data Master', 'icon' => 'building', 'items' => [
                 ['label' => 'Data Ibu',            'icon' => 'user',     'href' => $to('admin.data-ibu.index', 'data-ibu')],
@@ -125,6 +123,11 @@
                 ['label' => 'Kelola Jadwal',       'icon' => 'calendar', 'href' => $to('admin.jadwal.index', 'kelola-jadwal')],
             ]],
             ['label' => 'Laporan dan Rekapitulasi', 'icon' => 'report', 'href' => $to('admin.laporan.index', 'laporan')],
+            // Akses & Hak ditaruh paling bawah
+            ['label' => 'Akses & Hak', 'icon' => 'shield', 'items' => [
+                ['label' => 'Kelola Role',       'icon' => 'shield', 'href' => $to('admin.roles.index', 'kelola-role')],
+                ['label' => 'Kelola Permission', 'icon' => 'key',    'href' => $to('admin.permissions.index', 'kelola-permission')],
+            ]],
         ];
     } elseif ($roleKey === 'bidan') {
         $menu = [

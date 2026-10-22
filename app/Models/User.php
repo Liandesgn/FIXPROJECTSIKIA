@@ -83,7 +83,7 @@ class User extends Authenticatable
 
     public function isOrangTua(): bool
     {
-        return $this->hasRole(RoleEnum::OrangTua->value);
+        return $this->hasRole(RoleEnum::Ibu->value);
     }
 
     public function sedangHamil(): bool
