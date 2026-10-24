@@ -25,7 +25,7 @@ class UpdateUserRequest extends FormRequest
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'email' => ['sometimes', 'required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($userId)],
             'password' => ['nullable', 'string', 'min:8'],
-            'phone' => ['nullable', 'string', 'max:20'],
+            'phone' => ['nullable', 'regex:/^[0-9]+$/', 'min:10', 'max:13'],
             'role' => ['sometimes', 'required', Rule::in(RoleEnum::manageable())],
             'status' => ['sometimes', Rule::in(UserStatusEnum::values())],
             'wilayah_kerja_id' => [
@@ -45,10 +45,13 @@ class UpdateUserRequest extends FormRequest
      */
     public function messages(): array
     {
-        return [
-            'email.unique' => 'Email sudah terdaftar.',
-            'role.in' => 'Role tidak valid.',
-            'wilayah_kerja_id.required_if' => 'Wilayah kerja wajib diisi untuk Bidan dan Kader.',
-        ];
-    }
+    return [
+        'email.unique' => 'Email sudah terdaftar.',
+        'role.in' => 'Role tidak valid.',
+        'wilayah_kerja_id.required_if' => 'Wilayah kerja wajib diisi untuk Bidan dan Kader.',
+        'phone.regex' => 'No. telp hanya boleh berisi angka.',
+        'phone.min'   => 'No. telp minimal 10 digit.',
+        'phone.max'   => 'No. telp maksimal 13 digit.',
+    ];
+}
 }

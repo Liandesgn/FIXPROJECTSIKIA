@@ -23,7 +23,7 @@ class StoreUserRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')],
             'password' => ['required', 'string', 'min:8'],
-            'phone' => ['nullable', 'string', 'max:20'],
+            'phone' => ['nullable', 'regex:/^[0-9]+$/', 'min:10', 'max:13'],
             'role' => ['required', Rule::in(RoleEnum::manageable())],
             'status' => ['nullable', Rule::in(UserStatusEnum::values())],
             'wilayah_kerja_id' => [

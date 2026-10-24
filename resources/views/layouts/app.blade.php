@@ -119,14 +119,13 @@
                 ['label' => 'Data Ibu',            'icon' => 'user',     'href' => $to('admin.data-ibu.index', 'data-ibu')],
                 ['label' => 'Data Anak',           'icon' => 'child',    'href' => $to('admin.data-anak.index', 'data-anak')],
                 ['label' => 'Data Posyandu',       'icon' => 'building', 'href' => $to('admin.data-posyandu.index', 'data-posyandu')],
-                ['label' => 'Kelola Wilayah Kerja','icon' => 'pin',      'href' => $to('admin.wilayah-kerja.index', 'kelola-wilayah-kerja')],
+                ['label' => 'Kelola Wilayah ','icon' => 'pin',      'href' => $to('admin.wilayah-kerja.index', 'kelola-wilayah')],
                 ['label' => 'Kelola Jadwal',       'icon' => 'calendar', 'href' => $to('admin.jadwal.index', 'kelola-jadwal')],
             ]],
             ['label' => 'Laporan dan Rekapitulasi', 'icon' => 'report', 'href' => $to('admin.laporan.index', 'laporan')],
             // Akses & Hak ditaruh paling bawah
             ['label' => 'Akses & Hak', 'icon' => 'shield', 'items' => [
-                ['label' => 'Kelola Role',       'icon' => 'shield', 'href' => $to('admin.roles.index', 'kelola-role')],
-                ['label' => 'Kelola Permission', 'icon' => 'key',    'href' => $to('admin.permissions.index', 'kelola-permission')],
+                ['label' => 'Kelola Role & Permission', 'icon' => 'key',    'href' => $to('admin.permissions.index', 'kelola-permission')],
             ]],
         ];
     } elseif ($roleKey === 'bidan') {
@@ -176,6 +175,13 @@
             ['label' => 'Kelola Bidan', 'icon' => 'user', 'href' => $to('admin.bidan.index', 'kelola-bidan')],
             ['label' => 'Kelola Kader', 'icon' => 'user', 'href' => $to('admin.kader.index', 'kelola-kader')],
             ['label' => 'Kelola Ibu',   'icon' => 'user', 'href' => $to('admin.ibu.index', 'kelola-ibu')],
+        ]];
+    }
+
+        // Jika non-admin punya permission userrole.view, tampilkan Akses & Hak
+    if ($roleKey !== 'admin' && $user->can('userrole.view')) {
+        $menu[] = ['label' => 'Akses & Hak', 'icon' => 'shield', 'items' => [
+            ['label' => 'Kelola Role & Permission', 'icon' => 'key', 'href' => $to('admin.permissions.index', 'kelola-permission')],
         ]];
     }
 

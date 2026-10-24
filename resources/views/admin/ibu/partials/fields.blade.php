@@ -39,8 +39,7 @@
     </div>
 
     <div>
-        <label for="phone" class="{{ $labelClass }}">Nomor HP</label>
-        <input id="phone" type="text" name="phone" value="{{ old('phone', $ibu?->phone) }}" inputmode="tel" placeholder="08xxxxxxxxxx" class="{{ $inputClass }}">
+        <label for="phone" class="{{ $labelClass }}">Nomor HP</label><input id="phone" type="text" name="phone" value="{{ old('phone', $ibu?->phone) }}" inputmode="numeric" maxlength="13" pattern="[0-9]{10,13}" title="Hanya angka, 10-13 digit" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="08xxxxxxxxxx" class="{{ $inputClass }}"> 
         @error('phone') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
     </div>
 

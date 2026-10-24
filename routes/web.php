@@ -1,21 +1,20 @@
 <?php
 
-
-use App\Http\Controllers\OrangTuaDashboardController as IbuDashboardController;
-use App\Http\Controllers\Admin\RoleController;
-use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\BidanController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\IbuController;
 use App\Http\Controllers\Admin\KaderController;
+use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Bidan\DashboardController as BidanDashboardController;
 use App\Http\Controllers\Kader\DashboardController as KaderDashboardController;
 use App\Http\Controllers\OrangTua\DashboardController as OrangTuaDashboardController;
+use App\Http\Controllers\OrangTuaDashboardController as IbuDashboardController;
 use App\Http\Controllers\Panel\ComingSoonController;
 use App\Http\Controllers\Panel\ProfileController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+
 // Halaman awal: arahkan pengguna sesuai role
 Route::get('/', function () {
     $user = Auth::user();
@@ -61,21 +60,37 @@ Route::middleware('auth')->group(function () {
         ->group(function () {
             Route::get('/', [AdminDashboardController::class, 'index'])
                 ->name('dashboard');
-
-            Route::get('roles', [RoleController::class, 'index'])
-                ->name('roles.index');
-
-            Route::get('permissions', [PermissionController::class, 'index'])
-                ->name('permissions.index');
-
-            Route::put('permissions', [PermissionController::class, 'update'])
-                ->name('permissions.update');
         });
 
     // =========================
     // KELOLA DATA (PERMISSION)
     // =========================
     Route::prefix('admin')->name('admin.')->group(function () {
+
+        // Kelola Role & Permission
+        Route::get('permissions', [PermissionController::class, 'index'])
+            ->middleware('can:userrole.view')->name('permissions.index');
+
+        Route::get('permissions/role/{role}/edit', [PermissionController::class, 'editRole'])
+            ->middleware('can:userrole.update')->name('permissions.role.edit');
+
+        Route::put('permissions/role/{role}', [PermissionController::class, 'updateRole'])
+            ->middleware('can:userrole.update')->name('permissions.role.update');
+
+        Route::get('permissions/create', [PermissionController::class, 'create'])
+            ->middleware('can:userpermission.create')->name('permissions.create');
+
+        Route::post('permissions', [PermissionController::class, 'store'])
+            ->middleware('can:userpermission.create')->name('permissions.store');
+
+        Route::get('permissions/{permission}/edit', [PermissionController::class, 'edit'])
+            ->middleware('can:userpermission.update')->name('permissions.edit');
+
+        Route::put('permissions/{permission}', [PermissionController::class, 'update'])
+            ->middleware('can:userpermission.update')->name('permissions.update');
+
+        Route::delete('permissions/{permission}', [PermissionController::class, 'destroy'])
+            ->middleware('can:userpermission.delete')->name('permissions.destroy');
 
         // Kelola Bidan
         Route::get('bidan', [BidanController::class, 'index'])
@@ -125,19 +140,13 @@ Route::middleware('auth')->group(function () {
         Route::post('ibu', [IbuController::class, 'store'])
             ->middleware('can:user.create')->name('ibu.store');
 
-        Route::get('ibu/{ibu}/edit', [IbuController::class, 'edit'])
-            ->middleware('can:user.update')->name('ibu.edit');
-
-        Route::put('ibu/{ibu}', [IbuController::class, 'update'])
-            ->middleware('can:user.update')->name('ibu.update');
-
         Route::patch('ibu/{ibu}/toggle-status', [IbuController::class, 'toggleStatus'])
             ->middleware('can:user.activate')->name('ibu.toggle-status');
     });
 
-    
+    // =========================
     // DASHBOARD BIDAN
-   
+    // =========================
     Route::middleware('role:bidan')
         ->prefix('bidan')
         ->name('bidan.')
@@ -146,9 +155,9 @@ Route::middleware('auth')->group(function () {
                 ->name('dashboard');
         });
 
-
+    // =========================
     // DASHBOARD KADER
-        
+    // =========================
     Route::middleware('role:kader')
         ->prefix('kader')
         ->name('kader.')
@@ -157,9 +166,9 @@ Route::middleware('auth')->group(function () {
                 ->name('dashboard');
         });
 
-    
+    // =========================
     // DASHBOARD IBU
-    
+    // =========================
     Route::middleware('role:ibu')
         ->prefix('ibu')
         ->name('ibu.')

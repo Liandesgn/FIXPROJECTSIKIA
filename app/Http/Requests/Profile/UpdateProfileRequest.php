@@ -21,7 +21,7 @@ class UpdateProfileRequest extends FormRequest
         $rules = [
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'email' => ['sometimes', 'required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($this->user()->id)],
-            'phone' => ['nullable', 'string', 'max:20'],
+            'phone' => ['nullable', 'regex:/^[0-9]+$/', 'min:10', 'max:13'],
         ];
 
         if ($this->user()?->isOrangTua()) {

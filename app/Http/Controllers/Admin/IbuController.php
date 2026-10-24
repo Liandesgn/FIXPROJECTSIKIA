@@ -67,56 +67,17 @@ class IbuController extends Controller
             'status' => UserStatusEnum::Active->value,
         ]);
 
-        $ibu->assignRole(RoleEnum::OrangTua->value);
+        $ibu->assignRole(RoleEnum::Ibu->value);
 
         return redirect()
             ->route('admin.ibu.index')
             ->with('success', 'Data ibu berhasil didaftarkan.');
     }
 
-    public function edit(User $ibu): View
-    {
-        abort_unless($ibu->hasRole(RoleEnum::OrangTua->value), 404);
-
-        return view('admin.ibu.edit', [
-            'ibu' => $ibu->load('wilayahKerja'),
-        ] + $this->formData());
-    }
-
-    public function update(UpdateIbuRequest $request, User $ibu): RedirectResponse
-    {
-        abort_unless($ibu->hasRole(RoleEnum::OrangTua->value), 404);
-
-        $data = $request->validated();
-        $hamil = $data['status_kehamilan'] === StatusKehamilanEnum::Hamil->value;
-
-        $ibu->fill([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'phone' => $data['phone'] ?? null,
-            'nik' => $data['nik'],
-            'tempat_lahir' => $data['tempat_lahir'],
-            'tanggal_lahir' => $data['tanggal_lahir'],
-            'status_kehamilan' => $data['status_kehamilan'],
-            'hpl' => $hamil ? ($data['hpl'] ?? null) : null,
-            'usia_kehamilan' => $hamil ? ($data['usia_kehamilan'] ?? null) : null,
-            'wilayah_kerja_id' => $data['wilayah_kerja_id'],
-        ]);
-
-        if (! empty($data['password'])) {
-            $ibu->password = $data['password'];
-        }
-
-        $ibu->save();
-
-        return redirect()
-            ->route('admin.ibu.index')
-            ->with('success', 'Data ibu berhasil diperbarui.');
-    }
 
     public function toggleStatus(User $ibu): RedirectResponse
     {
-        abort_unless($ibu->hasRole(RoleEnum::OrangTua->value), 404);
+        abort_unless($ibu->hasRole(RoleEnum::Ibu->value), 404);
 
         if ($ibu->id === auth()->id()) {
             return back()->with('error', 'Anda tidak dapat menonaktifkan akun sendiri.');

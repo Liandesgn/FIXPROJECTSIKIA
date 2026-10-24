@@ -27,7 +27,7 @@ class UpdateIbuRequest extends FormRequest
             'nik' => ['required', 'string', 'digits:16'],
             'tempat_lahir' => ['required', 'string', 'max:255'],
             'tanggal_lahir' => ['required', 'date', 'before:today'],
-            'phone' => ['nullable', 'string', 'max:20'],
+            'phone' => ['nullable', 'regex:/^[0-9]+$/', 'min:10', 'max:13'],
             'wilayah_kerja_id' => ['required', 'integer', Rule::exists('wilayah_kerja', 'id')],
             'status_kehamilan' => ['required', Rule::in(StatusKehamilanEnum::values())],
             'hpl' => [

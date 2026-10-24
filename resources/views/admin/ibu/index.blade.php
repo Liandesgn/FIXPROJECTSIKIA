@@ -163,14 +163,7 @@
                                 {{-- Aksi --}}
                                 <td class="whitespace-nowrap px-3 py-3.5 lg:px-4">
                                     <div class="flex flex-nowrap items-center justify-center gap-2">
-                                        {{-- EDIT: pink tua solid --}}
-                                        @can('user.update')
-                                        <a href="{{ route('admin.ibu.edit', $ibu) }}"
-                                           class="inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-[#C9517E] px-3 text-xs font-bold text-white shadow-sm transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40 sm:px-3.5">
-                                            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 20h4L19 9l-4-4L4 16v4Zm9-13 4 4"/></svg>
-                                            Edit
-                                        </a>
-                                        @endcan
+                                
 
                                         {{-- Tidak ada tombol Hapus: akun ibu hanya bisa diaktifkan / dinonaktifkan.
                                              NONAKTIFKAN: amber solid | AKTIFKAN: hijau solid.
@@ -186,13 +179,13 @@
                                                 <button type="submit"
                                                         class="inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-amber-500 px-3 text-xs font-bold text-amber-950 shadow-sm transition hover:bg-amber-600 focus:outline-none focus:ring-4 focus:ring-amber-200 sm:px-3.5">
                                                     <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5.6 5.6l12.8 12.8M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z"/></svg>
-                                                    Nonaktifkan
+                                                    Aktifkan
                                                 </button>
                                             @else
                                                 <button type="submit"
                                                         class="inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-emerald-700 px-3 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-800 focus:outline-none focus:ring-4 focus:ring-emerald-200 sm:px-3.5">
                                                     <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m5 12 5 5 9-10"/></svg>
-                                                    Aktifkan
+                                                    Nonaktifkan
                                                 </button>
                                             @endif
                                         </form>
@@ -310,8 +303,8 @@ document.addEventListener('submit', function (e) {
     SikiaConfirm({
         title: (active ? 'Apakah akan menonaktifkan akun ' : 'Apakah akan mengaktifkan akun ') + name + '?',
         text: active
-            ? 'Akun nonaktif tidak dapat login ke sistem. Lanjutkan?'
-            : 'Akun aktif dapat kembali login dan menggunakan sistem. Lanjutkan?',
+            ? 'Akun aktif  dapat login ke sistem. Lanjutkan?'
+            : 'Akun nonaktif tidak dapat login ke sistem. Lanjutkan?',
         confirmText: active ? 'Ya, Nonaktifkan' : 'Ya, Aktifkan'
     }, function () {
         try { sessionStorage.setItem('sikia_ibu_toggle', JSON.stringify({ name: name, active: active })); } catch (err) {}

@@ -15,7 +15,6 @@ class DashboardController extends Controller
         $stats = [
             'posyandu' => 0,
             'pengukuran' => 0,
-            'notifikasi' => 0,
         ];
 
         return view('kader.dashboard', [

@@ -122,7 +122,6 @@ class Navigation
                 'heading' => 'Posyandu',
                 'items' => [
                     self::soon('Jadwal Posyandu', 'jadwal-posyandu'),
-                    self::soon('Notifikasi Sistem', 'notifikasi'),
                     self::soon('Pendataan Kegiatan', 'pendataan-posyandu'),
                 ],
             ],
@@ -163,17 +162,9 @@ class Navigation
                 ],
             ],
             [
-                'heading' => 'Pemeriksaan',
-                'items' => [
-                    self::soon('Riwayat Pemeriksaan Ibu', 'riwayat-ibu'),
-                    self::soon('Riwayat Pemeriksaan Anak', 'riwayat-anak'),
-                ],
-            ],
-            [
                 'heading' => 'Layanan',
                 'items' => [
                     self::soon('Konsultasi Bidan', 'konsultasi'),
-                    self::soon('Riwayat Konsultasi', 'riwayat-konsultasi'),
                     self::soon('Edukasi Kesehatan', 'edukasi'),
                 ],
             ],
@@ -181,7 +172,6 @@ class Navigation
                 'heading' => 'Jadwal & Info',
                 'items' => [
                     self::soon('Jadwal Pemeriksaan', 'jadwal-pemeriksaan'),
-                    self::soon('Notifikasi Sistem', 'notifikasi'),
                 ],
             ],
             [

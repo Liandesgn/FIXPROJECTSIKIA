@@ -23,7 +23,7 @@ class UpdatePetugasRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($userId)],
             'password' => ['nullable', 'string', 'min:8'],
-            'phone' => ['nullable', 'string', 'max:20'],
+            'phone' => ['nullable', 'regex:/^[0-9]+$/', 'min:10', 'max:13'],
             'wilayah_kerja_id' => ['required', 'integer', Rule::exists('wilayah_kerja', 'id')],
         ];
     }
