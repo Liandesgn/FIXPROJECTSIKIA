@@ -36,18 +36,16 @@ class WilayahKerjaSeeder extends Seeder
         ['Tambak', 'Tambak'],
     ];
 
-    public function run(): void
+       public function run(): void
     {
-        WilayahKerja::query()->delete();
-
         foreach (self::DESA as [$kecamatan, $desa]) {
-            WilayahKerja::create([
-                'kabupaten' => 'Gresik',
-                'kecamatan' => $kecamatan,
-                'desa' => $desa,
-                'nama' => 'Desa '.$desa.', Kec. '.$kecamatan,
-                'deskripsi' => 'Wilayah kerja Desa '.$desa.', Kecamatan '.$kecamatan.', Kabupaten Gresik.',
-            ]);
+            WilayahKerja::updateOrCreate(
+                ['kecamatan' => $kecamatan, 'desa' => $desa],
+                [
+                    'kabupaten' => 'Gresik',
+                    'nama_wilayah' => 'Desa '.$desa.', Kec. '.$kecamatan,
+                    'deskripsi' => 'Wilayah kerja Desa '.$desa.', Kecamatan '.$kecamatan.', Kabupaten Gresik.',
+                ]
+            );
         }
     }
-}

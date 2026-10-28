@@ -2,7 +2,7 @@
     $inputClass = 'w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200';
     $labelClass = 'mb-1 block text-sm font-medium text-slate-700';
     $errorClass = 'mt-1 text-xs text-red-600';
-    $selectedWilayah = old('wilayah_kerja_id', $user?->wilayah_kerja_id);
+    $selectedWilayah = old('wilayah_kerja_id', ($user?->bidan ?? $user?->kader)?->wilayah_kerja_id);
 @endphp
 
 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">

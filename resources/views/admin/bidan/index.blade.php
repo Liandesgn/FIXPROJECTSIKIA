@@ -80,7 +80,7 @@
 
                     <tbody id="listBody" class="divide-y divide-[#F7E6ED]">
                         @forelse ($bidans as $bidan)
-                            @php $wilayah = optional($bidan->wilayahKerja)->desa ?? '-'; @endphp
+                            @php $wilayah = optional($bidan->bidan?->wilayahKerja)->desa ?? '-'; @endphp
                             <tr class="row-item transition hover:bg-[#FCE7F0]/50"
                                 data-wilayah="{{ $wilayah }}"
                                 data-search="{{ mb_strtolower(($bidan->name ?? '') . ' ' . ($bidan->email ?? '') . ' ' . ($bidan->phone ?? '') . ' ' . $wilayah) }}">

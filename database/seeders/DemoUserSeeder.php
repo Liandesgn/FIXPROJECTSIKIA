@@ -48,15 +48,18 @@ class DemoUserSeeder extends Seeder
             wilayah: $wilayah,
         );
 
-        $orangTua->forceFill([
-            'nik' => '3525010101900001',
-            'nama_ibu' => 'Siti Aminah',
-            'tempat_lahir' => 'Gresik',
-            'tanggal_lahir' => '1990-01-01',
-            'status_kehamilan' => StatusKehamilanEnum::Hamil->value,
-            'hpl' => now()->addMonths(3)->toDateString(),
-            'usia_kehamilan' => 24,
-        ])->save();
+       $orangTua->ibu()->updateOrCreate(
+    ['user_id' => $orangTua->id],
+    [
+        'wilayah_kerja_id' => $wilayah?->id,
+        'nik' => '3525010101900001',
+        'tempat_lahir' => 'Gresik',
+        'tanggal_lahir' => '1990-01-01',
+        'status_kehamilan' => StatusKehamilanEnum::Hamil->value,
+        'hpl' => now()->addMonths(3)->toDateString(),
+        'usia_kehamilan' => 24,
+    ]
+);
     }
 
     private function createUser(string $name, string $email, RoleEnum $role, ?WilayahKerja $wilayah): User

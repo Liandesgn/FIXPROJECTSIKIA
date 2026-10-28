@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use App\Enums\RoleEnum;
 use App\Enums\StatusKehamilanEnum;
+use App\Enums\RoleEnum;
 use App\Enums\UserStatusEnum;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -21,16 +21,10 @@ use Spatie\Permission\Traits\HasRoles;
     'email',
     'password',
     'phone',
-    'nik',
-    'nama_ibu',
-    'tempat_lahir',
-    'tanggal_lahir',
-    'status_kehamilan',
-    'hpl',
-    'usia_kehamilan',
     'status',
     'wilayah_kerja_id',
 ])]
+
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -46,9 +40,6 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'status' => UserStatusEnum::class,
-            'tanggal_lahir' => 'date',
-            'hpl' => 'date',
-            'status_kehamilan' => StatusKehamilanEnum::class,
              'last_login_at' => 'datetime', 
         ];
     }
@@ -56,6 +47,35 @@ class User extends Authenticatable
     public function wilayahKerja(): BelongsTo
     {
         return $this->belongsTo(WilayahKerja::class);
+    }
+
+
+        public function ibu(): HasOne
+    {
+        return $this->hasOne(Ibu::class);
+    }
+
+    public function bidan(): HasOne
+    {
+        return $this->hasOne(Bidan::class);
+    }
+
+    public function kader(): HasOne
+    {
+        return $this->hasOne(Kader::class);
+    }
+
+        /**
+     * Tetapkan wilayah untuk bidan/kader.
+     * Tabel bidan/kader adalah sumber utama; kolom users.wilayah_kerja_id
+     * ikut diisi sebagai JEMBATAN dan dihapus di tahap C.
+     */
+    public function assignWilayah(int $wilayahId): void
+    {
+        $profil = $this->hasRole(RoleEnum::Bidan->value) ? $this->bidan() : $this->kader();
+        $profil->updateOrCreate([], ['wilayah_kerja_id' => $wilayahId]);
+
+        $this->forceFill(['wilayah_kerja_id' => $wilayahId])->save();
     }
 
     /**
@@ -87,21 +107,18 @@ class User extends Authenticatable
     }
 
     public function sedangHamil(): bool
-    {
-        return $this->status_kehamilan === StatusKehamilanEnum::Hamil;
-    }
+{
+    return $this->ibu?->sedangHamil() ?? false;
+}
 
     /**
      * Tempat dan tanggal lahir (TTL).
      */
     public function ttl(): ?string
-    {
-        if (! $this->tempat_lahir && ! $this->tanggal_lahir) {
-            return null;
-        }
+{
+    return $this->ibu?->ttl();
+}
 
-        return trim(($this->tempat_lahir ?? '').', '.($this->tanggal_lahir?->format('d-m-Y') ?? ''), ', ');
-    }
 
     public function isActive(): bool
     {
@@ -117,4 +134,17 @@ class User extends Authenticatable
 
         return $name ? RoleEnum::tryFrom($name) : null;
     }
+
+        /**
+     * Lepas bidan/kader dari wilayahnya (akun tidak dihapus).
+     */
+    public function lepasWilayah(): void
+    {
+        $profil = $this->hasRole(RoleEnum::Bidan->value) ? $this->bidan() : $this->kader();
+        $profil->update(['wilayah_kerja_id' => null]);
+
+        // JEMBATAN: dihapus di tahap C
+        $this->forceFill(['wilayah_kerja_id' => null])->save();
+    }
+
 }

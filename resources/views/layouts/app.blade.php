@@ -409,11 +409,11 @@
 
             if (form.hasAttribute('data-confirm-delete')) {
                 e.preventDefault();
-                SikiaConfirm({
+                                SikiaConfirm({
                     danger: true,
-                    title: 'Apakah akan menghapus akun ' + (form.dataset.name || '') + '?',
-                    text: 'Data akun akan dihapus secara permanen dan tidak dapat dipulihkan. Lanjutkan?',
-                    confirmText: 'Ya, Hapus Akun'
+                    title: form.dataset.title || ('Apakah akan menghapus akun ' + (form.dataset.name || '') + '?'),
+                    text: form.dataset.text || 'Data akun akan dihapus secara permanen dan tidak dapat dipulihkan. Lanjutkan?',
+                    confirmText: form.dataset.confirmText || 'Ya, Hapus Akun'
                 }, function () { form.dataset.confirmed = '1'; form.submit(); });
             } else if (form.hasAttribute('data-confirm-toggle')) {
                 e.preventDefault();

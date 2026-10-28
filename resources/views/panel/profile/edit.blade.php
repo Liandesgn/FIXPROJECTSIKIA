@@ -8,10 +8,10 @@
     $roleLabel = $roleKey === 'orang-tua' ? 'Ibu' : ($user->primaryRole()?->label() ?? '-');
     $isIbu     = $user->isOrangTua();
     $isAdmin   = $roleKey === 'admin';
-    $wk        = $user->wilayahKerja;
+    $wk        = $isIbu ? $user->ibu?->wilayahKerja : $user->wilayahKerja;
     $initial   = \Illuminate\Support\Str::upper(\Illuminate\Support\Str::substr($user->name, 0, 1));
 
-    $hamil = $isIbu && method_exists($user, 'sedangHamil') ? $user->sedangHamil() : false;
+    $hamil = $isIbu && method_exists($user, 'sedangHamil') ? $user->ibu?->sedangHamil() : false;
 
     // Satu baris informasi: label kecil berwarna + nilai tegas
     $field = fn (string $label, $value) =>
@@ -74,14 +74,14 @@
             <p class="mt-0.5 text-sm text-slate-700">Data registrasi ibu yang tercatat di sistem.</p>
 
             <dl class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {!! $field('NIK', $user->nik) !!}
-                {!! $field('Tempat, Tanggal Lahir', $user->ttl()) !!}
-                {!! $field('Status Kehamilan', $user->status_kehamilan?->label()) !!}
+                {!! $field('NIK', $user->ibu?->nik) !!}
+                {!! $field('Tempat, Tanggal Lahir', $user->ibu?->ttl()) !!}
+                {!! $field('Status Kehamilan', $user->ibu?->status_kehamilan?->label()) !!}
                 @if ($hamil)
-                    {!! $field('Usia Kehamilan', $user->usia_kehamilan ? $user->usia_kehamilan . ' minggu' : null) !!}
-                    {!! $field('HPL (Hari Perkiraan Lahir)', $user->hpl?->format('d-m-Y')) !!}
+                    {!! $field('Usia Kehamilan', $user->ibu?->usia_kehamilan ? $user->ibu?->usia_kehamilan . ' minggu' : null) !!}
+                    {!! $field('HPL (Hari Perkiraan Lahir)', $user->ibu?->hpl?->format('d-m-Y')) !!}
                 @endif
             </dl>
         </section>
     @endif
-
+@endsection

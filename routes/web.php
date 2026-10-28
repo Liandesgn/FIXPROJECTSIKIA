@@ -1,5 +1,12 @@
 <?php
 
+
+use App\Http\Controllers\Admin\DataPosyanduController;
+use App\Http\Controllers\DataIbuController;
+use App\Http\Controllers\DataAnakController;
+use App\Http\Controllers\Admin\PenugasanController;
+use App\Http\Controllers\Admin\PosyanduController;
+use App\Http\Controllers\Admin\WilayahKerjaController;
 use App\Http\Controllers\Admin\BidanController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\IbuController;
@@ -92,6 +99,114 @@ Route::middleware('auth')->group(function () {
         Route::delete('permissions/{permission}', [PermissionController::class, 'destroy'])
             ->middleware('can:userpermission.delete')->name('permissions.destroy');
 
+
+                // Kelola Wilayah Kerja
+        Route::get('wilayah-kerja', [WilayahKerjaController::class, 'index'])
+            ->middleware('can:wilayah.view')->name('wilayah-kerja.index');
+
+        Route::get('wilayah-kerja/create', [WilayahKerjaController::class, 'create'])
+            ->middleware('can:wilayah.create')->name('wilayah-kerja.create');
+
+        Route::post('wilayah-kerja', [WilayahKerjaController::class, 'store'])
+            ->middleware('can:wilayah.create')->name('wilayah-kerja.store');
+
+        Route::get('wilayah-kerja/{wilayah}/edit', [WilayahKerjaController::class, 'edit'])
+            ->middleware('can:wilayah.update')->name('wilayah-kerja.edit');
+
+        Route::put('wilayah-kerja/{wilayah}', [WilayahKerjaController::class, 'update'])
+            ->middleware('can:wilayah.update')->name('wilayah-kerja.update');
+
+        Route::delete('wilayah-kerja/{wilayah}', [WilayahKerjaController::class, 'destroy'])
+            ->middleware('can:wilayah.delete')->name('wilayah-kerja.destroy');
+
+
+
+                // Tab Posyandu (di bawah Kelola Wilayah Kerja)
+        Route::get('wilayah-kerja/posyandu', [PosyanduController::class, 'index'])
+            ->middleware('can:wilayah.view')->name('posyandu.index');
+
+        Route::get('wilayah-kerja/posyandu/create', [PosyanduController::class, 'create'])
+            ->middleware('can:wilayah.create')->name('posyandu.create');
+
+        Route::post('wilayah-kerja/posyandu', [PosyanduController::class, 'store'])
+            ->middleware('can:wilayah.create')->name('posyandu.store');
+
+        Route::get('wilayah-kerja/posyandu/{posyandu}/edit', [PosyanduController::class, 'edit'])
+            ->middleware('can:wilayah.update')->name('posyandu.edit');
+
+        Route::put('wilayah-kerja/posyandu/{posyandu}', [PosyanduController::class, 'update'])
+            ->middleware('can:wilayah.update')->name('posyandu.update');
+
+        Route::delete('wilayah-kerja/posyandu/{posyandu}', [PosyanduController::class, 'destroy'])
+            ->middleware('can:wilayah.delete')->name('posyandu.destroy');
+
+        // Tab Penugasan
+        Route::get('wilayah-kerja/penugasan', [PenugasanController::class, 'index'])
+            ->middleware('can:wilayah.view')->name('penugasan.index');
+
+        Route::get('wilayah-kerja/penugasan/create', [PenugasanController::class, 'create'])
+            ->middleware('can:wilayah.update')->name('penugasan.create');
+
+        Route::post('wilayah-kerja/penugasan', [PenugasanController::class, 'store'])
+            ->middleware('can:wilayah.update')->name('penugasan.store');
+
+        Route::get('wilayah-kerja/penugasan/{wilayah}/edit', [PenugasanController::class, 'edit'])
+            ->middleware('can:wilayah.update')->name('penugasan.edit');
+
+        Route::put('wilayah-kerja/penugasan/{wilayah}', [PenugasanController::class, 'update'])
+            ->middleware('can:wilayah.update')->name('penugasan.update');
+
+                    Route::delete('wilayah-kerja/penugasan/{wilayah}', [PenugasanController::class, 'destroy'])
+            ->middleware('can:wilayah.delete')->name('penugasan.destroy');
+
+
+
+                // Data Ibu
+        Route::get('data-ibu', [DataIbuController::class, 'index'])
+            ->middleware('can:ibu.view')->name('data-ibu.index');
+
+        Route::get('data-ibu/{ibu}', [DataIbuController::class, 'show'])
+            ->middleware('can:ibu.view')->name('data-ibu.show');
+
+        Route::get('data-ibu/{ibu}/edit', [DataIbuController::class, 'edit'])
+            ->middleware('can:ibu.update')->name('data-ibu.edit');
+
+        Route::put('data-ibu/{ibu}', [DataIbuController::class, 'update'])
+            ->middleware('can:ibu.update')->name('data-ibu.update');
+
+        // Data Anak (create ditulis sebelum {anak} supaya tidak dianggap id)
+        Route::get('data-anak', [DataAnakController::class, 'index'])
+            ->middleware('can:anak.view')->name('data-anak.index');
+
+        Route::get('data-anak/create', [DataAnakController::class, 'create'])
+            ->middleware('can:anak.create')->name('data-anak.create');
+
+        Route::post('data-anak', [DataAnakController::class, 'store'])
+            ->middleware('can:anak.create')->name('data-anak.store');
+
+        Route::get('data-anak/{anak}', [DataAnakController::class, 'show'])
+            ->middleware('can:anak.view')->name('data-anak.show');
+
+        Route::get('data-anak/{anak}/edit', [DataAnakController::class, 'edit'])
+            ->middleware('can:anak.update')->name('data-anak.edit');
+
+        Route::put('data-anak/{anak}', [DataAnakController::class, 'update'])
+            ->middleware('can:anak.update')->name('data-anak.update');
+
+
+                // Data Posyandu (rekap ditulis sebelum {kegiatan} supaya tidak dianggap id)
+        Route::get('data-posyandu', [DataPosyanduController::class, 'index'])
+            ->middleware('can:posyandu.view')->name('data-posyandu.index');
+
+        Route::get('data-posyandu/rekap', [DataPosyanduController::class, 'rekap'])
+            ->middleware('can:posyandu.view')->name('data-posyandu.rekap');
+
+        Route::get('data-posyandu/{kegiatan}', [DataPosyanduController::class, 'show'])
+            ->middleware('can:posyandu.view')->name('data-posyandu.show');
+
+
+
+
         // Kelola Bidan
         Route::get('bidan', [BidanController::class, 'index'])
             ->middleware('can:user.view')->name('bidan.index');
@@ -130,6 +245,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('kader/{kader}', [KaderController::class, 'destroy'])
             ->middleware('can:user.delete')->name('kader.destroy');
 
+ 
         // Kelola Ibu
         Route::get('ibu', [IbuController::class, 'index'])
             ->middleware('can:user.view')->name('ibu.index');
@@ -140,13 +256,19 @@ Route::middleware('auth')->group(function () {
         Route::post('ibu', [IbuController::class, 'store'])
             ->middleware('can:user.create')->name('ibu.store');
 
+        Route::get('ibu/{ibu}/edit', [IbuController::class, 'edit'])
+            ->middleware('can:user.update')->name('ibu.edit');
+
+        Route::put('ibu/{ibu}', [IbuController::class, 'update'])
+            ->middleware('can:user.update')->name('ibu.update');
+
         Route::patch('ibu/{ibu}/toggle-status', [IbuController::class, 'toggleStatus'])
             ->middleware('can:user.activate')->name('ibu.toggle-status');
-    });
 
-    // =========================
-    // DASHBOARD BIDAN
-    // =========================
+    }); // Penutup grup admin.ibu
+
+
+        // Dashboard Bidan
     Route::middleware('role:bidan')
         ->prefix('bidan')
         ->name('bidan.')
@@ -155,9 +277,7 @@ Route::middleware('auth')->group(function () {
                 ->name('dashboard');
         });
 
-    // =========================
-    // DASHBOARD KADER
-    // =========================
+    // Dashboard Kader
     Route::middleware('role:kader')
         ->prefix('kader')
         ->name('kader.')
@@ -166,9 +286,7 @@ Route::middleware('auth')->group(function () {
                 ->name('dashboard');
         });
 
-    // =========================
-    // DASHBOARD IBU
-    // =========================
+    // Dashboard Ibu
     Route::middleware('role:ibu')
         ->prefix('ibu')
         ->name('ibu.')
@@ -177,4 +295,5 @@ Route::middleware('auth')->group(function () {
                 ->name('dashboard');
         });
 
-});
+
+}); // Penutup grup auth

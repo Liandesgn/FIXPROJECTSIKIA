@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Models\WilayahKerja;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class BidanController extends Controller
@@ -19,11 +20,12 @@ class BidanController extends Controller
     {
         $bidans = User::query()
             ->role(RoleEnum::Bidan->value)
-            ->with('wilayahKerja')
+            ->with('bidan.wilayahKerja')
             ->when($request->filled('search'), fn ($query) => $query
                 ->where('name', 'like', '%'.$request->string('search').'%'))
             ->when($request->filled('wilayah_kerja_id'), fn ($query) => $query
-                ->where('wilayah_kerja_id', $request->integer('wilayah_kerja_id')))
+                ->whereHas('bidan', fn ($b) => $b
+                    ->where('wilayah_kerja_id', $request->integer('wilayah_kerja_id'))))
             ->latest()
             ->paginate(10)
             ->withQueryString();
@@ -45,16 +47,18 @@ class BidanController extends Controller
     {
         $data = $request->validated();
 
-        $bidan = User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'password' => $data['password'],
-            'phone' => $data['phone'] ?? null,
-            'wilayah_kerja_id' => $data['wilayah_kerja_id'],
-            'status' => UserStatusEnum::Active->value,
-        ]);
+        DB::transaction(function () use ($data) {
+            $bidan = User::create([
+                'name' => $data['name'],
+                'email' => $data['email'],
+                'password' => $data['password'],
+                'phone' => $data['phone'] ?? null,
+                'status' => UserStatusEnum::Active->value,
+            ]);
 
-        $bidan->assignRole(RoleEnum::Bidan->value);
+            $bidan->assignRole(RoleEnum::Bidan->value);
+            $bidan->assignWilayah((int) $data['wilayah_kerja_id']);
+        });
 
         return redirect()
             ->route('admin.bidan.index')
@@ -66,7 +70,7 @@ class BidanController extends Controller
         abort_unless($bidan->hasRole(RoleEnum::Bidan->value), 404);
 
         return view('admin.bidan.edit', [
-            'bidan' => $bidan->load('wilayahKerja'),
+            'bidan' => $bidan->load('bidan.wilayahKerja'),
             'wilayahs' => $this->wilayahs(),
         ]);
     }
@@ -77,18 +81,20 @@ class BidanController extends Controller
 
         $data = $request->validated();
 
-        $bidan->fill([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'phone' => $data['phone'] ?? null,
-            'wilayah_kerja_id' => $data['wilayah_kerja_id'],
-        ]);
+        DB::transaction(function () use ($data, $bidan) {
+            $bidan->fill([
+                'name' => $data['name'],
+                'email' => $data['email'],
+                'phone' => $data['phone'] ?? null,
+            ]);
 
-        if (! empty($data['password'])) {
-            $bidan->password = $data['password'];
-        }
+            if (! empty($data['password'])) {
+                $bidan->password = $data['password'];
+            }
 
-        $bidan->save();
+            $bidan->save();
+            $bidan->assignWilayah((int) $data['wilayah_kerja_id']);
+        });
 
         return redirect()
             ->route('admin.bidan.index')

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Ibu;
 use App\Enums\RoleEnum;
 use App\Enums\StatusKehamilanEnum;
 use App\Enums\UserStatusEnum;
@@ -27,7 +28,7 @@ class AdminKelolaTest extends TestCase
             'kabupaten' => 'Gresik',
             'kecamatan' => 'Wringinanom',
             'desa' => 'Sumberame',
-            'nama' => 'Desa Sumberame, Kec. Wringinanom',
+            'nama_wilayah' => 'Desa Sumberame, Kec. Wringinanom',
         ]);
     }
 
@@ -61,13 +62,22 @@ class AdminKelolaTest extends TestCase
             'usia_kehamilan' => 24,
         ])->assertRedirect(route('admin.ibu.index'));
 
-        $user = User::where('email', 'siti.hamil@sikia.test')->firstOrFail();
-        $this->assertTrue($user->hasRole(RoleEnum::OrangTua->value));
-        $this->assertSame('Siti Aminah', $user->name);
-        $this->assertSame('3525010101900001', $user->nik);
-        $this->assertSame(StatusKehamilanEnum::Hamil, $user->status_kehamilan);
-        $this->assertSame(24, $user->usia_kehamilan);
-        $this->assertNotNull($user->hpl);
+$user = User::where('email', 'siti.hamil@sikia.test')->firstOrFail();
+
+$this->assertTrue($user->hasRole(RoleEnum::Ibu->value));
+$this->assertSame('Siti Aminah', $user->name);
+
+$ibu = $user->ibu;
+
+$this->assertNotNull($ibu);
+$this->assertSame('3525010101900001', $ibu->nik);
+$this->assertSame(StatusKehamilanEnum::Hamil, $ibu->status_kehamilan);
+$this->assertSame(24, $ibu->usia_kehamilan);
+$this->assertNotNull($ibu->hpl);
+$this->assertDatabaseHas('ibu', [
+    'user_id' => $user->id,
+    'nik' => '3525010101900001',
+]);
     }
 
     public function test_register_ibu_does_not_require_nama_ibu(): void
@@ -85,9 +95,11 @@ class AdminKelolaTest extends TestCase
         ])->assertRedirect(route('admin.ibu.index'));
 
         $user = User::where('email', 'dewi@sikia.test')->firstOrFail();
-        $this->assertNull($user->nama_ibu);
-        $this->assertNull($user->hpl);
-        $this->assertNull($user->usia_kehamilan);
+       $ibu = $user->ibu;
+
+$this->assertNotNull($ibu);
+$this->assertNull($ibu->hpl);
+$this->assertNull($ibu->usia_kehamilan);
     }
 
     public function test_register_ibu_requires_hpl_when_hamil(): void
@@ -107,9 +119,34 @@ class AdminKelolaTest extends TestCase
 
     public function test_kelola_ibu_can_filter_by_search_wilayah_and_status(): void
     {
-        $lain = WilayahKerja::create(['kabupaten' => 'Gresik', 'kecamatan' => 'Driyorejo', 'desa' => 'Banjaran', 'nama' => 'Desa Banjaran']);
-        $ibu = $this->userWithRole(RoleEnum::OrangTua, ['name' => 'Ani Sumberame', 'wilayah_kerja_id' => $this->wilayah->id]);
-        $other = $this->userWithRole(RoleEnum::OrangTua, ['name' => 'Budi Banjaran', 'wilayah_kerja_id' => $lain->id, 'status' => UserStatusEnum::Inactive->value]);
+        $lain = WilayahKerja::create([
+    'kabupaten' => 'Gresik',
+    'kecamatan' => 'Driyorejo',
+    'desa' => 'Banjaran',
+    'nama_wilayah' => 'Desa Banjaran, Kec. Driyorejo',
+]);
+        $ibu = $this->userWithRole(RoleEnum::Ibu, [
+    'name' => 'Ani Sumberame',
+]);
+
+$ibu->ibu()->create([
+    'wilayah_kerja_id' => $this->wilayah->id,
+    'nik' => '3525010101900011',
+    'status_kehamilan' => StatusKehamilanEnum::Hamil->value,
+    'hpl' => now()->addMonths(3)->toDateString(),
+    'usia_kehamilan' => 24,
+]);
+
+$other = $this->userWithRole(RoleEnum::Ibu, [
+    'name' => 'Budi Banjaran',
+    'status' => UserStatusEnum::Inactive->value,
+]);
+
+$other->ibu()->create([
+    'wilayah_kerja_id' => $lain->id,
+    'nik' => '3525010101900012',
+    'status_kehamilan' => StatusKehamilanEnum::Melahirkan->value,
+]);
 
         $admin = $this->admin();
 
@@ -127,22 +164,35 @@ class AdminKelolaTest extends TestCase
     }
 
     public function test_admin_can_update_ibu(): void
-    {
-        $ibu = $this->userWithRole(RoleEnum::OrangTua, ['wilayah_kerja_id' => $this->wilayah->id]);
+{
+    $ibuUser = $this->userWithRole(RoleEnum::Ibu, [
+        'wilayah_kerja_id' => $this->wilayah->id,
+    ]);
 
-        $this->actingAs($this->admin())->put("/admin/ibu/{$ibu->id}", [
-            'name' => 'Nama Diubah',
-            'email' => $ibu->email,
-            'nik' => '3525010101930004',
-            'tempat_lahir' => 'Surabaya',
-            'tanggal_lahir' => '1993-04-04',
-            'wilayah_kerja_id' => $this->wilayah->id,
-            'status_kehamilan' => StatusKehamilanEnum::Melahirkan->value,
-        ])->assertRedirect(route('admin.ibu.index'));
+    $ibuUser->ibu()->create([
+        'wilayah_kerja_id' => $this->wilayah->id,
+        'nik' => '3525010101900005',
+        'tempat_lahir' => 'Gresik',
+        'tanggal_lahir' => '1993-04-04',
+        'status_kehamilan' => StatusKehamilanEnum::Melahirkan->value,
+    ]);
 
-        $this->assertSame('Nama Diubah', $ibu->fresh()->name);
-        $this->assertSame('3525010101930004', $ibu->fresh()->nik);
-    }
+    $this->actingAs($this->admin())->put("/admin/ibu/{$ibuUser->id}", [
+        'name' => 'Nama Diubah',
+        'email' => $ibuUser->email,
+        'nik' => '3525010101930004',
+        'tempat_lahir' => 'Surabaya',
+        'tanggal_lahir' => '1993-04-04',
+        'wilayah_kerja_id' => $this->wilayah->id,
+        'status_kehamilan' => StatusKehamilanEnum::Melahirkan->value,
+    ])->assertRedirect();
+
+    $this->assertSame('Nama Diubah', $ibuUser->fresh()->name);
+    $this->assertSame(
+        '3525010101930004',
+        $ibuUser->fresh()->ibu->nik
+    );
+}
 
     public function test_admin_can_delete_bidan(): void
     {
@@ -168,35 +218,43 @@ class AdminKelolaTest extends TestCase
     {
         $bidan = $this->userWithRole(RoleEnum::Bidan, ['wilayah_kerja_id' => $this->wilayah->id]);
         $kader = $this->userWithRole(RoleEnum::Kader, ['wilayah_kerja_id' => $this->wilayah->id]);
-        $ibu = $this->userWithRole(RoleEnum::OrangTua, ['wilayah_kerja_id' => $this->wilayah->id]);
+        $ibu = $this->userWithRole(RoleEnum::Ibu, ['wilayah_kerja_id' => $this->wilayah->id]);
 
         $this->assertTrue($ibu->bidanWilayah->is($bidan));
         $this->assertTrue($ibu->kaderWilayah->is($kader));
     }
 
-    public function test_ibu_sees_mother_data_in_profile(): void
-    {
-        $ibu = $this->userWithRole(RoleEnum::OrangTua, [
-            'wilayah_kerja_id' => $this->wilayah->id,
-            'nik' => '3525010101900009',
-            'status_kehamilan' => StatusKehamilanEnum::Hamil->value,
-            'hpl' => now()->addMonths(2)->toDateString(),
-            'usia_kehamilan' => 20,
-        ]);
 
-        $this->actingAs($ibu)->get('/profile')
-            ->assertOk()
-            ->assertSee('Data Ibu')
-            ->assertSee('3525010101900009');
-    }
+
+public function test_ibu_sees_mother_data_in_profile(): void
+{
+    $ibu = $this->userWithRole(RoleEnum::Ibu, [
+        'wilayah_kerja_id' => $this->wilayah->id,
+    ]);
+
+    $ibu->ibu()->create([
+        'wilayah_kerja_id' => $this->wilayah->id,
+        'nik' => '3525010101900009',
+        'status_kehamilan' => StatusKehamilanEnum::Hamil->value,
+        'hpl' => now()->addMonths(2)->toDateString(),
+        'usia_kehamilan' => 20,
+        
+    ]);
+
+    $this->actingAs($ibu)
+    ->get('/profile')
+    ->assertOk()
+    ->assertSee('Data Ibu')
+    ->assertSee('3525010101900009');
+}
 
     public function test_ibu_dashboard_shows_assigned_staff(): void
     {
         $bidan = $this->userWithRole(RoleEnum::Bidan, ['wilayah_kerja_id' => $this->wilayah->id]);
         $kader = $this->userWithRole(RoleEnum::Kader, ['wilayah_kerja_id' => $this->wilayah->id]);
-        $ibu = $this->userWithRole(RoleEnum::OrangTua, ['wilayah_kerja_id' => $this->wilayah->id]);
+        $ibu = $this->userWithRole(RoleEnum::Ibu, ['wilayah_kerja_id' => $this->wilayah->id]);
 
-        $this->actingAs($ibu)->get('/orang-tua')
+        $this->actingAs($ibu)->get('/ibu')
             ->assertOk()
             ->assertSee($bidan->name)
             ->assertSee($kader->name);

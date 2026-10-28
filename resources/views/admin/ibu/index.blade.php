@@ -119,8 +119,8 @@
                         @forelse ($ibus as $ibu)
                             @php
                                 $isActive = $ibu->status === \App\Enums\UserStatusEnum::Active;
-                                $desa     = optional($ibu->wilayahKerja)->desa;
-                                $kec      = optional($ibu->wilayahKerja)->kecamatan;
+                                $desa     = $ibu->ibu?->wilayahKerja?->desa;
+                                $kec      = $ibu->ibu?->wilayahKerja?->kecamatan;
                             @endphp
                             <tr class="row-item transition hover:bg-[#FCE7F0]/50">
                                 <td class="px-3 py-3.5 text-sm font-semibold text-slate-700 lg:px-4"><span class="row-no">{{ $loop->iteration }}</span></td>
@@ -133,7 +133,7 @@
                                         </span>
                                         <div class="min-w-0">
                                             <p class="break-words text-sm font-bold text-[#542D3D] lg:whitespace-nowrap">{{ $ibu->name ?? '-' }}</p>
-                                            <p class="whitespace-nowrap text-xs font-medium text-slate-600">NIK {{ $ibu->nik ?? '-' }}</p>
+                                            <p class="whitespace-nowrap text-xs font-medium text-slate-600">NIK {{ $ibu->ibu?->nik ?? '-' }}</p>
 
                                             <p class="mt-0.5 break-all text-xs text-slate-700 lg:break-normal lg:whitespace-nowrap 2xl:hidden">{{ $ibu->email ?? '-' }}</p>
                                             <p class="text-xs text-slate-700 2xl:hidden">{{ $ibu->phone ?? '-' }}</p>

@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Models\WilayahKerja;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class KaderController extends Controller
@@ -19,11 +20,12 @@ class KaderController extends Controller
     {
         $kaders = User::query()
             ->role(RoleEnum::Kader->value)
-            ->with('wilayahKerja')
+            ->with('kader.wilayahKerja')
             ->when($request->filled('search'), fn ($query) => $query
                 ->where('name', 'like', '%'.$request->string('search').'%'))
             ->when($request->filled('wilayah_kerja_id'), fn ($query) => $query
-                ->where('wilayah_kerja_id', $request->integer('wilayah_kerja_id')))
+                ->whereHas('kader', fn ($k) => $k
+                    ->where('wilayah_kerja_id', $request->integer('wilayah_kerja_id'))))
             ->latest()
             ->paginate(10)
             ->withQueryString();
@@ -45,16 +47,18 @@ class KaderController extends Controller
     {
         $data = $request->validated();
 
-        $kader = User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'password' => $data['password'],
-            'phone' => $data['phone'] ?? null,
-            'wilayah_kerja_id' => $data['wilayah_kerja_id'],
-            'status' => UserStatusEnum::Active->value,
-        ]);
+        DB::transaction(function () use ($data) {
+            $kader = User::create([
+                'name' => $data['name'],
+                'email' => $data['email'],
+                'password' => $data['password'],
+                'phone' => $data['phone'] ?? null,
+                'status' => UserStatusEnum::Active->value,
+            ]);
 
-        $kader->assignRole(RoleEnum::Kader->value);
+            $kader->assignRole(RoleEnum::Kader->value);
+            $kader->assignWilayah((int) $data['wilayah_kerja_id']);
+        });
 
         return redirect()
             ->route('admin.kader.index')
@@ -66,7 +70,7 @@ class KaderController extends Controller
         abort_unless($kader->hasRole(RoleEnum::Kader->value), 404);
 
         return view('admin.kader.edit', [
-            'kader' => $kader->load('wilayahKerja'),
+            'kader' => $kader->load('kader.wilayahKerja'),
             'wilayahs' => $this->wilayahs(),
         ]);
     }
@@ -77,18 +81,20 @@ class KaderController extends Controller
 
         $data = $request->validated();
 
-        $kader->fill([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'phone' => $data['phone'] ?? null,
-            'wilayah_kerja_id' => $data['wilayah_kerja_id'],
-        ]);
+        DB::transaction(function () use ($data, $kader) {
+            $kader->fill([
+                'name' => $data['name'],
+                'email' => $data['email'],
+                'phone' => $data['phone'] ?? null,
+            ]);
 
-        if (! empty($data['password'])) {
-            $kader->password = $data['password'];
-        }
+            if (! empty($data['password'])) {
+                $kader->password = $data['password'];
+            }
 
-        $kader->save();
+            $kader->save();
+            $kader->assignWilayah((int) $data['wilayah_kerja_id']);
+        });
 
         return redirect()
             ->route('admin.kader.index')

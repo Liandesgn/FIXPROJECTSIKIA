@@ -1,10 +1,12 @@
 @php
+        $profil = $ibu?->ibu;
+
     $inputClass = 'w-full rounded-xl border border-[#E2C3D0] bg-white px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-slate-500 hover:border-[#E99AB7] focus:border-[#C9517E] focus:ring-4 focus:ring-[#E99AB7]/25';
     $labelClass = 'mb-1.5 block text-sm font-semibold text-[#542D3D]';
     $errorClass = 'mt-1 text-xs font-medium text-red-600';
     $star       = '<span class="text-[#C9517E]">*</span>';
-    $selectedWilayah = old('wilayah_kerja_id', $ibu?->wilayah_kerja_id);
-    $selectedStatus  = old('status_kehamilan', $ibu?->status_kehamilan?->value);
+    $selectedWilayah = old('wilayah_kerja_id', $profil?->wilayah_kerja_id);
+    $selectedStatus  = old('status_kehamilan', $profil?->status_kehamilan?->value);
     $isHamilNow      = $selectedStatus === \App\Enums\StatusKehamilanEnum::Hamil->value;
 @endphp
 
@@ -34,7 +36,7 @@
 
     <div>
         <label for="nik" class="{{ $labelClass }}">NIK {!! $star !!}</label>
-        <input id="nik" type="text" name="nik" value="{{ old('nik', $ibu?->nik) }}" maxlength="16" inputmode="numeric" required placeholder="16 digit NIK" class="{{ $inputClass }}">
+        <input id="nik" type="text" name="nik" value="{{ old('nik', $profil?->nik) }}" maxlength="16" inputmode="numeric" required placeholder="16 digit NIK" class="{{ $inputClass }}">
         @error('nik') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
     </div>
 
@@ -45,13 +47,13 @@
 
     <div>
         <label for="tempat_lahir" class="{{ $labelClass }}">Tempat Lahir {!! $star !!}</label>
-        <input id="tempat_lahir" type="text" name="tempat_lahir" value="{{ old('tempat_lahir', $ibu?->tempat_lahir) }}" required placeholder="Kota / kabupaten kelahiran" class="{{ $inputClass }}">
+        <input id="tempat_lahir" type="text" name="tempat_lahir" value="{{ old('tempat_lahir', $profil?->tempat_lahir) }}" required placeholder="Kota / kabupaten kelahiran" class="{{ $inputClass }}">
         @error('tempat_lahir') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
     </div>
 
     <div>
         <label for="tanggal_lahir" class="{{ $labelClass }}">Tanggal Lahir {!! $star !!}</label>
-        <input id="tanggal_lahir" type="date" name="tanggal_lahir" value="{{ old('tanggal_lahir', $ibu?->tanggal_lahir?->format('Y-m-d')) }}" required class="{{ $inputClass }}">
+        <input id="tanggal_lahir" type="date" name="tanggal_lahir" value="{{ old('tanggal_lahir', $profil?->tanggal_lahir?->format('Y-m-d')) }}" required class="{{ $inputClass }}">
         @error('tanggal_lahir') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
     </div>
 
@@ -86,13 +88,13 @@
     {{-- Tampil hanya jika status = Hamil --}}
     <div data-hamil-fields class="{{ $isHamilNow ? '' : 'hidden' }}">
         <label for="usia_kehamilan" class="{{ $labelClass }}">Usia Kehamilan (minggu) {!! $star !!}</label>
-        <input id="usia_kehamilan" type="number" name="usia_kehamilan" min="1" max="42" value="{{ old('usia_kehamilan', $ibu?->usia_kehamilan) }}" placeholder="Minggu" class="{{ $inputClass }}">
+        <input id="usia_kehamilan" type="number" name="usia_kehamilan" min="1" max="42" value="{{ old('usia_kehamilan', $profil?->usia_kehamilan) }}" placeholder="Minggu" class="{{ $inputClass }}">
         @error('usia_kehamilan') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
     </div>
 
     <div data-hamil-fields class="{{ $isHamilNow ? '' : 'hidden' }}">
         <label for="hpl" class="{{ $labelClass }}">HPL (Hari Perkiraan Lahir) {!! $star !!}</label>
-        <input id="hpl" type="date" name="hpl" value="{{ old('hpl', $ibu?->hpl?->format('Y-m-d')) }}" class="{{ $inputClass }}">
+        <input id="hpl" type="date" name="hpl" value="{{ old('hpl', $profil?->hpl?->format('Y-m-d')) }}" class="{{ $inputClass }}">
         @error('hpl') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
     </div>
 </div>

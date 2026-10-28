@@ -10,9 +10,12 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 class WilayahKerjaController extends Controller
 {
     public function index(): AnonymousResourceCollection
-    {
-        return WilayahKerjaResource::collection(
-            WilayahKerja::orderBy('nama')->get()
-        );
-    }
+{
+    return WilayahKerjaResource::collection(
+        WilayahKerja::with('bidan')
+            ->withCount('posyandu')
+            ->orderBy('nama_wilayah')
+            ->get()
+    );
+}
 }
