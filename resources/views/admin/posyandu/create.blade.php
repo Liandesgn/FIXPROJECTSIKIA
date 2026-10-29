@@ -1,155 +1,34 @@
 @extends('layouts.app')
 
+@section('title', 'Tambah Wilayah Posyandu')
+
 @section('content')
-<div class="container-fluid px-4 py-4">
-    <div class="mb-4">
-        <h2 class="fw-bold">Tambah Posyandu</h2>
-        <p class="text-muted">Data Master / Kelola Wilayah Kerja / Tambah Posyandu</p>
+<div class="mx-auto w-full max-w-3xl space-y-4">
+
+    <div>
+        <a href="{{ route('admin.posyandu.index') }}"
+           class="inline-flex items-center gap-2 rounded-xl border-2 border-[#C9517E] bg-white px-4 py-2 text-sm font-semibold text-[#C9517E] shadow-sm transition hover:bg-[#C9517E] hover:text-white focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M19 12H5m6-6-6 6 6 6"/></svg>
+            Kembali ke Kelola Posyandu
+        </a>
+        <p class="mt-3 text-sm font-medium text-slate-700">Data Master / Kelola Wilayah Kerja / Posyandu / Tambah</p>
     </div>
 
-    <div class="card border-0 shadow-sm rounded-4">
-        <div class="card-body p-4">
-            <form action="{{ route('admin.posyandu.store') }}" method="POST">
-                @csrf
-
-                <div class="mb-3">
-                    <label for="nama_posyandu" class="form-label fw-semibold">
-                        Nama Posyandu <span class="text-danger">*</span>
-                    </label>
-                    <input
-                        type="text"
-                        name="nama_posyandu"
-                        id="nama_posyandu"
-                        class="form-control @error('nama_posyandu') is-invalid @enderror"
-                        value="{{ old('nama_posyandu') }}"
-                        placeholder="Masukkan nama Posyandu"
-                        required
-                    >
-                    @error('nama_posyandu')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="mb-3">
-                    <label for="wilayah_kerja_id" class="form-label fw-semibold">
-                        Wilayah Kerja <span class="text-danger">*</span>
-                    </label>
-                    <select
-                        name="wilayah_kerja_id"
-                        id="wilayah_kerja_id"
-                        class="form-select @error('wilayah_kerja_id') is-invalid @enderror"
-                        required
-                    >
-                        <option value="">-- Pilih Kecamatan dan Desa --</option>
-
-                        @foreach ($wilayahs as $wilayah)
-                            <option
-                                value="{{ $wilayah->id }}"
-                                @selected(old('wilayah_kerja_id') == $wilayah->id)
-                            >
-                                {{ $wilayah->kecamatan }} — {{ $wilayah->desa }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('wilayah_kerja_id')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="mb-3">
-                    <label for="kader_id" class="form-label fw-semibold">
-                        Kader
-                    </label>
-                    <select
-                        name="kader_id"
-                        id="kader_id"
-                        class="form-select @error('kader_id') is-invalid @enderror"
-                    >
-                        <option value="">-- Pilih Kader (Opsional) --</option>
-
-                        @foreach ($kaders as $kader)
-                            <option
-                                value="{{ $kader->id }}"
-                                data-wilayah="{{ $kader->wilayah_kerja_id }}"
-                                @selected(old('kader_id') == $kader->id)
-                            >
-                                {{ $kader->user?->name ?? 'Kader #' . $kader->id }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('kader_id')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                    <small class="text-muted">
-                        Pilih kader yang bertugas di wilayah Posyandu tersebut.
-                    </small>
-                </div>
-
-                <div class="mb-4">
-                    <label for="alamat" class="form-label fw-semibold">
-                        Alamat Posyandu <span class="text-danger">*</span>
-                    </label>
-                    <textarea
-                        name="alamat"
-                        id="alamat"
-                        rows="3"
-                        class="form-control @error('alamat') is-invalid @enderror"
-                        placeholder="Masukkan alamat Posyandu"
-                        required
-                    >{{ old('alamat') }}</textarea>
-                    @error('alamat')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="d-flex justify-content-end gap-2">
-                    <a
-                        href="{{ route('admin.posyandu.index') }}"
-                        class="btn btn-light border"
-                    >
-                        Kembali
-                    </a>
-
-                    <button type="submit" class="btn btn-primary">
-                        Simpan Posyandu
-                    </button>
-                </div>
-            </form>
+    <div class="overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm">
+        <div class="border-b border-[#E99AB7]/60 bg-[#FCE7F0] px-6 py-5 sm:px-8">
+            <h1 class="text-xl font-bold text-[#542D3D] sm:text-2xl">Tambah Wilayah Posyandu</h1>
+            <p class="mt-1 text-sm text-slate-700">Isi nama Posyandu, wilayah, dan alamat.</p>
         </div>
+
+        <form method="POST" action="{{ route('admin.posyandu.store') }}" class="space-y-6 p-6 sm:p-8">
+            @csrf
+            @include('admin.posyandu.partials.form', [
+                'posyandu'  => null,
+                'wilayahs'  => $wilayahs ?? collect(),
+                'kaders'    => $kaders ?? null,
+                'cancelUrl' => route('admin.posyandu.index'),
+            ])
+        </form>
     </div>
 </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const wilayahSelect = document.getElementById('wilayah_kerja_id');
-    const kaderSelect = document.getElementById('kader_id');
-
-    function filterKader() {
-        const wilayahId = wilayahSelect.value;
-
-        Array.from(kaderSelect.options).forEach(function (option) {
-            if (!option.value) {
-                option.hidden = false;
-                return;
-            }
-
-            option.hidden = wilayahId !== ''
-                && option.dataset.wilayah !== wilayahId;
-        });
-
-        const selectedOption = kaderSelect.selectedOptions[0];
-
-        if (
-            selectedOption
-            && selectedOption.value
-            && selectedOption.hidden
-        ) {
-            kaderSelect.value = '';
-        }
-    }
-
-    wilayahSelect.addEventListener('change', filterKader);
-    filterKader();
-});
-</script>
 @endsection

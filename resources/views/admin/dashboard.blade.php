@@ -9,7 +9,7 @@
             ['label' => 'Jumlah Kader',          'value' => $stats['kader'],     'icon' => 'M16 11a3 3 0 1 0 0-6m-8 6a3 3 0 1 0 0-6m-6 13a6 6 0 0 1 12 0m2-5a6 6 0 0 1 6 5'],
             ['label' => 'Jumlah Ibu Hamil',      'value' => $stats['ibu_hamil'], 'icon' => 'M12 7a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Zm-3 3h6l2 5-3 2v5m-4-8-2 3 3 2v3'],
             ['label' => 'Jumlah Anak',           'value' => $stats['anak'],      'icon' => 'M12 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm-4 14v-6l-2-4h12l-2 4v6'],
-            ['label' => 'Jumlah Wilayah Kerja',  'value' => $stats['wilayah'],   'icon' => 'M12 21s-7-6.2-7-11a7 7 0 1 1 14 0c0 4.8-7 11-7 11Zm0-8.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z'],
+            ['label' => 'Jumlah Wilayah',  'value' => $stats['wilayah'],   'icon' => 'M12 21s-7-6.2-7-11a7 7 0 1 1 14 0c0 4.8-7 11-7 11Zm0-8.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z'],
             ['label' => 'Jadwal Posyandu',       'value' => $stats['jadwal'],    'icon' => 'M7 3v4m10-4v4M4 9h16M5 5h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z'],
         ];
 
