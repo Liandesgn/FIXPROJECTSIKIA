@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\RoleEnum;
 use App\Enums\StatusKehamilanEnum;
 use App\Http\Requests\Admin\UpdateIbuRequest;
 use App\Models\Ibu;
+use App\Models\User;
 use App\Models\WilayahKerja;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,8 +18,15 @@ class DataIbuController extends Controller
 {
     public function index(Request $request): View
     {
+        $user = $request->user();
+
+        // Role Ibu: tampilan kartu sesuai wireframe 5.14
+        if ($user->isOrangTua()) {
+            return $this->tampilanIbuSendiri($user);
+        }
+
         $ibus = Ibu::query()
-            ->visibleTo($request->user())
+            ->visibleTo($user)
             ->with(['user', 'wilayahKerja'])
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = '%'.$request->string('search').'%';
@@ -43,11 +52,20 @@ class DataIbuController extends Controller
 
     public function show(Request $request, Ibu $ibu): View
     {
+        $user = $request->user();
+
+        // Kader hanya boleh mencari, tidak boleh membuka detail
+        abort_if($user->hasRole(RoleEnum::Kader->value), 403, 'Akses ditolak.');
+
         abort_unless(
-            Ibu::visibleTo($request->user())->whereKey($ibu->id)->exists(),
+            Ibu::visibleTo($user)->whereKey($ibu->id)->exists(),
             403,
             'Akses ditolak.'
         );
+
+        if ($user->isOrangTua()) {
+            return $this->tampilanIbuSendiri($user);
+        }
 
         return view('data-ibu.show', [
             'ibu' => $ibu->load(['user', 'wilayahKerja', 'anak']),
@@ -91,6 +109,16 @@ class DataIbuController extends Controller
         return redirect()
             ->route('admin.data-ibu.show', $ibu)
             ->with('success', 'Data ibu berhasil diperbarui.');
+    }
+
+    /** Tampilan khusus role Ibu: data dirinya sendiri + anaknya. */
+    private function tampilanIbuSendiri(User $user): View
+    {
+        $ibu = Ibu::with(['user', 'wilayahKerja', 'anak'])
+            ->where('user_id', $user->id)
+            ->first();
+
+        return view('data-ibu.ibu-sendiri', ['ibu' => $ibu]);
     }
 
     /** Awalan nama route sesuai role: admin, bidan, kader, atau ibu. */

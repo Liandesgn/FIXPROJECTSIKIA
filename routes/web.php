@@ -268,13 +268,19 @@ Route::middleware('auth')->group(function () {
     }); // Penutup grup admin.ibu
 
 
-        // Dashboard Bidan
+           // Dashboard Bidan
     Route::middleware('role:bidan')
         ->prefix('bidan')
         ->name('bidan.')
         ->group(function () {
             Route::get('/', [BidanDashboardController::class, 'index'])
                 ->name('dashboard');
+
+            // Data Ibu & Data Anak (cari + detail, hanya wilayahnya)
+            Route::get('data-ibu', [DataIbuController::class, 'index'])->name('data-ibu.index');
+            Route::get('data-ibu/{ibu}', [DataIbuController::class, 'show'])->name('data-ibu.show');
+            Route::get('data-anak', [DataAnakController::class, 'index'])->name('data-anak.index');
+            Route::get('data-anak/{anak}', [DataAnakController::class, 'show'])->name('data-anak.show');
         });
 
     // Dashboard Kader
@@ -284,6 +290,12 @@ Route::middleware('auth')->group(function () {
         ->group(function () {
             Route::get('/', [KaderDashboardController::class, 'index'])
                 ->name('dashboard');
+
+            // Data Ibu & Data Anak (cari saja; detail ditolak di controller)
+            Route::get('data-ibu', [DataIbuController::class, 'index'])->name('data-ibu.index');
+            Route::get('data-ibu/{ibu}', [DataIbuController::class, 'show'])->name('data-ibu.show');
+            Route::get('data-anak', [DataAnakController::class, 'index'])->name('data-anak.index');
+            Route::get('data-anak/{anak}', [DataAnakController::class, 'show'])->name('data-anak.show');
         });
 
     // Dashboard Ibu
@@ -293,7 +305,13 @@ Route::middleware('auth')->group(function () {
         ->group(function () {
             Route::get('/', [OrangTuaDashboardController::class, 'index'])
                 ->name('dashboard');
+
+            // Data Ibu & Data Anak (hanya miliknya sendiri)
+            Route::get('data-ibu', [DataIbuController::class, 'index'])->name('data-ibu.index');
+            Route::get('data-ibu/{ibu}', [DataIbuController::class, 'show'])->name('data-ibu.show');
+            Route::get('data-anak', [DataAnakController::class, 'index'])->name('data-anak.index');
+            Route::get('data-anak/{anak}', [DataAnakController::class, 'show'])->name('data-anak.show');
         });
 
-
 }); // Penutup grup auth
+

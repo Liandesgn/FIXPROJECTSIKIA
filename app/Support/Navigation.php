@@ -76,112 +76,69 @@ class Navigation
         ];
     }
 
-    /**
-     * @return array<int, array{heading: string, items: array<int, array<string, mixed>>}>
-     */
-    private static function bidan(): array
-    {
-        return [
-            [
-                'heading' => 'Utama',
-                'items' => [
-                    self::link('Dashboard', 'bidan.dashboard'),
-                ],
-            ],
-            [
-                'heading' => 'Menu',
-                'items' => [
-                    self::soon('Data Ibu', 'data-ibu'),
-                    self::soon('Data Anak', 'data-anak'),
-                    self::soon('Jadwal', 'jadwal-pemeriksaan'),
-                    self::soon('Laporan', 'laporan'),
-                ],
-            ],
-            [
-                'heading' => 'Akun',
-                'items' => [
-                    self::link('Profil', 'profile.edit', 'profile.*'),
-                ],
-            ],
-        ];
-    }
+   private static function bidan(): array
+{
+    return [
+        ['heading' => 'Utama', 'items' => [
+            self::link('Dashboard', 'bidan.dashboard'),
+        ]],
+        ['heading' => 'Menu', 'items' => [
+            self::link('Data Ibu', 'bidan.data-ibu.index', 'bidan.data-ibu.*'),
+            self::link('Data Anak', 'bidan.data-anak.index', 'bidan.data-anak.*'),
+            self::soon('Jadwal', 'jadwal-pemeriksaan'),
+            self::soon('Laporan', 'laporan'),
+        ]],
+        ['heading' => 'Akun', 'items' => [
+            self::link('Profil', 'profile.edit', 'profile.*'),
+        ]],
+    ];
+}
 
-    /**
-     * @return array<int, array{heading: string, items: array<int, array<string, mixed>>}>
-     */
-    private static function kader(): array
-    {
-        return [
-            [
-                'heading' => 'Utama',
-                'items' => [
-                    self::link('Dashboard', 'kader.dashboard'),
-                ],
-            ],
-            [
-                'heading' => 'Posyandu',
-                'items' => [
-                    self::soon('Jadwal Posyandu', 'jadwal-posyandu'),
-                    self::soon('Pendataan Kegiatan', 'pendataan-posyandu'),
-                ],
-            ],
-            [
-                'heading' => 'Pengukuran',
-                'items' => [
-                    self::soon('Cari Data Ibu', 'cari-ibu'),
-                    self::soon('Data Anak', 'data-anak'),
-                    self::soon('Input Hasil Pengukuran', 'input-pengukuran'),
-                ],
-            ],
-            [
-                'heading' => 'Akun',
-                'items' => [
-                    self::link('Profil', 'profile.edit', 'profile.*'),
-                ],
-            ],
-        ];
-    }
+private static function kader(): array
+{
+    return [
+        ['heading' => 'Utama', 'items' => [
+            self::link('Dashboard', 'kader.dashboard'),
+        ]],
+        ['heading' => 'Data', 'items' => [
+            self::link('Data Ibu', 'kader.data-ibu.index', 'kader.data-ibu.*'),
+            self::link('Data Anak', 'kader.data-anak.index', 'kader.data-anak.*'),
+        ]],
+        ['heading' => 'Posyandu', 'items' => [
+            self::soon('Jadwal Posyandu', 'jadwal-posyandu'),
+            self::soon('Pendataan Kegiatan', 'pendataan-posyandu'),
+        ]],
+        ['heading' => 'Pengukuran', 'items' => [
+            self::soon('Input Hasil Pengukuran', 'input-pengukuran'),
+        ]],
+        ['heading' => 'Akun', 'items' => [
+            self::link('Profil', 'profile.edit', 'profile.*'),
+        ]],
+    ];
+}
 
-    /**
-     * @return array<int, array{heading: string, items: array<int, array<string, mixed>>}>
-     */
-    private static function orangTua(): array
-    {
-        return [
-            [
-                'heading' => 'Utama',
-                'items' => [
-                    self::link('Dashboard', 'orang-tua.dashboard'),
-                ],
-            ],
-            [
-                'heading' => 'Data',
-                'items' => [
-                    self::soon('Data Ibu', 'data-ibu'),
-                    self::soon('Data Anak', 'data-anak'),
-                ],
-            ],
-            [
-                'heading' => 'Layanan',
-                'items' => [
-                    self::soon('Konsultasi Bidan', 'konsultasi'),
-                    self::soon('Edukasi Kesehatan', 'edukasi'),
-                ],
-            ],
-            [
-                'heading' => 'Jadwal & Info',
-                'items' => [
-                    self::soon('Jadwal Pemeriksaan', 'jadwal-pemeriksaan'),
-                ],
-            ],
-            [
-                'heading' => 'Akun',
-                'items' => [
-                    self::link('Profil', 'profile.edit', 'profile.*'),
-                ],
-            ],
-        ];
-    }
+private static function orangTua(): array
+{
+    return [
+        ['heading' => 'Utama', 'items' => [
+            self::link('Dashboard', 'ibu.dashboard'),
+        ]],
+        ['heading' => 'Data', 'items' => [
+            self::link('Data Ibu', 'ibu.data-ibu.index', 'ibu.data-ibu.*'),
+            self::link('Data Anak', 'ibu.data-anak.index', 'ibu.data-anak.*'),
+        ]],
+        ['heading' => 'Layanan', 'items' => [
+            self::soon('Konsultasi Bidan', 'konsultasi'),
+            self::soon('Edukasi Kesehatan', 'edukasi'),
+        ]],
+        ['heading' => 'Jadwal & Info', 'items' => [
+            self::soon('Jadwal Pemeriksaan', 'jadwal-pemeriksaan'),
+        ]],
+        ['heading' => 'Akun', 'items' => [
+            self::link('Profil', 'profile.edit', 'profile.*'),
+        ]],
+    ];
+}
 
     /**
      * @return array<string, mixed>

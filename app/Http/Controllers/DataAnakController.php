@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\RoleEnum;
 use App\Http\Requests\AnakRequest;
 use App\Models\Anak;
 use App\Models\Ibu;
@@ -14,8 +15,19 @@ class DataAnakController extends Controller
 {
     public function index(Request $request): View
     {
+        $user = $request->user();
+
+        // Role Ibu: tampilan kartu sesuai wireframe 5.14
+        if ($user->isOrangTua()) {
+            $ibu = Ibu::with(['user', 'wilayahKerja', 'anak'])
+                ->where('user_id', $user->id)
+                ->first();
+
+            return view('data-anak.ibu-sendiri', ['ibu' => $ibu]);
+        }
+
         $anaks = Anak::query()
-            ->visibleTo($request->user())
+            ->visibleTo($user)
             ->with('ibu.user')
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = '%'.$request->string('search').'%';
@@ -47,13 +59,23 @@ class DataAnakController extends Controller
             ->with('success', 'Data anak berhasil ditambahkan.');
     }
 
-    public function show(Request $request, Anak $anak): View
+    public function show(Request $request, Anak $anak): View|RedirectResponse
     {
+        $user = $request->user();
+
+        // Kader hanya boleh mencari, tidak boleh membuka detail
+        abort_if($user->hasRole(RoleEnum::Kader->value), 403, 'Akses ditolak.');
+
         abort_unless(
-            Anak::visibleTo($request->user())->whereKey($anak->id)->exists(),
+            Anak::visibleTo($user)->whereKey($anak->id)->exists(),
             403,
             'Akses ditolak.'
         );
+
+        // Ibu: semua data anaknya sudah tampil di halaman Data Anak
+        if ($user->isOrangTua()) {
+            return redirect()->route('ibu.data-anak.index');
+        }
 
         return view('data-anak.show', [
             'anak' => $anak->load('ibu.user', 'ibu.wilayahKerja'),

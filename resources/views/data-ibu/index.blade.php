@@ -54,7 +54,10 @@
                         <th class="px-4 py-3">Status Kehamilan</th>
                         <th class="px-4 py-3">Usia Kehamilan</th>
                         <th class="px-4 py-3">HPL</th>
-                        <th class="px-4 py-3 text-center">Aksi</th>
+                        {{-- UBAH 1: kolom Aksi disembunyikan untuk Kader --}}
+                        @if ($base !== 'kader')
+                            <th class="px-4 py-3 text-center">Aksi</th>
+                        @endif
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-[#F7E6ED]">
@@ -67,22 +70,27 @@
                             <td class="px-4 py-3.5">@include('data-ibu.partials.badge', ['status' => $ibu->status_kehamilan])</td>
                             <td class="px-4 py-3.5 text-sm text-slate-800">{{ $ibu->usia_kehamilan ? $ibu->usia_kehamilan.' mgg' : '-' }}</td>
                             <td class="px-4 py-3.5 text-sm text-slate-800">{{ $ibu->hpl?->format('d/m/Y') ?? '-' }}</td>
-                            <td class="px-4 py-3.5">
-                                <div class="flex items-center justify-center gap-2">
-                                    <a href="{{ route($base.'.data-ibu.show', $ibu) }}"
-                                       class="inline-flex h-8 items-center rounded-lg border border-[#C9517E] px-3 text-xs font-bold text-[#C9517E] hover:bg-[#FCE7F0]">Detail</a>
-                                    @if ($base === 'admin')
-                                        @can('ibu.update')
-                                            <a href="{{ route('admin.data-ibu.edit', $ibu) }}"
-                                               class="inline-flex h-8 items-center rounded-lg bg-[#C9517E] px-3 text-xs font-bold text-white hover:bg-[#B7436D]">Edit</a>
-                                        @endcan
-                                    @endif
-                                </div>
-                            </td>
+
+                            {{-- UBAH 2: tombol Detail/Edit disembunyikan untuk Kader --}}
+                            @if ($base !== 'kader')
+                                <td class="px-4 py-3.5">
+                                    <div class="flex items-center justify-center gap-2">
+                                        <a href="{{ route($base.'.data-ibu.show', $ibu) }}"
+                                           class="inline-flex h-8 items-center rounded-lg border border-[#C9517E] px-3 text-xs font-bold text-[#C9517E] hover:bg-[#FCE7F0]">Detail</a>
+                                        @if ($base === 'admin')
+                                            @can('ibu.update')
+                                                <a href="{{ route('admin.data-ibu.edit', $ibu) }}"
+                                                   class="inline-flex h-8 items-center rounded-lg bg-[#C9517E] px-3 text-xs font-bold text-white hover:bg-[#B7436D]">Edit</a>
+                                            @endcan
+                                        @endif
+                                    </div>
+                                </td>
+                            @endif
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="px-5 py-12 text-center">
+                            {{-- UBAH 3: jumlah kolom 7 untuk Kader, 8 untuk role lain --}}
+                            <td colspan="{{ $base === 'kader' ? 7 : 8 }}" class="px-5 py-12 text-center">
                                 <p class="font-bold text-[#542D3D]">Data tidak ditemukan.</p>
                             </td>
                         </tr>

@@ -75,6 +75,9 @@ public function anak(): HasMany
         /**
      * Batasi data sesuai role: admin semua, bidan/kader wilayahnya, ibu dirinya sendiri.
      */
+        /**
+     * Batasi data sesuai role: admin semua, bidan/kader wilayahnya, ibu dirinya sendiri.
+     */
     public function scopeVisibleTo(Builder $query, User $user): Builder
     {
         if ($user->isAdmin()) {
@@ -85,7 +88,10 @@ public function anak(): HasMany
             return $query->where('user_id', $user->id);
         }
 
-        $wilayahId = ($user->bidan ?? $user->kader)?->wilayah_kerja_id;
+        // Wilayah dibaca dari tabel bidan/kader; kalau kosong, pakai kolom lama di users
+        $wilayahId = $user->bidan?->wilayah_kerja_id
+            ?? $user->kader?->wilayah_kerja_id
+            ?? $user->wilayah_kerja_id;
 
         return $wilayahId
             ? $query->where('wilayah_kerja_id', $wilayahId)
