@@ -12,26 +12,26 @@ use Illuminate\View\View;
 class WilayahKerjaController extends Controller
 {
 
-public function index(Request $request): View
-{
-    $wilayahs = WilayahKerja::query()
-        ->with('bidan')
-        ->withCount('posyandu')
-        ->when($request->filled('search'), function ($query) use ($request) {
-            $search = '%' . $request->string('search') . '%';
+     public function index(Request $request): View
+    {
+        $wilayahs = WilayahKerja::query()
+            ->with('bidan')
+            ->withCount('posyandu')
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $search = '%'.$request->string('search').'%';
 
-            $query->where(function ($q) use ($search) {
-                $q->where('nama_wilayah', 'like', $search)
-                    ->orWhere('desa', 'like', $search)
-                    ->orWhere('kecamatan', 'like', $search);
-            });
-        })
-        ->orderBy('kecamatan')
-        ->orderBy('desa')
-        ->get();
+                $query->where(function ($q) use ($search) {
+                    $q->where('nama_wilayah', 'like', $search)
+                        ->orWhere('desa', 'like', $search)
+                        ->orWhere('kecamatan', 'like', $search);
+                });
+            })
+            ->orderByDesc('id')
+            ->get();
 
-    return view('admin.wilayah.index', compact('wilayahs'));
-}
+        return view('admin.wilayah.index', compact('wilayahs'));
+    }
+
 
     public function create(): View
     {

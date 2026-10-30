@@ -22,7 +22,11 @@
 
         <form method="POST" action="{{ route('admin.data-anak.store') }}" class="space-y-6 p-6 sm:p-8">
             @csrf
-            @include('data-anak.partials.form')
+            @include('data-anak.partials.form', [
+                'anak'      => null,
+                'ibus'      => $ibus ?? collect(),
+                'cancelUrl' => route('admin.data-anak.index'),
+            ])
         </form>
     </div>
 </div>

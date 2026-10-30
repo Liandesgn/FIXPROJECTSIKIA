@@ -26,7 +26,6 @@
             @include('admin.posyandu.partials.form', [
                 'posyandu'  => $posyandu,
                 'wilayahs'  => $wilayahs ?? collect(),
-                'kaders'    => $kaders ?? null,
                 'cancelUrl' => route('admin.posyandu.index'),
             ])
         </form>

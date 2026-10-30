@@ -9,6 +9,7 @@
         $anaks->appends(request()->query());
     }
     $nextUrl = $anaks->nextPageUrl() ?? '';
+    $adaAksi = $base !== 'kader';   // Kader hanya melihat data, tanpa kolom Aksi
 @endphp
 
 <div class="mx-auto w-full max-w-[96rem] space-y-5">
@@ -61,7 +62,9 @@
                             <th class="hidden whitespace-nowrap bg-[#FCE7F0] px-4 py-3 md:table-cell">JK</th>
                             <th class="hidden whitespace-nowrap bg-[#FCE7F0] px-4 py-3 lg:table-cell">Nama Ayah</th>
                             <th class="whitespace-nowrap bg-[#FCE7F0] px-3 py-3 lg:px-4">Nama Ibu</th>
-                            <th class="whitespace-nowrap bg-[#FCE7F0] px-3 py-3 text-center lg:px-4">Aksi</th>
+                            @if ($adaAksi)
+                                <th class="whitespace-nowrap bg-[#FCE7F0] px-3 py-3 text-center lg:px-4">Aksi</th>
+                            @endif
                         </tr>
                     </thead>
 
@@ -79,29 +82,32 @@
                                 <td class="hidden px-4 py-3.5 text-sm font-semibold text-slate-800 md:table-cell">{{ $a->jenis_kelamin }}</td>
                                 <td class="hidden whitespace-nowrap px-4 py-3.5 text-sm text-slate-800 lg:table-cell">{{ $a->nama_ayah }}</td>
                                 <td class="px-3 py-3.5 text-sm font-semibold text-slate-800 lg:whitespace-nowrap lg:px-4">{{ $a->ibu?->user?->name ?? '(belum terhubung)' }}</td>
-                                <td class="whitespace-nowrap px-3 py-3.5 lg:px-4">
-                                    <div class="flex flex-nowrap items-center justify-center gap-2">
-                                        {{-- DETAIL: outline pink, tanpa ikon --}}
-                                        <a href="{{ route($base.'.data-anak.show', $a) }}"
-                                           class="inline-flex h-8 items-center justify-center whitespace-nowrap rounded-lg border-2 border-[#C9517E] bg-white px-4 text-xs font-bold text-[#C9517E] transition hover:bg-[#FCE7F0] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40">
-                                            Detail
-                                        </a>
-                                        @if ($base === 'admin')
-                                            @can('anak.update')
-                                                {{-- EDIT: pink tua solid --}}
-                                                <a href="{{ route('admin.data-anak.edit', $a) }}"
-                                                   class="inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-[#C9517E] px-3 text-xs font-bold text-white shadow-sm transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40">
-                                                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 20h4L19 9l-4-4L4 16v4Zm9-13 4 4"/></svg>
-                                                    Edit
-                                                </a>
-                                            @endcan
-                                        @endif
-                                    </div>
-                                </td>
+
+                                @if ($adaAksi)
+                                    <td class="whitespace-nowrap px-3 py-3.5 lg:px-4">
+                                        <div class="flex flex-nowrap items-center justify-center gap-2">
+                                            {{-- DETAIL: outline pink, tanpa ikon --}}
+                                            <a href="{{ route($base.'.data-anak.show', $a) }}"
+                                               class="inline-flex h-8 items-center justify-center whitespace-nowrap rounded-lg border-2 border-[#C9517E] bg-white px-4 text-xs font-bold text-[#C9517E] transition hover:bg-[#FCE7F0] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40">
+                                                Detail
+                                            </a>
+                                            @if ($base === 'admin')
+                                                @can('anak.update')
+                                                    {{-- EDIT: pink tua solid --}}
+                                                    <a href="{{ route('admin.data-anak.edit', $a) }}"
+                                                       class="inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-[#C9517E] px-3 text-xs font-bold text-white shadow-sm transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40">
+                                                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 20h4L19 9l-4-4L4 16v4Zm9-13 4 4"/></svg>
+                                                        Edit
+                                                    </a>
+                                                @endcan
+                                            @endif
+                                        </div>
+                                    </td>
+                                @endif
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="px-5 py-12 text-center">
+                                <td colspan="{{ $adaAksi ? 8 : 7 }}" class="px-5 py-12 text-center">
                                     <p class="font-bold text-[#542D3D]">Data tidak ditemukan.</p>
                                 </td>
                             </tr>

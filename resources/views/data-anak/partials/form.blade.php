@@ -1,4 +1,9 @@
+{{-- Isi form data anak. Parameter: $anak (model|null), $ibus, $cancelUrl (opsional) --}}
 @php
+    $anak      = $anak ?? null;
+    $ibus      = $ibus ?? collect();
+    $cancelUrl = $cancelUrl ?? route('admin.data-anak.index');
+
     $inputClass = 'w-full rounded-xl border border-[#E2C3D0] bg-white px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-slate-500 hover:border-[#E99AB7] focus:border-[#C9517E] focus:ring-4 focus:ring-[#E99AB7]/25';
     $labelClass = 'mb-1.5 block text-sm font-semibold text-[#542D3D]';
     $errorClass = 'mt-1 text-xs font-medium text-red-600';
@@ -45,7 +50,7 @@
     <div>
         <label for="tanggal_lahir" class="{{ $labelClass }}">Tanggal Lahir {!! $star !!}</label>
         <input id="tanggal_lahir" type="date" name="tanggal_lahir" max="{{ now()->format('Y-m-d') }}"
-               value="{{ old('tanggal_lahir', isset($anak) ? $anak->tanggal_lahir?->format('Y-m-d') : '') }}" class="{{ $inputClass }}">
+               value="{{ old('tanggal_lahir', $anak?->tanggal_lahir?->format('Y-m-d')) }}" class="{{ $inputClass }}">
         @error('tanggal_lahir') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
     </div>
 
@@ -68,7 +73,7 @@
 </div>
 
 <div class="flex flex-col-reverse gap-3 border-t border-[#F1D5E0] pt-6 sm:flex-row sm:justify-end">
-    <a href="{{ route('admin.data-anak.index') }}"
+    <a href="{{ $cancelUrl }}"
        class="inline-flex justify-center rounded-xl border border-[#E99AB7] bg-white px-6 py-3 text-sm font-semibold text-[#C9517E] transition hover:bg-[#FCE7F0]">Batal</a>
     <button type="submit"
             class="inline-flex justify-center rounded-xl bg-[#C9517E] px-8 py-3 text-sm font-semibold text-white shadow-md shadow-[#C9517E]/25 transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40">Simpan</button>

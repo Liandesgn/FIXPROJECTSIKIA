@@ -106,6 +106,17 @@
         };
     };
 
+    // Role & Permission memakai satu route; tampilan dipilih lewat ?tampilan=role
+    $roleUrl = Route::has('admin.roles.index')
+        ? route('admin.roles.index')
+        : (Route::has('admin.permissions.index') ? route('admin.permissions.index', ['tampilan' => 'role']) : '#');
+    $permUrl = Route::has('admin.permissions.index') ? route('admin.permissions.index') : '#';
+
+    // Penanda menu aktif (karena kedua menu memakai route yang sama)
+    $onRolePage = request()->routeIs('admin.roles.*', 'admin.permissions.role.*')
+        || (request()->routeIs('admin.permissions.index') && request('tampilan') === 'role');
+    $onPermPage = request()->routeIs('admin.permissions.*') && ! $onRolePage;
+
     // ===== MENU PER ROLE =====
     if ($roleKey === 'admin') {
         $menu = [
@@ -116,16 +127,17 @@
                 ['label' => 'Kelola Ibu',   'icon' => 'user', 'href' => $to('admin.ibu.index', 'kelola-ibu')],
             ]],
             ['label' => 'Data Master', 'icon' => 'building', 'items' => [
-                ['label' => 'Data Ibu',            'icon' => 'user',     'href' => $to('admin.data-ibu.index', 'data-ibu')],
-                ['label' => 'Data Anak',           'icon' => 'child',    'href' => $to('admin.data-anak.index', 'data-anak')],
-                ['label' => 'Data Posyandu',       'icon' => 'building', 'href' => $to('admin.data-posyandu.index', 'data-posyandu')],
-                ['label' => 'Kelola Wilayah ','icon' => 'pin',      'href' => $to('admin.wilayah-kerja.index', 'kelola-wilayah')],
-                ['label' => 'Kelola Jadwal',       'icon' => 'calendar', 'href' => $to('admin.jadwal.index', 'kelola-jadwal')],
+                ['label' => 'Data Ibu',        'icon' => 'user',     'href' => $to('admin.data-ibu.index', 'data-ibu')],
+                ['label' => 'Data Anak',       'icon' => 'child',    'href' => $to('admin.data-anak.index', 'data-anak')],
+                ['label' => 'Data Posyandu',   'icon' => 'building', 'href' => $to('admin.data-posyandu.index', 'data-posyandu')],
+                ['label' => 'Kelola Wilayah',  'icon' => 'pin',      'href' => $to('admin.wilayah-kerja.index', 'kelola-wilayah')],
+                ['label' => 'Kelola Jadwal',   'icon' => 'calendar', 'href' => $to('admin.jadwal.index', 'kelola-jadwal')],
             ]],
             ['label' => 'Laporan dan Rekapitulasi', 'icon' => 'report', 'href' => $to('admin.laporan.index', 'laporan')],
-            // Akses & Hak ditaruh paling bawah
+            // Akses & Hak ditaruh paling bawah: Role dan Permission terpisah
             ['label' => 'Akses & Hak', 'icon' => 'shield', 'items' => [
-                ['label' => 'Kelola Role & Permission', 'icon' => 'key',    'href' => $to('admin.permissions.index', 'kelola-permission')],
+                ['label' => 'Kelola Role',       'icon' => 'shield', 'href' => $roleUrl, 'active' => $onRolePage],
+                ['label' => 'Kelola Permission', 'icon' => 'key',    'href' => $permUrl, 'active' => $onPermPage],
             ]],
         ];
     } elseif ($roleKey === 'bidan') {
@@ -178,11 +190,18 @@
         ]];
     }
 
-        // Jika non-admin punya permission userrole.view, tampilkan Akses & Hak
-    if ($roleKey !== 'admin' && $user->can('userrole.view')) {
-        $menu[] = ['label' => 'Akses & Hak', 'icon' => 'shield', 'items' => [
-            ['label' => 'Kelola Role & Permission', 'icon' => 'key', 'href' => $to('admin.permissions.index', 'kelola-permission')],
-        ]];
+    // Non-admin: Akses & Hak tampil sesuai permission masing-masing menu
+    if ($roleKey !== 'admin') {
+        $aksesItems = [];
+        if ($user->can('userrole.view')) {
+            $aksesItems[] = ['label' => 'Kelola Role', 'icon' => 'shield', 'href' => $roleUrl, 'active' => $onRolePage];
+        }
+        if ($user->can('userpermission.view')) {
+            $aksesItems[] = ['label' => 'Kelola Permission', 'icon' => 'key', 'href' => $permUrl, 'active' => $onPermPage];
+        }
+        if ($aksesItems) {
+            $menu[] = ['label' => 'Akses & Hak', 'icon' => 'shield', 'items' => $aksesItems];
+        }
     }
 
     $isActive = function (array $item) {
@@ -301,8 +320,20 @@
                     $routeName  = request()->route()?->getName() ?? '';
                     $segments   = explode('.', $routeName);
                     $pageAction = end($segments);
-                    $entity     = ['bidan' => 'Bidan', 'kader' => 'Kader', 'ibu' => 'Ibu', 'orang-tua' => 'Ibu'][$segments[1] ?? ''] ?? null;
-                    $failVerb   = ['create' => 'Tambah', 'edit' => 'Edit'][$pageAction] ?? null;
+
+                    // Nama objek untuk judul popup gagal, sesuai wireframe
+                    $entity = [
+                        'bidan'         => 'Akun Bidan',
+                        'kader'         => 'Akun Kader',
+                        'ibu'           => 'Akun Ibu',
+                        'orang-tua'     => 'Akun Ibu',
+                        'data-ibu'      => 'Akun Ibu',
+                        'data-anak'     => 'Data Anak',
+                        'wilayah-kerja' => 'Wilayah Kerja',
+                        'posyandu'      => 'Wilayah Posyandu',
+                        'penugasan'     => 'Wilayah Penugasan',
+                    ][$segments[1] ?? ''] ?? null;
+                    $failVerb = ['create' => 'Tambah', 'edit' => 'Edit'][$pageAction] ?? null;
 
                     $popupSuccess = session('success') ?? session('status') ?? session('message');
                     $popupError   = session('error');
@@ -310,7 +341,7 @@
                     $popupType    = ($popupError || $popupInvalid) ? 'error' : ($popupSuccess ? 'success' : null);
 
                     $popupTitle = $popupType === 'error'
-                        ? (($failVerb && $entity) ? "{$failVerb} Akun {$entity} Gagal" : 'Proses Gagal')
+                        ? (($failVerb && $entity) ? "{$failVerb} {$entity} Gagal" : 'Proses Gagal')
                         : $popupSuccess;
                     $popupText = $popupType === 'error'
                         ? ($popupError ?: 'Periksa kembali data yang Anda masukkan.')
@@ -401,7 +432,7 @@
     </script>
 
     <script>
-        // Konfirmasi hapus: <form data-confirm-delete data-name="Nama">
+        // Konfirmasi hapus: <form data-confirm-delete data-name="Nama" [data-title] [data-text] [data-confirm-text]>
         // Konfirmasi aktif/nonaktif: <form data-confirm-toggle data-active="1|0" data-name="Nama">
         document.addEventListener('submit', function (e) {
             const form = e.target;
@@ -409,7 +440,7 @@
 
             if (form.hasAttribute('data-confirm-delete')) {
                 e.preventDefault();
-                                SikiaConfirm({
+                SikiaConfirm({
                     danger: true,
                     title: form.dataset.title || ('Apakah akan menghapus akun ' + (form.dataset.name || '') + '?'),
                     text: form.dataset.text || 'Data akun akan dihapus secara permanen dan tidak dapat dipulihkan. Lanjutkan?',

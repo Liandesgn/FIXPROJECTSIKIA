@@ -20,7 +20,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('profile', [ProfileController::class, 'show']);
     Route::put('profile', [ProfileController::class, 'update']);
 
-    Route::get('roles', [RoleController::class, 'index'])->middleware('permission:user.assign-role');
+   Route::get('roles', [RoleController::class, 'index'])->middleware('role:admin');
     Route::get('wilayah-kerja', [WilayahKerjaController::class, 'index'])->middleware('permission:user.view');
 
     Route::prefix('users')->group(function () {

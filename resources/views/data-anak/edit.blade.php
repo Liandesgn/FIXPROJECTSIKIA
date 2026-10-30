@@ -23,7 +23,11 @@
         <form method="POST" action="{{ route('admin.data-anak.update', $anak) }}" class="space-y-6 p-6 sm:p-8">
             @csrf
             @method('PUT')
-            @include('data-anak.partials.form')
+            @include('data-anak.partials.form', [
+                'anak'      => $anak,
+                'ibus'      => $ibus ?? collect(),
+                'cancelUrl' => route('admin.data-anak.index'),
+            ])
         </form>
     </div>
 </div>

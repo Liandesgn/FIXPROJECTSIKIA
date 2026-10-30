@@ -45,10 +45,8 @@
                     <tr>
                         <th class="whitespace-nowrap bg-[#FCE7F0] px-3 py-3 lg:px-4">No</th>
                         <th class="whitespace-nowrap bg-[#FCE7F0] px-3 py-3 lg:px-4">Nama Wilayah</th>
-                        <th class="hidden whitespace-nowrap bg-[#FCE7F0] px-4 py-3 md:table-cell">Kelurahan/Desa</th>
-                        <th class="hidden whitespace-nowrap bg-[#FCE7F0] px-4 py-3 md:table-cell">Kecamatan</th>
-                        <th class="hidden whitespace-nowrap bg-[#FCE7F0] px-4 py-3 lg:table-cell">Posyandu</th>
-                        <th class="hidden whitespace-nowrap bg-[#FCE7F0] px-4 py-3 lg:table-cell">Bidan</th>
+                        <th class="hidden whitespace-nowrap bg-[#FCE7F0] px-4 py-3 md:table-cell">Posyandu</th>
+                        <th class="hidden whitespace-nowrap bg-[#FCE7F0] px-4 py-3 md:table-cell">Bidan</th>
                         <th class="whitespace-nowrap bg-[#FCE7F0] px-3 py-3 text-center lg:px-4">Aksi</th>
                     </tr>
                 </thead>
@@ -57,14 +55,12 @@
                         <tr class="transition hover:bg-[#FCE7F0]/50">
                             <td class="px-3 py-3.5 text-sm font-semibold text-slate-700 lg:px-4">{{ $loop->iteration }}</td>
                             <td class="px-3 py-3.5 lg:px-4">
-                                <p class="text-sm font-bold text-[#542D3D] lg:whitespace-nowrap">{{ $wilayah->nama_wilayah }}</p>
-                                <p class="text-xs font-medium text-slate-700 md:hidden">Desa {{ $wilayah->desa }}, Kec. {{ $wilayah->kecamatan }}</p>
-                                <p class="text-xs font-medium text-slate-700 lg:hidden">{{ $wilayah->posyandu_count }} posyandu · Bidan: {{ $wilayah->bidan?->name ?? '-' }}</p>
+                                <p class="text-sm font-bold text-[#542D3D]">{{ $wilayah->nama_wilayah }}</p>
+                                <p class="mt-0.5 text-xs font-medium text-slate-700">Desa {{ $wilayah->desa }}, Kec. {{ $wilayah->kecamatan }}</p>
+                                <p class="mt-0.5 text-xs font-medium text-slate-700 md:hidden">{{ $wilayah->posyandu_count }} posyandu · Bidan: {{ $wilayah->bidan?->name ?? '-' }}</p>
                             </td>
-                            <td class="hidden whitespace-nowrap px-4 py-3.5 text-sm text-slate-800 md:table-cell">{{ $wilayah->desa }}</td>
-                            <td class="hidden whitespace-nowrap px-4 py-3.5 text-sm text-slate-800 md:table-cell">{{ $wilayah->kecamatan }}</td>
-                            <td class="hidden px-4 py-3.5 text-sm font-semibold text-slate-800 lg:table-cell">{{ $wilayah->posyandu_count }}</td>
-                            <td class="hidden whitespace-nowrap px-4 py-3.5 text-sm text-slate-800 lg:table-cell">{{ $wilayah->bidan?->name ?? '-' }}</td>
+                            <td class="hidden px-4 py-3.5 text-sm font-semibold text-slate-800 md:table-cell">{{ $wilayah->posyandu_count }}</td>
+                            <td class="hidden whitespace-nowrap px-4 py-3.5 text-sm text-slate-800 md:table-cell">{{ $wilayah->bidan?->name ?? '-' }}</td>
                             <td class="whitespace-nowrap px-3 py-3.5 lg:px-4">
                                 <div class="flex flex-nowrap items-center justify-center gap-2">
                                     @can('wilayah.update')
@@ -98,7 +94,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-5 py-12 text-center">
+                            <td colspan="5" class="px-5 py-12 text-center">
                                 <p class="font-bold text-[#542D3D]">Data wilayah tidak ditemukan.</p>
                             </td>
                         </tr>
