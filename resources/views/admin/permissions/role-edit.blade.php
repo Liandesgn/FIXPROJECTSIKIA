@@ -13,7 +13,7 @@
 
         <div class="grid gap-x-6 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
             @foreach ($permissions as $p)
-                @php $wajib = $role->name === 'admin' && str_starts_with($p->name, 'user.') && $p->name !== 'user.assign-role'; @endphp
+                @php $wajib = $role->name === 'admin' && str_starts_with($p->name, 'user.'); @endphp
                 <label class="flex items-center gap-2 text-sm text-slate-700">
                     <input type="checkbox" name="permissions[]" value="{{ $p->name }}"
                            @checked($wajib || in_array($p->name, $selected, true))

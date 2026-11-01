@@ -74,7 +74,6 @@
                         <th class="bg-[#FCE7F0] px-4 py-3">Wilayah</th>
                         <th class="bg-[#FCE7F0] px-4 py-3">Bidan Penanggung Jawab</th>
                         <th class="bg-[#FCE7F0] px-4 py-3">Kader Wilayah</th>
-                        <th class="bg-[#FCE7F0] px-4 py-3 text-center">Aksi</th>
                     </tr>
                 </thead>
 
@@ -110,53 +109,11 @@
                                     -
                                 @endforelse
                             </td>
-
-                            {{-- Actions --}}
-                            <td class="px-4 py-3.5">
-                                <div class="flex items-center justify-center gap-2">
-
-                                    @can('wilayah.update')
-                                        <a
-                                            href="{{ route('admin.penugasan.edit', $w) }}"
-                                            class="inline-flex h-8 items-center rounded-lg bg-[#C9517E] px-3 text-xs font-bold text-white hover:bg-[#B7436D]"
-                                        >
-                                            Edit
-                                        </a>
-                                    @endcan
-
-                                    @if ($bidanMap->has($w->id) || $kaders->isNotEmpty())
-
-                                        @can('wilayah.delete')
-                                            <form
-                                                method="POST"
-                                                action="{{ route('admin.penugasan.destroy', $w) }}"
-                                                class="m-0"
-                                                data-confirm-delete
-                                                data-name="{{ $w->nama_wilayah }}"
-                                                data-title="Apakah akan menghapus penugasan {{ $w->nama_wilayah }}?"
-                                                data-text="Bidan dan kader akan dilepas dari wilayah ini. Akun mereka tidak dihapus. Lanjutkan?"
-                                                data-confirm-text="Ya, Hapus"
-                                            >
-                                                @csrf
-                                                @method('DELETE')
-
-                                                <button
-                                                    type="submit"
-                                                    class="inline-flex h-8 items-center rounded-lg bg-red-600 px-3 text-xs font-bold text-white hover:bg-red-700"
-                                                >
-                                                    Hapus
-                                                </button>
-                                            </form>
-                                        @endcan
-
-                                    @endif
-                                </div>
-                            </td>
                         </tr>
 
                     @empty
                         <tr>
-                            <td colspan="5" class="px-4 py-8 text-center text-sm text-slate-500">
+                            <td colspan="4" class="px-4 py-8 text-center text-sm text-slate-500">
                                 Belum ada data wilayah penugasan.
                             </td>
                         </tr>

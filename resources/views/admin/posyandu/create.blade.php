@@ -56,35 +56,6 @@
                     @enderror
                 </div>
 
-                <div class="mb-3">
-                    <label for="kader_id" class="form-label fw-semibold">
-                        Kader
-                    </label>
-                    <select
-                        name="kader_id"
-                        id="kader_id"
-                        class="form-select @error('kader_id') is-invalid @enderror"
-                    >
-                        <option value="">-- Pilih Kader (Opsional) --</option>
-
-                        @foreach ($kaders as $kader)
-                            <option
-                                value="{{ $kader->id }}"
-                                data-wilayah="{{ $kader->wilayah_kerja_id }}"
-                                @selected(old('kader_id') == $kader->id)
-                            >
-                                {{ $kader->user?->name ?? 'Kader #' . $kader->id }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('kader_id')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                    <small class="text-muted">
-                        Pilih kader yang bertugas di wilayah Posyandu tersebut.
-                    </small>
-                </div>
-
                 <div class="mb-4">
                     <label for="alamat" class="form-label fw-semibold">
                         Alamat Posyandu <span class="text-danger">*</span>
@@ -118,38 +89,4 @@
         </div>
     </div>
 </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const wilayahSelect = document.getElementById('wilayah_kerja_id');
-    const kaderSelect = document.getElementById('kader_id');
-
-    function filterKader() {
-        const wilayahId = wilayahSelect.value;
-
-        Array.from(kaderSelect.options).forEach(function (option) {
-            if (!option.value) {
-                option.hidden = false;
-                return;
-            }
-
-            option.hidden = wilayahId !== ''
-                && option.dataset.wilayah !== wilayahId;
-        });
-
-        const selectedOption = kaderSelect.selectedOptions[0];
-
-        if (
-            selectedOption
-            && selectedOption.value
-            && selectedOption.hidden
-        ) {
-            kaderSelect.value = '';
-        }
-    }
-
-    wilayahSelect.addEventListener('change', filterKader);
-    filterKader();
-});
-</script>
 @endsection

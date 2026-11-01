@@ -33,6 +33,7 @@
             {!! $baris('Tempat, Tanggal Lahir', $ibu->ttl()) !!}
             {!! $baris('Nomor HP', $ibu->user?->phone) !!}
             {!! $baris('Wilayah', $ibu->wilayahKerja?->nama_wilayah) !!}
+           
         </div>
 
         <div class="rounded-2xl border border-[#F1D5E0] bg-white p-5 shadow-sm">

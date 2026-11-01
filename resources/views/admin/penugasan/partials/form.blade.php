@@ -3,29 +3,24 @@
     $labelClass = 'mb-1 block text-sm font-semibold text-[#542D3D]';
     $errorClass = 'mt-1 text-xs font-medium text-red-600';
 
-    $edit          = isset($wilayah);
-    $bidanDipilih  = old('bidan_id', $bidanSekarang ?? '');
-    $kaderDipilih  = old('kader_ids', $kaderSekarang ?? []);
-    $kaderTerkunci = $kaderSekarang ?? [];
+    $bidanDipilih = old('bidan_id', '');
+    $kaderDipilih = (array) old('kader_ids', []);
+    $adaOld       = old('wilayah_kerja_id') !== null;
 @endphp
 
 <div>
-    <label class="{{ $labelClass }}">Wilayah <span class="text-red-600">*</span></label>
-    @if ($edit)
-        <p class="rounded-xl border-2 border-[#F1D5E0] bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-700">{{ $wilayah->nama_wilayah }}</p>
-    @else
-        <select name="wilayah_kerja_id" class="{{ $inputClass }}">
-            <option value="">-- Pilih Wilayah --</option>
-            @foreach ($wilayahs->groupBy('kecamatan') as $kecamatan => $desas)
-                <optgroup label="Kec. {{ $kecamatan ?: '-' }}">
-                    @foreach ($desas as $w)
-                        <option value="{{ $w->id }}" @selected((string) old('wilayah_kerja_id') === (string) $w->id)>Desa {{ $w->desa }}</option>
-                    @endforeach
-                </optgroup>
-            @endforeach
-        </select>
-        @error('wilayah_kerja_id') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
-    @endif
+    <label for="wilayah_kerja_id" class="{{ $labelClass }}">Wilayah <span class="text-red-600">*</span></label>
+    <select id="wilayah_kerja_id" name="wilayah_kerja_id" class="{{ $inputClass }}">
+        <option value="">-- Pilih Wilayah --</option>
+        @foreach ($wilayahs->groupBy('kecamatan') as $kecamatan => $desas)
+            <optgroup label="Kec. {{ $kecamatan ?: '-' }}">
+                @foreach ($desas as $w)
+                    <option value="{{ $w->id }}" @selected((string) old('wilayah_kerja_id') === (string) $w->id)>Desa {{ $w->desa }}</option>
+                @endforeach
+            </optgroup>
+        @endforeach
+    </select>
+    @error('wilayah_kerja_id') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
 </div>
 
 <div>
@@ -33,12 +28,13 @@
     <select id="bidan_id" name="bidan_id" class="{{ $inputClass }}">
         <option value="">-- Pilih Bidan --</option>
         @foreach ($bidans as $b)
-            <option value="{{ $b->id }}" @selected((string) $bidanDipilih === (string) $b->id)>
+            <option value="{{ $b->id }}"
+                    data-wilayah="{{ $b->bidan?->wilayah_kerja_id }}"
+                    @selected((string) $bidanDipilih === (string) $b->id)>
                 {{ $b->name }} (saat ini: {{ $b->bidan?->wilayahKerja?->desa ?? '-' }})
             </option>
         @endforeach
     </select>
-    <p class="mt-1 text-xs text-slate-500">Jika wilayah sudah punya bidan, kedua bidan saling bertukar wilayah.</p>
     @error('bidan_id') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
 </div>
 
@@ -46,20 +42,17 @@
     <p class="{{ $labelClass }}">Kader Wilayah</p>
     <div class="max-h-64 divide-y divide-[#F7E6ED] overflow-y-auto rounded-xl border-2 border-[#F1D5E0]">
         @foreach ($kaders as $k)
-            @php $terkunci = in_array($k->id, $kaderTerkunci, true); @endphp
-            <label class="flex items-center gap-3 px-3 py-2 text-sm text-slate-700">
+            <label class="kader-row flex items-center gap-3 px-3 py-2 text-sm text-slate-700">
                 <input type="checkbox" name="kader_ids[]" value="{{ $k->id }}"
-                       @checked($terkunci || in_array($k->id, (array) $kaderDipilih))
-                       @disabled($terkunci)
-                       class="h-4 w-4 rounded border-slate-300 text-[#C9517E] focus:ring-[#C9517E]">
+                       data-wilayah="{{ $k->kader?->wilayah_kerja_id }}"
+                       @checked(in_array($k->id, $kaderDipilih))
+                       class="kader-cb h-4 w-4 rounded border-slate-300 text-[#C9517E] focus:ring-[#C9517E]">
                 <span class="font-semibold text-[#542D3D]">{{ $k->name }}</span>
-                <span class="text-xs text-slate-500">
-                    {{ $terkunci ? '(sudah bertugas di wilayah ini)' : '(saat ini: '.($k->kader?->wilayahKerja?->desa ?? '-').')' }}
-                </span>
+                <span class="text-xs text-slate-500">(saat ini: {{ $k->kader?->wilayahKerja?->desa ?? '-' }})</span>
             </label>
         @endforeach
     </div>
-    <p class="mt-1 text-xs text-slate-500">Centang kader untuk dipindahkan ke wilayah ini. Kader yang sudah bertugas di sini dipindah lewat penugasan wilayah lain.</p>
+    @error('kader_ids') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
     @error('kader_ids.*') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
 </div>
 
@@ -69,3 +62,49 @@
     <button type="submit"
             class="rounded-xl bg-[#C9517E] px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#C9517E]/25 hover:bg-[#B7436D]">Simpan</button>
 </div>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const peta = @json($penugasanMap ?? []);
+    const wilayah = document.getElementById('wilayah_kerja_id');
+    const bidan = document.getElementById('bidan_id');
+    const kaderCb = document.querySelectorAll('.kader-cb');
+
+    // Yang sudah bertugas di wilayah lain tidak boleh dipilih (abu-abu)
+    function kunci() {
+        const w = wilayah.value;
+
+        Array.from(bidan.options).forEach(function (opt) {
+            const asal = opt.dataset.wilayah;
+            opt.disabled = !!(opt.value && asal && asal !== w);
+        });
+
+        kaderCb.forEach(function (cb) {
+            const asal = cb.dataset.wilayah;
+            const terkunci = !!(asal && asal !== w);
+            cb.disabled = terkunci;
+            if (terkunci) cb.checked = false;
+            cb.closest('.kader-row').classList.toggle('opacity-50', terkunci);
+        });
+    }
+
+    // Isi bidan & kader yang sudah bertugas di wilayah yang dipilih
+    function terapkan() {
+        const p = peta[wilayah.value];
+        bidan.value = (p && p.bidan) ? String(p.bidan) : '';
+        kaderCb.forEach(function (cb) {
+            cb.checked = !!(p && p.kader.indexOf(Number(cb.value)) !== -1);
+        });
+    }
+
+    wilayah.addEventListener('change', function () {
+        kunci();
+        terapkan();
+    });
+
+    kunci();
+    if (wilayah.value && !@json($adaOld)) terapkan();
+});
+</script>
+@endpush

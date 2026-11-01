@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Kader;
 
 use App\Http\Controllers\Controller;
+use App\Services\Dashboard\DashboardKader;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -10,16 +11,16 @@ class DashboardController extends Controller
 {
     public function index(Request $request): View
     {
-        $user = $request->user()->load('wilayahKerja');
+        $dashboard = new DashboardKader($request->user());
 
-        $stats = [
-            'posyandu' => 0,
-            'pengukuran' => 0,
-        ];
+        abort_unless($dashboard->cekRole(), 403, 'Akses ditolak.');
 
         return view('kader.dashboard', [
-            'user' => $user,
-            'stats' => $stats,
+            'user' => $request->user(),
+            'wilayah' => $dashboard->wilayah(),
+            'ringkasan' => $dashboard->ambilRingkasan(),
+            'jadwal' => $dashboard->jadwal(),
+            'notifikasi' => $dashboard->ambilNotifikasiTerbaru(),
         ]);
     }
 }

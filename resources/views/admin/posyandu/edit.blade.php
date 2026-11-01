@@ -57,7 +57,6 @@
                         @foreach ($wilayahs as $wilayah)
                             <option
                                 value="{{ $wilayah->id }}"
-                                data-wilayah="{{ $wilayah->id }}"
                                 @selected(
                                     old('wilayah_kerja_id', $posyandu->wilayah_kerja_id)
                                     == $wilayah->id
@@ -69,38 +68,6 @@
                     </select>
 
                     @error('wilayah_kerja_id')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                {{-- Kader --}}
-                <div class="mb-3">
-                    <label for="kader_id" class="form-label fw-semibold">
-                        Kader
-                    </label>
-
-                    <select
-                        name="kader_id"
-                        id="kader_id"
-                        class="form-select @error('kader_id') is-invalid @enderror"
-                    >
-                        <option value="">-- Pilih Kader (Opsional) --</option>
-
-                        @foreach ($kaders as $kader)
-                            <option
-                                value="{{ $kader->id }}"
-                                data-wilayah="{{ $kader->wilayah_kerja_id }}"
-                                @selected(
-                                    (string) old('kader_id', $posyandu->kader_id)
-                                    === (string) $kader->id
-                                )
-                            >
-                                {{ $kader->user?->name ?? 'Kader #' . $kader->id }}
-                            </option>
-                        @endforeach
-                    </select>
-
-                    @error('kader_id')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
@@ -142,35 +109,4 @@
         </div>
     </div>
 </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const wilayahSelect = document.getElementById('wilayah_kerja_id');
-    const kaderSelect = document.getElementById('kader_id');
-
-    function filterKader() {
-        const wilayahId = wilayahSelect.value;
-
-        Array.from(kaderSelect.options).forEach(function (option) {
-            if (!option.value) {
-                option.hidden = false;
-                return;
-            }
-
-            option.hidden =
-                wilayahId !== '' &&
-                option.dataset.wilayah !== wilayahId;
-        });
-
-        const selectedOption = kaderSelect.selectedOptions[0];
-
-        if (selectedOption && selectedOption.hidden) {
-            kaderSelect.value = '';
-        }
-    }
-
-    wilayahSelect.addEventListener('change', filterKader);
-    filterKader();
-});
-</script>
 @endsection

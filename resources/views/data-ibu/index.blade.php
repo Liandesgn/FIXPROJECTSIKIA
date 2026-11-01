@@ -6,12 +6,30 @@
 @php
     $inputClass = 'rounded-xl border-2 border-[#C9517E]/60 bg-white px-3 py-2.5 text-sm font-medium text-gray-900 outline-none focus:border-[#C9517E] focus:ring-4 focus:ring-[#E99AB7]/40';
 @endphp
-<div class="mx-auto w-full max-w-[96rem] space-y-5">
+        <div class="mx-auto w-full max-w-[96rem] space-y-5">
 
-    <div>
-        <h1 class="text-2xl font-bold tracking-tight text-[#542D3D] sm:text-3xl">Data Ibu</h1>
-        <p class="mt-1 text-sm font-medium text-slate-700">Data Master / Data Ibu</p>
-    </div>
+          
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight text-[#542D3D] sm:text-3xl">
+                    Data Ibu
+                </h1>
+                <p class="mt-1 text-sm font-medium text-slate-700">
+                    Data Master / Data Ibu
+                </p>
+            </div>
+
+            @if ($base === 'admin')
+                @can('user.create')
+                    <a href="{{ route('admin.ibu.create') }}"
+                    class="inline-flex items-center gap-2 rounded-xl bg-[#C9517E] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#B7436D]">
+                        <span>+</span>
+                        Registrasi Ibu
+                    </a>
+                @endcan
+            @endif
+        </div>
+
 
     <div class="overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm">
 
@@ -68,7 +86,9 @@
                             <td class="px-4 py-3.5 text-sm font-bold text-[#542D3D]">{{ $ibu->user?->name ?? '-' }}</td>
                             <td class="px-4 py-3.5 text-sm text-slate-800">{{ $ibu->wilayahKerja?->desa ?? '-' }}</td>
                             <td class="px-4 py-3.5">@include('data-ibu.partials.badge', ['status' => $ibu->status_kehamilan])</td>
-                            <td class="px-4 py-3.5 text-sm text-slate-800">{{ $ibu->usia_kehamilan ? $ibu->usia_kehamilan.' mgg' : '-' }}</td>
+                           <td class="px-4 py-3.5 text-sm text-slate-800">
+                        {{ $ibu->usia_kehamilan_sekarang !== null ? $ibu->usia_kehamilan_sekarang.' minggu' : '-' }}
+                    </td>
                             <td class="px-4 py-3.5 text-sm text-slate-800">{{ $ibu->hpl?->format('d/m/Y') ?? '-' }}</td>
 
                             {{-- UBAH 2: tombol Detail/Edit disembunyikan untuk Kader --}}

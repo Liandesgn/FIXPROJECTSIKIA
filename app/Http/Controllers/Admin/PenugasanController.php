@@ -44,70 +44,37 @@ class PenugasanController extends Controller
 
         return redirect()
             ->route('admin.penugasan.index')
-            ->with('success', 'Penugasan bidan dan kader berhasil disimpan.');
+            ->with('success', 'Penugasan bidan penanggung jawab berhasil disimpan. Penugasan kader wilayah berhasil disimpan.');
     }
-
-    public function edit(WilayahKerja $wilayah): View
-    {
-        return view('admin.penugasan.edit', $this->formData() + [
-            'wilayah' => $wilayah,
-            'bidanSekarang' => Bidan::where('wilayah_kerja_id', $wilayah->id)->value('user_id'),
-            'kaderSekarang' => Kader::where('wilayah_kerja_id', $wilayah->id)->pluck('user_id')->all(),
-        ]);
-    }
-
-    public function update(PenugasanRequest $request, WilayahKerja $wilayah): RedirectResponse
-    {
-        $this->simpan($wilayah, $request->validated());
-
-        return redirect()
-            ->route('admin.penugasan.index')
-            ->with('success', 'Penugasan bidan dan kader berhasil diperbarui.');
-    }
-
-        public function destroy(WilayahKerja $wilayah): RedirectResponse
-    {
-        $userIds = Bidan::where('wilayah_kerja_id', $wilayah->id)->pluck('user_id')
-            ->merge(Kader::where('wilayah_kerja_id', $wilayah->id)->pluck('user_id'));
-
-        if ($userIds->isEmpty()) {
-            return back()->with('error', 'Wilayah ini belum memiliki penugasan.');
-        }
-
-        DB::transaction(function () use ($userIds) {
-            User::whereIn('id', $userIds)->get()->each->lepasWilayah();
-        });
-
-        return redirect()
-            ->route('admin.penugasan.index')
-            ->with('success', 'Penugasan wilayah berhasil dihapus.');
-    }   
-
 
     /**
-     * Satu bidan per wilayah, banyak kader per wilayah.
-     * Bidan baru yang dipilih menukar posisi dengan bidan lama (kalau ada),
-     * supaya tidak ada wilayah dengan dua bidan dan tidak ada bidan tanpa wilayah.
+     * Penugasan diperbarui sesuai pilihan terbaru:
+     * - Bidan: bidan terpilih ditugaskan ke wilayah ini, bidan lama di wilayah ini dilepas.
+     * - Kader: yang dicentang ditugaskan, yang tidak dicentang dilepas.
      */
     private function simpan(WilayahKerja $wilayah, array $data): void
     {
         DB::transaction(function () use ($wilayah, $data) {
+            // Bidan
             $bidanBaru = User::findOrFail($data['bidan_id']);
             $bidanLama = Bidan::with('user')->where('wilayah_kerja_id', $wilayah->id)->first();
 
-            if ($bidanLama && $bidanLama->user_id !== $bidanBaru->id) {
-                $wilayahAsalBaru = $bidanBaru->bidan?->wilayah_kerja_id;
-
-                if ($wilayahAsalBaru) {
-                    $bidanLama->user->assignWilayah($wilayahAsalBaru);
-                }
+            if ($bidanLama && (int) $bidanLama->user_id !== (int) $bidanBaru->id) {
+                $bidanLama->user->lepasWilayah();
             }
 
             $bidanBaru->assignWilayah($wilayah->id);
 
-            foreach ($data['kader_ids'] ?? [] as $kaderId) {
-                User::findOrFail($kaderId)->assignWilayah($wilayah->id);
-            }
+            // Kader
+            $kaderBaru = collect($data['kader_ids'] ?? [])->map(fn ($id) => (int) $id)->unique()->values();
+            $kaderLama = Kader::where('wilayah_kerja_id', $wilayah->id)
+                ->pluck('user_id')->map(fn ($id) => (int) $id);
+
+            User::whereIn('id', $kaderLama->diff($kaderBaru)->values())->get()
+                ->each->lepasWilayah();
+
+            User::whereIn('id', $kaderBaru->diff($kaderLama)->values())->get()
+                ->each->assignWilayah($wilayah->id);
         });
     }
 
@@ -116,10 +83,25 @@ class PenugasanController extends Controller
      */
     private function formData(): array
     {
+        $wilayahs = WilayahKerja::query()->orderBy('kecamatan')->orderBy('desa')->get();
+
+        // Penugasan tiap wilayah, agar bidan & kader lama langsung terpilih di form
+        $bidanPer = Bidan::whereNotNull('wilayah_kerja_id')->pluck('user_id', 'wilayah_kerja_id');
+        $kaderPer = Kader::whereNotNull('wilayah_kerja_id')->get()->groupBy('wilayah_kerja_id');
+
+        $peta = [];
+        foreach ($wilayahs as $w) {
+            $peta[$w->id] = [
+                'bidan' => isset($bidanPer[$w->id]) ? (int) $bidanPer[$w->id] : null,
+                'kader' => ($kaderPer[$w->id] ?? collect())->pluck('user_id')->map(fn ($v) => (int) $v)->values()->all(),
+            ];
+        }
+
         return [
-            'wilayahs' => WilayahKerja::query()->orderBy('kecamatan')->orderBy('desa')->get(),
+            'wilayahs' => $wilayahs,
             'bidans' => User::role(RoleEnum::Bidan->value)->with('bidan.wilayahKerja')->orderBy('name')->get(),
             'kaders' => User::role(RoleEnum::Kader->value)->with('kader.wilayahKerja')->orderBy('name')->get(),
+            'penugasanMap' => $peta,
         ];
     }
 }

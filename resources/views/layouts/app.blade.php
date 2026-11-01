@@ -124,8 +124,10 @@
             ]],
             ['label' => 'Laporan dan Rekapitulasi', 'icon' => 'report', 'href' => $to('admin.laporan.index', 'laporan')],
             // Akses & Hak ditaruh paling bawah
+                        // Akses & Hak ditaruh paling bawah
             ['label' => 'Akses & Hak', 'icon' => 'shield', 'items' => [
-                ['label' => 'Kelola Role & Permission', 'icon' => 'key',    'href' => $to('admin.permissions.index', 'kelola-permission')],
+                ['label' => 'Kelola Role',       'icon' => 'shield', 'href' => $to('admin.roles.index', 'kelola-role')],
+                ['label' => 'Kelola Permission', 'icon' => 'key',    'href' => $to('admin.permissions.index', 'kelola-permission')],
             ]],
         ];
     } elseif ($roleKey === 'bidan') {
@@ -178,10 +180,10 @@
         ]];
     }
 
-        // Jika non-admin punya permission userrole.view, tampilkan Akses & Hak
-    if ($roleKey !== 'admin' && $user->can('userrole.view')) {
+            if ($roleKey !== 'admin' && $user->can('userrole.view')) {
         $menu[] = ['label' => 'Akses & Hak', 'icon' => 'shield', 'items' => [
-            ['label' => 'Kelola Role & Permission', 'icon' => 'key', 'href' => $to('admin.permissions.index', 'kelola-permission')],
+            ['label' => 'Kelola Role',       'icon' => 'shield', 'href' => $to('admin.roles.index', 'role')],
+            ['label' => 'Kelola Permission', 'icon' => 'key',    'href' => $to('admin.permissions.index', 'permission')],
         ]];
     }
 

@@ -38,14 +38,11 @@ class PosyanduController extends Controller
     }
 
     public function create(): View
-{
-    return view('admin.posyandu.create', [
-        'wilayahs' => $this->wilayahs(),
-        'kaders' => Kader::with('user')
-            ->orderBy('id')
-            ->get(),
-    ]);
-}
+    {
+        return view('admin.posyandu.create', [
+            'wilayahs' => $this->wilayahs(),
+        ]);
+    }
 
     public function store(PosyanduRequest $request): RedirectResponse
     {
@@ -57,15 +54,12 @@ class PosyanduController extends Controller
     }
 
     public function edit(Posyandu $posyandu): View
-{
-    return view('admin.posyandu.edit', [
-        'posyandu' => $posyandu,
-        'wilayahs' => $this->wilayahs(),
-        'kaders' => Kader::with('user')
-            ->orderBy('id')
-            ->get(),
-    ]);
-}
+    {
+        return view('admin.posyandu.edit', [
+            'posyandu' => $posyandu,
+            'wilayahs' => $this->wilayahs(),
+        ]);
+    }
 
     public function update(PosyanduRequest $request, Posyandu $posyandu): RedirectResponse
     {
