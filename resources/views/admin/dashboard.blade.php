@@ -39,6 +39,52 @@
             @endforeach
         </div>
 
+                {{-- Jadwal Posyandu Terdekat --}}
+        <div class="overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm">
+            <div class="border-b border-[#F1D5E0] px-5 py-4">
+                <h3 class="font-bold text-[#542D3D]">Jadwal Posyandu Terdekat</h3>
+                <p class="mt-0.5 text-xs text-slate-600">
+                    Informasi kegiatan Posyandu yang akan datang.
+                </p>
+            </div>
+
+            <div class="divide-y divide-[#F7E6ED]">
+                @forelse ($jadwalTerdekat as $jadwal)
+                    <div class="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+                        <div>
+                            <p class="font-semibold text-[#542D3D]">
+                                Kegiatan Posyandu
+                            </p>
+                            <p class="mt-1 text-sm text-slate-600">
+                                Tanggal:
+                                {{ \Carbon\Carbon::parse($jadwal->tanggal)->translatedFormat('d F Y') }}
+                            </p>
+                            <p class="text-sm text-slate-600">
+                                Waktu:
+                                {{ $jadwal->waktu }}
+                            </p>
+                            <p class="text-sm text-slate-600">
+                                Lokasi:
+                                {{ $jadwal->lokasi ?? '-' }}
+                            </p>
+                        </div>
+                        <span class="rounded-full bg-[#FCE7F0] px-3 py-1 text-xs font-semibold text-[#C9517E]">
+                            Akan datang
+                        </span>
+                    </div>
+                @empty
+                    <div class="px-5 py-10 text-center">
+                        <p class="font-semibold text-[#542D3D]">
+                            Belum ada jadwal Posyandu.
+                        </p>
+                        <p class="mt-1 text-sm text-slate-500">
+                            Jadwal Posyandu yang akan datang akan ditampilkan di sini.
+                        </p>
+                    </div>
+                @endforelse
+            </div>
+        </div>
+
         {{-- User yang baru dibuatkan akun --}}
         <div class="overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm">
             <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[#F1D5E0] px-5 py-4">

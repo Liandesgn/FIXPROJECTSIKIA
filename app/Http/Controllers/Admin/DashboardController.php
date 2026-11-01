@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\RoleEnum;
 use App\Enums\StatusKehamilanEnum;
 use App\Http\Controllers\Controller;
+use App\Models\KegiatanPosyandu;
+use App\Models\Anak;
 use App\Models\Ibu;
 use App\Models\User;
 use App\Models\WilayahKerja;
@@ -18,9 +20,9 @@ class DashboardController extends Controller
             'bidan' => User::role(RoleEnum::Bidan->value)->count(),
             'kader' => User::role(RoleEnum::Kader->value)->count(),
             'ibu_hamil' => Ibu::where('status_kehamilan', StatusKehamilanEnum::Hamil->value)->count(),
-            'anak' => 0,
+            'anak' => Anak::count(),
             'wilayah' => WilayahKerja::count(),
-            'jadwal' => 0,
+            'jadwal' => KegiatanPosyandu::whereDate('tanggal', '>=', today())->count(),
         ];
 
         $latestUsers = User::with(['roles', 'wilayahKerja', 'ibu.wilayahKerja'])
@@ -28,6 +30,15 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
-        return view('admin.dashboard', compact('stats', 'latestUsers'));
+        $jadwalTerdekat = KegiatanPosyandu::with('posyandu')
+        ->whereDate('tanggal', '>=', today())
+        ->orderBy('tanggal')
+        ->orderBy('waktu')
+        ->take(3)
+        ->get();
+
+        return view('admin.dashboard', compact('stats', 'latestUsers', 'jadwalTerdekat'));
     }
+
+
 }

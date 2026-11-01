@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\LaporanController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\DataPosyanduController;
 use App\Http\Controllers\DataIbuController;
@@ -67,7 +68,12 @@ Route::middleware('auth')->group(function () {
         ->group(function () {
             Route::get('/', [AdminDashboardController::class, 'index'])
                 ->name('dashboard');
+
+    Route::get('/laporan', [LaporanController::class, 'index'])
+    ->name('laporan.index');
         });
+
+        
 
     // =========================
     // KELOLA DATA (PERMISSION)
