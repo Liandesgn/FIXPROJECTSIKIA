@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers\Bidan;
 
+use App\Enums\RoleEnum;
 use App\Http\Controllers\Controller;
-use App\Services\Dashboard\DashboardBidan;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -11,16 +12,18 @@ class DashboardController extends Controller
 {
     public function index(Request $request): View
     {
-        $dashboard = new DashboardBidan($request->user());
+        $user = $request->user()->load('wilayahKerja');
 
-        abort_unless($dashboard->cekRole(), 403, 'Akses ditolak.');
+        $stats = [
+            'orang_tua' => User::role(RoleEnum::Ibu->value)->count(),
+            'pemeriksaan' => 0,
+            'konsultasi' => 0,
+            'jadwal' => 0,
+        ];
 
         return view('bidan.dashboard', [
-            'user' => $request->user(),
-            'wilayah' => $dashboard->wilayah(),
-            'ringkasan' => $dashboard->ambilRingkasan(),
-            'jadwal' => $dashboard->jadwal(),
-            'notifikasi' => $dashboard->ambilNotifikasiTerbaru(),
+            'user' => $user,
+            'stats' => $stats,
         ]);
     }
 }
