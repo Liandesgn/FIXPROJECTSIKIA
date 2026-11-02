@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Bidan\LaporanController as BidanLaporanController;
+use App\Http\Controllers\Admin\LaporanPdfController;
 use App\Http\Controllers\Admin\LaporanController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\DataPosyanduController;
@@ -71,6 +73,9 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/laporan', [LaporanController::class, 'index'])
     ->name('laporan.index');
+
+    Route::get('/laporan/pdf', [LaporanPdfController::class, 'download'])
+    ->name('laporan.pdf');
         });
 
         
@@ -280,6 +285,9 @@ Route::middleware('auth')->group(function () {
         ->group(function () {
             Route::get('/', [BidanDashboardController::class, 'index'])
                 ->name('dashboard');
+
+            Route::get('laporan', [BidanLaporanController::class, 'index'])
+    ->name('laporan.index');
 
             // Data Ibu & Data Anak (cari + detail, hanya wilayahnya)
             Route::get('data-ibu', [DataIbuController::class, 'index'])->name('data-ibu.index');

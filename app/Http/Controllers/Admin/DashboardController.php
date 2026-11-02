@@ -30,14 +30,8 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
-        $jadwalTerdekat = KegiatanPosyandu::with('posyandu')
-        ->whereDate('tanggal', '>=', today())
-        ->orderBy('tanggal')
-        ->orderBy('waktu')
-        ->take(3)
-        ->get();
 
-        return view('admin.dashboard', compact('stats', 'latestUsers', 'jadwalTerdekat'));
+        return view('admin.dashboard', compact('stats', 'latestUsers'));
     }
 
 

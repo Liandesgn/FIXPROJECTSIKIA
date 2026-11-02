@@ -100,22 +100,18 @@ private static function kader(): array
         ['heading' => 'Utama', 'items' => [
             self::link('Dashboard', 'kader.dashboard'),
         ]],
-        ['heading' => 'Data', 'items' => [
-            self::link('Data Ibu', 'kader.data-ibu.index', 'kader.data-ibu.*'),
-            self::link('Data Anak', 'kader.data-anak.index', 'kader.data-anak.*'),
-        ]],
-        ['heading' => 'Posyandu', 'items' => [
+        ['heading' => 'Menu', 'items' => [
+            self::link('Data Ibu', 'bidan.data-ibu.index', 'bidan.data-ibu.*'),
+            self::link('Data Anak', 'bidan.data-anak.index', 'bidan.data-anak.*'),
             self::soon('Jadwal Posyandu', 'jadwal-posyandu'),
-            self::soon('Pendataan Kegiatan', 'pendataan-posyandu'),
-        ]],
-        ['heading' => 'Pengukuran', 'items' => [
-            self::soon('Input Hasil Pengukuran', 'input-pengukuran'),
+            self::soon('Pendataan Posyandu', 'pendataan-posyandu'),
         ]],
         ['heading' => 'Akun', 'items' => [
             self::link('Profil', 'profile.edit', 'profile.*'),
         ]],
     ];
 }
+
 
 private static function orangTua(): array
 {
@@ -126,14 +122,11 @@ private static function orangTua(): array
         ['heading' => 'Data', 'items' => [
             self::link('Data Ibu', 'ibu.data-ibu.index', 'ibu.data-ibu.*'),
             self::link('Data Anak', 'ibu.data-anak.index', 'ibu.data-anak.*'),
-        ]],
-        ['heading' => 'Layanan', 'items' => [
+            self::soon('Jadwal Pemeriksaan', 'jadwal-pemeriksaan'), 
             self::soon('Konsultasi Bidan', 'konsultasi'),
             self::soon('Edukasi Kesehatan', 'edukasi'),
-        ]],
-        ['heading' => 'Jadwal & Info', 'items' => [
-            self::soon('Jadwal Pemeriksaan', 'jadwal-pemeriksaan'),
-        ]],
+            self::soon('Jadwal', 'jadwal-posyandu'),
+       ]],
         ['heading' => 'Akun', 'items' => [
             self::link('Profil', 'profile.edit', 'profile.*'),
         ]],

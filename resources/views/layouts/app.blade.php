@@ -130,13 +130,17 @@
                 ['label' => 'Kelola Permission', 'icon' => 'key',    'href' => $to('admin.permissions.index', 'kelola-permission')],
             ]],
         ];
-    } elseif ($roleKey === 'bidan') {
+        } elseif ($roleKey === 'bidan') {
         $menu = [
-            ['label' => 'Dashboard', 'icon' => 'home',     'href' => $dashboardUrl, 'exact' => true],
-            ['label' => 'Data Ibu',  'icon' => 'user',     'href' => $to('bidan.data-ibu.index', 'data-ibu')],
-            ['label' => 'Data Anak', 'icon' => 'child',    'href' => $to('bidan.data-anak.index', 'data-anak')],
-            ['label' => 'Jadwal',    'icon' => 'calendar', 'href' => $to('bidan.jadwal.index', 'jadwal')],
-            ['label' => 'Laporan',   'icon' => 'report',   'href' => $to('bidan.laporan.index', 'laporan')],
+            ['label' => 'Dashboard',           'icon' => 'home',     'href' => $dashboardUrl, 'exact' => true],
+            ['label' => 'Data Ibu',            'icon' => 'user',     'href' => $to('bidan.data-ibu.index', 'data-ibu')],
+            ['label' => 'Data Anak',           'icon' => 'child',    'href' => $to('bidan.data-anak.index', 'data-anak')],
+            ['label' => 'Pemeriksaan Pasien',  'icon' => 'report',   'href' => $to('bidan.pemeriksaan-pasien.index', 'pemeriksaan-pasien')],
+            ['label' => 'Posyandu',            'icon' => 'building', 'href' => $to('bidan.posyandu.index', 'posyandu')],
+            ['label' => 'Riwayat Pemeriksaan', 'icon' => 'book',     'href' => $to('bidan.riwayat-pemeriksaan.index', 'riwayat-pemeriksaan')],
+            ['label' => 'Konsultasi',          'icon' => 'chat',     'href' => $to('bidan.konsultasi.index', 'konsultasi')],
+            ['label' => 'Jadwal',              'icon' => 'calendar', 'href' => $to('bidan.jadwal.index', 'jadwal')],
+            ['label' => 'Laporan Wilayah', 'icon' => 'report', 'href' => $to('bidan.laporan.index', 'laporan-wilayah')],
         ];
     } else {
         // Kader & Ibu: tetap memakai Navigation bawaan project
