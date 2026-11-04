@@ -9,7 +9,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'wilayah_kerja_id',
-    'kader_id',
     'nama_posyandu',
     'alamat',
 ])]
@@ -22,9 +21,12 @@ class Posyandu extends Model
         return $this->belongsTo(WilayahKerja::class);
     }
 
-    public function kader(): BelongsTo
+    /**
+     * Kader Posyandu = kader yang bertugas di wilayah Posyandu ini.
+     */
+    public function kaders(): HasMany
     {
-        return $this->belongsTo(Kader::class);
+        return $this->hasMany(Kader::class, 'wilayah_kerja_id', 'wilayah_kerja_id');
     }
 
     public function kegiatan(): HasMany

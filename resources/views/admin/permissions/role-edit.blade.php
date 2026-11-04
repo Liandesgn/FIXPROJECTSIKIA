@@ -19,10 +19,20 @@
         <p class="mt-3 text-sm font-medium text-slate-700">Akses &amp; Hak / Kelola Role / Edit</p>
     </div>
 
-    <div class="overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm">
-        <div class="border-b border-[#E99AB7]/60 bg-[#FCE7F0] px-6 py-5 sm:px-8">
-            <h1 class="text-xl font-bold text-[#542D3D] sm:text-2xl">Edit Hak Akses: {{ ucfirst($role->name) }}</h1>
-            <p class="mt-1 text-sm text-slate-700">Centang permission yang boleh dipakai role ini.</p>
+        <div class="grid gap-x-6 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
+            @foreach ($permissions as $p)
+                @php $wajib = $role->name === 'admin' && str_starts_with($p->name, 'user.'); @endphp
+                <label class="flex items-center gap-2 text-sm text-slate-700">
+                    <input type="checkbox" name="permissions[]" value="{{ $p->name }}"
+                           @checked($wajib || in_array($p->name, $selected, true))
+                           @if ($wajib) onclick="return false" @endif
+                           class="h-4 w-4 rounded border-slate-300 text-[#C9517E] focus:ring-[#C9517E]">
+                    {{ $p->name }}
+                    @if ($wajib)
+                        <span class="text-xs text-slate-400">(wajib)</span>
+                    @endif
+                </label>
+            @endforeach
         </div>
 
         <form method="POST" action="{{ route('admin.permissions.role.update', $role) }}" class="space-y-6 p-6 sm:p-8">

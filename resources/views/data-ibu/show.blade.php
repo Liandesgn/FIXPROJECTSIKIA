@@ -29,15 +29,14 @@
     </div>
 
     <div class="grid gap-5 md:grid-cols-3">
-        <div class="overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm md:col-span-2">
-            <h2 class="border-b border-[#E99AB7]/60 bg-[#FCE7F0] px-5 py-3 text-sm font-bold text-[#542D3D]">Identitas Ibu</h2>
-            <div class="px-5 py-2">
-                {!! $baris('NIK', $ibu->nik) !!}
-                {!! $baris('Nama', $ibu->user?->name) !!}
-                {!! $baris('Tempat, Tanggal Lahir', $ibu->ttl()) !!}
-                {!! $baris('Nomor HP', $ibu->user?->phone) !!}
-                {!! $baris('Wilayah', $ibu->wilayahKerja?->nama_wilayah) !!}
-            </div>
+        <div class="rounded-2xl border border-[#F1D5E0] bg-white p-5 shadow-sm md:col-span-2">
+            <h2 class="mb-2 text-sm font-bold text-[#542D3D]">Identitas Ibu</h2>
+            {!! $baris('NIK', $ibu->nik) !!}
+            {!! $baris('Nama', $ibu->user?->name) !!}
+            {!! $baris('Tempat, Tanggal Lahir', $ibu->ttl()) !!}
+            {!! $baris('Nomor HP', $ibu->user?->phone) !!}
+            {!! $baris('Wilayah', $ibu->wilayahKerja?->nama_wilayah) !!}
+           
         </div>
 
         <div class="overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm">

@@ -1,6 +1,6 @@
 <?php
 
-
+use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\DataPosyanduController;
 use App\Http\Controllers\DataIbuController;
 use App\Http\Controllers\DataAnakController;
@@ -75,6 +75,13 @@ Route::middleware('auth')->group(function () {
     Route::prefix('admin')->name('admin.')->group(function () {
 
         // Kelola Role & Permission
+
+        
+         Route::get('roles', [RoleController::class, 'index'])->name('roles.index');
+        Route::get('roles/{role}/edit', [RoleController::class, 'edit'])->name('roles.edit');
+        Route::put('roles/{role}', [RoleController::class, 'update'])->name('roles.update');
+
+
         Route::get('permissions', [PermissionController::class, 'index'])
             ->middleware('can:userrole.view')->name('permissions.index');
 
@@ -141,6 +148,7 @@ Route::middleware('auth')->group(function () {
             ->middleware('can:wilayah.delete')->name('posyandu.destroy');
 
         // Tab Penugasan
+                // Tab Penugasan
         Route::get('wilayah-kerja/penugasan', [PenugasanController::class, 'index'])
             ->middleware('can:wilayah.view')->name('penugasan.index');
 
@@ -149,7 +157,6 @@ Route::middleware('auth')->group(function () {
 
         Route::post('wilayah-kerja/penugasan', [PenugasanController::class, 'store'])
             ->middleware('can:wilayah.update')->name('penugasan.store');
-
 
 
 

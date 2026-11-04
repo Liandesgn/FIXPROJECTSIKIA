@@ -2,13 +2,12 @@
 
 namespace App\Models;
 
-
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Builder;
 use App\Enums\StatusKehamilanEnum;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'user_id',
@@ -18,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'tanggal_lahir',
     'status_kehamilan',
     'usia_kehamilan',
+    'tanggal_pemeriksaan_awal',
     'hpl',
 ])]
 class Ibu extends Model
@@ -31,9 +31,51 @@ class Ibu extends Model
     {
         return [
             'tanggal_lahir' => 'date',
+            'tanggal_pemeriksaan_awal' => 'date',
             'hpl' => 'date',
             'status_kehamilan' => StatusKehamilanEnum::class,
         ];
+    }
+
+    /**
+     * Tanggal pemeriksaan awal diisi otomatis:
+     * - data baru berstatus Hamil  : hari ini
+     * - usia kehamilan diubah      : hari ini (usia yang diinput menjadi usia awal)
+     * - bukan hamil / usia kosong  : dikosongkan
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (Ibu $ibu) {
+            if ($ibu->status_kehamilan !== StatusKehamilanEnum::Hamil || $ibu->usia_kehamilan === null) {
+                $ibu->tanggal_pemeriksaan_awal = null;
+
+                return;
+            }
+
+            if (! $ibu->exists || $ibu->isDirty('usia_kehamilan') || $ibu->tanggal_pemeriksaan_awal === null) {
+                $ibu->tanggal_pemeriksaan_awal = now()->toDateString();
+            }
+        });
+    }
+
+    /**
+     * Usia kehamilan saat ini (minggu): usia saat pemeriksaan awal
+     * ditambah selisih minggu sejak tanggal pemeriksaan awal.
+     */
+    public function getUsiaKehamilanSekarangAttribute(): ?int
+    {
+        if (! $this->sedangHamil() || $this->usia_kehamilan === null) {
+            return null;
+        }
+
+        if (! $this->tanggal_pemeriksaan_awal) {
+            return (int) $this->usia_kehamilan;
+        }
+
+        $hari = $this->tanggal_pemeriksaan_awal->copy()->startOfDay()
+            ->diffInDays(now()->startOfDay());
+
+        return (int) $this->usia_kehamilan + max(0, (int) floor($hari / 7));
     }
 
     public function user(): BelongsTo
@@ -47,19 +89,19 @@ class Ibu extends Model
     }
 
     /**
- * Satu ibu dapat memiliki banyak anak.
- */
-public function anak(): HasMany
-{
-    return $this->hasMany(Anak::class, 'ibu_id');
-}
+     * Satu ibu dapat memiliki banyak anak.
+     */
+    public function anak(): HasMany
+    {
+        return $this->hasMany(Anak::class, 'ibu_id');
+    }
 
     public function sedangHamil(): bool
     {
         return $this->status_kehamilan === StatusKehamilanEnum::Hamil;
     }
 
-        /**
+    /**
      * Tempat dan tanggal lahir (TTL).
      */
     public function ttl(): ?string
@@ -71,11 +113,7 @@ public function anak(): HasMany
         return trim(($this->tempat_lahir ?? '').', '.($this->tanggal_lahir?->format('d-m-Y') ?? ''), ', ');
     }
 
-
-        /**
-     * Batasi data sesuai role: admin semua, bidan/kader wilayahnya, ibu dirinya sendiri.
-     */
-        /**
+    /**
      * Batasi data sesuai role: admin semua, bidan/kader wilayahnya, ibu dirinya sendiri.
      */
     public function scopeVisibleTo(Builder $query, User $user): Builder
@@ -88,7 +126,6 @@ public function anak(): HasMany
             return $query->where('user_id', $user->id);
         }
 
-        // Wilayah dibaca dari tabel bidan/kader; kalau kosong, pakai kolom lama di users
         $wilayahId = $user->bidan?->wilayah_kerja_id
             ?? $user->kader?->wilayah_kerja_id
             ?? $user->wilayah_kerja_id;
@@ -97,7 +134,4 @@ public function anak(): HasMany
             ? $query->where('wilayah_kerja_id', $wilayahId)
             : $query->whereRaw('1 = 0');
     }
-
-
 }
-

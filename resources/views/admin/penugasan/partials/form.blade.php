@@ -28,7 +28,9 @@
     <select id="bidan_id" name="bidan_id" class="{{ $inputClass }}">
         <option value="">-- Pilih Bidan --</option>
         @foreach ($bidans as $b)
-            <option value="{{ $b->id }}" @selected((string) $bidanDipilih === (string) $b->id)>
+            <option value="{{ $b->id }}"
+                    data-wilayah="{{ $b->bidan?->wilayah_kerja_id }}"
+                    @selected((string) $bidanDipilih === (string) $b->id)>
                 {{ $b->name }} (saat ini: {{ $b->bidan?->wilayahKerja?->desa ?? '-' }})
             </option>
         @endforeach
@@ -40,8 +42,9 @@
     <p class="{{ $labelClass }}">Kader Wilayah</p>
     <div class="max-h-64 divide-y divide-[#F7E6ED] overflow-y-auto rounded-xl border-2 border-[#F1D5E0]">
         @foreach ($kaders as $k)
-            <label class="flex items-center gap-3 px-3 py-2 text-sm text-slate-700">
+            <label class="kader-row flex items-center gap-3 px-3 py-2 text-sm text-slate-700">
                 <input type="checkbox" name="kader_ids[]" value="{{ $k->id }}"
+                       data-wilayah="{{ $k->kader?->wilayah_kerja_id }}"
                        @checked(in_array($k->id, $kaderDipilih))
                        class="kader-cb h-4 w-4 rounded border-slate-300 text-[#C9517E] focus:ring-[#C9517E]">
                 <span class="font-semibold text-[#542D3D]">{{ $k->name }}</span>
@@ -49,6 +52,7 @@
             </label>
         @endforeach
     </div>
+    @error('kader_ids') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
     @error('kader_ids.*') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
 </div>
 
@@ -67,7 +71,25 @@ document.addEventListener('DOMContentLoaded', function () {
     const bidan = document.getElementById('bidan_id');
     const kaderCb = document.querySelectorAll('.kader-cb');
 
-    // Saat wilayah dipilih: bidan & kader yang sudah bertugas langsung terpilih/tercentang
+    // Yang sudah bertugas di wilayah lain tidak boleh dipilih (abu-abu)
+    function kunci() {
+        const w = wilayah.value;
+
+        Array.from(bidan.options).forEach(function (opt) {
+            const asal = opt.dataset.wilayah;
+            opt.disabled = !!(opt.value && asal && asal !== w);
+        });
+
+        kaderCb.forEach(function (cb) {
+            const asal = cb.dataset.wilayah;
+            const terkunci = !!(asal && asal !== w);
+            cb.disabled = terkunci;
+            if (terkunci) cb.checked = false;
+            cb.closest('.kader-row').classList.toggle('opacity-50', terkunci);
+        });
+    }
+
+    // Isi bidan & kader yang sudah bertugas di wilayah yang dipilih
     function terapkan() {
         const p = peta[wilayah.value];
         bidan.value = (p && p.bidan) ? String(p.bidan) : '';
@@ -76,7 +98,12 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    wilayah.addEventListener('change', terapkan);
+    wilayah.addEventListener('change', function () {
+        kunci();
+        terapkan();
+    });
+
+    kunci();
     if (wilayah.value && !@json($adaOld)) terapkan();
 });
 </script>

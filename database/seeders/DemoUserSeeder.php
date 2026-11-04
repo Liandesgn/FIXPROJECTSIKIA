@@ -22,7 +22,7 @@ class DemoUserSeeder extends Seeder
         foreach ($wilayahs as $wilayah) {
             $slug = Str::slug($wilayah->desa.' '.$wilayah->kecamatan);
 
-            // Setiap desa memiliki 1 bidan dan 1 kader yang bertugas.
+            // Setiap desa memiliki 1 bidan dan maximal 3 kader yang bertugas.
             $this->createUser(
                 name: 'Bidan '.$wilayah->desa,
                 email: 'bidan.'.$slug.'@sikia.test',
@@ -30,12 +30,14 @@ class DemoUserSeeder extends Seeder
                 wilayah: $wilayah,
             );
 
-            $this->createUser(
-                name: 'Kader '.$wilayah->desa,
-                email: 'kader.'.$slug.'@sikia.test',
-                role: RoleEnum::Kader,
-                wilayah: $wilayah,
-            );
+            for ($i = 1; $i <= 3; $i++) {
+                $this->createUser(
+                    name: 'Kader '.$i.' '.$wilayah->desa,
+                    email: 'kader.'.$i.'.'.$slug.'@sikia.test',
+                    role: RoleEnum::Kader,
+                    wilayah: $wilayah,
+                );
+            }
         }
 
         // Orang tua demo pada desa pertama.

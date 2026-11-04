@@ -12,13 +12,30 @@
     $adaAksi   = $base !== 'kader';   // Kader hanya melihat data, tanpa kolom Aksi
     $fieldBase = 'w-full rounded-xl border-2 border-[#C9517E]/60 bg-white text-sm font-semibold text-gray-900 outline-none transition placeholder:font-medium placeholder:text-slate-500 focus:border-[#C9517E] focus:ring-4 focus:ring-[#E99AB7]/40';
 @endphp
+        <div class="mx-auto w-full max-w-[96rem] space-y-5">
 
-<div class="mx-auto w-full max-w-[96rem] space-y-5">
+          
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight text-[#542D3D] sm:text-3xl">
+                    Data Ibu
+                </h1>
+                <p class="mt-1 text-sm font-medium text-slate-700">
+                    Data Master / Data Ibu
+                </p>
+            </div>
 
-    <div>
-        <h1 class="text-2xl font-bold tracking-tight text-[#542D3D] sm:text-3xl">Data Ibu</h1>
-        <p class="mt-1 text-sm font-medium text-slate-700">Data Master / Data Ibu</p>
-    </div>
+            @if ($base === 'admin')
+                @can('user.create')
+                    <a href="{{ route('admin.ibu.create') }}"
+                    class="inline-flex items-center gap-2 rounded-xl bg-[#C9517E] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#B7436D]">
+                        <span>+</span>
+                        Registrasi Ibu
+                    </a>
+                @endcan
+            @endif
+        </div>
+
 
     <div class="overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm">
 
@@ -61,21 +78,50 @@
             </form>
         </div>
 
-        {{-- Tabel (virtual scrolling) --}}
-        <div id="listWrap" data-next="{{ $nextUrl }}">
-            <div id="listScroll" class="max-h-[28rem] overflow-x-auto overflow-y-auto">
-                <table class="w-full text-left">
-                    <thead class="sticky top-0 z-10 text-xs font-bold uppercase tracking-wide text-[#542D3D]">
-                        <tr>
-                            <th class="whitespace-nowrap bg-[#FCE7F0] px-3 py-3 lg:px-4">No</th>
-                            <th class="hidden whitespace-nowrap bg-[#FCE7F0] px-4 py-3 xl:table-cell">NIK</th>
-                            <th class="whitespace-nowrap bg-[#FCE7F0] px-3 py-3 lg:px-4">Nama</th>
-                            <th class="hidden whitespace-nowrap bg-[#FCE7F0] px-4 py-3 md:table-cell">Wilayah</th>
-                            <th class="whitespace-nowrap bg-[#FCE7F0] px-3 py-3 lg:px-4">Status Kehamilan</th>
-                            <th class="hidden whitespace-nowrap bg-[#FCE7F0] px-4 py-3 lg:table-cell">Usia Kehamilan</th>
-                            <th class="hidden whitespace-nowrap bg-[#FCE7F0] px-4 py-3 lg:table-cell">HPL</th>
-                            @if ($adaAksi)
-                                <th class="whitespace-nowrap bg-[#FCE7F0] px-3 py-3 text-center lg:px-4">Aksi</th>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left">
+                <thead class="bg-[#FCE7F0] text-xs font-bold uppercase tracking-wide text-[#542D3D]">
+                    <tr>
+                        <th class="px-4 py-3">No</th>
+                        <th class="px-4 py-3">NIK</th>
+                        <th class="px-4 py-3">Nama</th>
+                        <th class="px-4 py-3">Wilayah</th>
+                        <th class="px-4 py-3">Status Kehamilan</th>
+                        <th class="px-4 py-3">Usia Kehamilan</th>
+                        <th class="px-4 py-3">HPL</th>
+                        {{-- UBAH 1: kolom Aksi disembunyikan untuk Kader --}}
+                        @if ($base !== 'kader')
+                            <th class="px-4 py-3 text-center">Aksi</th>
+                        @endif
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-[#F7E6ED]">
+                    @forelse ($ibus as $ibu)
+                        <tr class="hover:bg-[#FCE7F0]/50">
+                            <td class="px-4 py-3.5 text-sm font-semibold text-slate-700">{{ $ibus->firstItem() + $loop->index }}</td>
+                            <td class="px-4 py-3.5 text-sm text-slate-800">{{ $ibu->nik ?? '-' }}</td>
+                            <td class="px-4 py-3.5 text-sm font-bold text-[#542D3D]">{{ $ibu->user?->name ?? '-' }}</td>
+                            <td class="px-4 py-3.5 text-sm text-slate-800">{{ $ibu->wilayahKerja?->desa ?? '-' }}</td>
+                            <td class="px-4 py-3.5">@include('data-ibu.partials.badge', ['status' => $ibu->status_kehamilan])</td>
+                           <td class="px-4 py-3.5 text-sm text-slate-800">
+                        {{ $ibu->usia_kehamilan_sekarang !== null ? $ibu->usia_kehamilan_sekarang.' minggu' : '-' }}
+                    </td>
+                            <td class="px-4 py-3.5 text-sm text-slate-800">{{ $ibu->hpl?->format('d/m/Y') ?? '-' }}</td>
+
+                            {{-- UBAH 2: tombol Detail/Edit disembunyikan untuk Kader --}}
+                            @if ($base !== 'kader')
+                                <td class="px-4 py-3.5">
+                                    <div class="flex items-center justify-center gap-2">
+                                        <a href="{{ route($base.'.data-ibu.show', $ibu) }}"
+                                           class="inline-flex h-8 items-center rounded-lg border border-[#C9517E] px-3 text-xs font-bold text-[#C9517E] hover:bg-[#FCE7F0]">Detail</a>
+                                        @if ($base === 'admin')
+                                            @can('ibu.update')
+                                                <a href="{{ route('admin.data-ibu.edit', $ibu) }}"
+                                                   class="inline-flex h-8 items-center rounded-lg bg-[#C9517E] px-3 text-xs font-bold text-white hover:bg-[#B7436D]">Edit</a>
+                                            @endcan
+                                        @endif
+                                    </div>
+                                </td>
                             @endif
                         </tr>
                     </thead>

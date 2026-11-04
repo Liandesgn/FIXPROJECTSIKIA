@@ -134,10 +134,11 @@
                 ['label' => 'Kelola Jadwal',   'icon' => 'calendar', 'href' => $to('admin.jadwal.index', 'kelola-jadwal')],
             ]],
             ['label' => 'Laporan dan Rekapitulasi', 'icon' => 'report', 'href' => $to('admin.laporan.index', 'laporan')],
-            // Akses & Hak ditaruh paling bawah: Role dan Permission terpisah
+            // Akses & Hak ditaruh paling bawah
+                        // Akses & Hak ditaruh paling bawah
             ['label' => 'Akses & Hak', 'icon' => 'shield', 'items' => [
-                ['label' => 'Kelola Role',       'icon' => 'shield', 'href' => $roleUrl, 'active' => $onRolePage],
-                ['label' => 'Kelola Permission', 'icon' => 'key',    'href' => $permUrl, 'active' => $onPermPage],
+                ['label' => 'Kelola Role',       'icon' => 'shield', 'href' => $to('admin.roles.index', 'kelola-role')],
+                ['label' => 'Kelola Permission', 'icon' => 'key',    'href' => $to('admin.permissions.index', 'kelola-permission')],
             ]],
         ];
     } elseif ($roleKey === 'bidan') {
@@ -190,18 +191,11 @@
         ]];
     }
 
-    // Non-admin: Akses & Hak tampil sesuai permission masing-masing menu
-    if ($roleKey !== 'admin') {
-        $aksesItems = [];
-        if ($user->can('userrole.view')) {
-            $aksesItems[] = ['label' => 'Kelola Role', 'icon' => 'shield', 'href' => $roleUrl, 'active' => $onRolePage];
-        }
-        if ($user->can('userpermission.view')) {
-            $aksesItems[] = ['label' => 'Kelola Permission', 'icon' => 'key', 'href' => $permUrl, 'active' => $onPermPage];
-        }
-        if ($aksesItems) {
-            $menu[] = ['label' => 'Akses & Hak', 'icon' => 'shield', 'items' => $aksesItems];
-        }
+            if ($roleKey !== 'admin' && $user->can('userrole.view')) {
+        $menu[] = ['label' => 'Akses & Hak', 'icon' => 'shield', 'items' => [
+            ['label' => 'Kelola Role',       'icon' => 'shield', 'href' => $to('admin.roles.index', 'role')],
+            ['label' => 'Kelola Permission', 'icon' => 'key',    'href' => $to('admin.permissions.index', 'permission')],
+        ]];
     }
 
     $isActive = function (array $item) {

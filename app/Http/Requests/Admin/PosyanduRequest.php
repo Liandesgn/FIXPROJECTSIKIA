@@ -30,12 +30,6 @@ class PosyanduRequest extends FormRequest
                 Rule::exists('wilayah_kerja', 'id'),
             ],
 
-            'kader_id' => [
-                'nullable',
-                'integer',
-                Rule::exists('kader', 'id'),
-            ],
-
             'alamat' => [
                 'required',
                 'string',
@@ -51,7 +45,6 @@ class PosyanduRequest extends FormRequest
             'nama_posyandu.unique' => 'Nama Posyandu sudah digunakan.',
             'wilayah_kerja_id.required' => 'Wilayah wajib dipilih.',
             'wilayah_kerja_id.exists' => 'Wilayah kerja tidak ditemukan.',
-            'kader_id.exists' => 'Kader tidak ditemukan.',
             'alamat.required' => 'Alamat wajib diisi.',
         ];
     }

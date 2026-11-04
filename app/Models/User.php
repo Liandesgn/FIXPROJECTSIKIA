@@ -49,6 +49,11 @@ class User extends Authenticatable
         return $this->belongsTo(WilayahKerja::class);
     }
 
+        public function admin(): HasOne
+    {
+        return $this->hasOne(Admin::class);
+    }
+
 
         public function ibu(): HasOne
     {

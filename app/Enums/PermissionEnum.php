@@ -9,7 +9,6 @@ enum PermissionEnum: string
     case UserUpdate = 'user.update';
     case UserDelete = 'user.delete';
     case UserActivate = 'user.activate';
-  
 
     public function label(): string
     {
@@ -19,7 +18,6 @@ enum PermissionEnum: string
             self::UserUpdate => 'Mengubah user',
             self::UserDelete => 'Menghapus user',
             self::UserActivate => 'Mengaktifkan / menonaktifkan user',
-           
         };
     }
 

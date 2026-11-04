@@ -14,10 +14,85 @@
         <p class="mt-3 text-sm font-medium text-slate-700">Data Master / Kelola Wilayah Kerja / Posyandu / Tambah</p>
     </div>
 
-    <div class="overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm">
-        <div class="border-b border-[#E99AB7]/60 bg-[#FCE7F0] px-6 py-5 sm:px-8">
-            <h1 class="text-xl font-bold text-[#542D3D] sm:text-2xl">Tambah Wilayah Posyandu</h1>
-            <p class="mt-1 text-sm text-slate-700">Isi nama Posyandu, wilayah, dan alamat.</p>
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-4">
+            <form action="{{ route('admin.posyandu.store') }}" method="POST">
+                @csrf
+
+                <div class="mb-3">
+                    <label for="nama_posyandu" class="form-label fw-semibold">
+                        Nama Posyandu <span class="text-danger">*</span>
+                    </label>
+                    <input
+                        type="text"
+                        name="nama_posyandu"
+                        id="nama_posyandu"
+                        class="form-control @error('nama_posyandu') is-invalid @enderror"
+                        value="{{ old('nama_posyandu') }}"
+                        placeholder="Masukkan nama Posyandu"
+                        required
+                    >
+                    @error('nama_posyandu')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+
+                <div class="mb-3">
+                    <label for="wilayah_kerja_id" class="form-label fw-semibold">
+                        Wilayah Kerja <span class="text-danger">*</span>
+                    </label>
+                    <select
+                        name="wilayah_kerja_id"
+                        id="wilayah_kerja_id"
+                        class="form-select @error('wilayah_kerja_id') is-invalid @enderror"
+                        required
+                    >
+                        <option value="">-- Pilih Kecamatan dan Desa --</option>
+
+                        @foreach ($wilayahs as $wilayah)
+                            <option
+                                value="{{ $wilayah->id }}"
+                                @selected(old('wilayah_kerja_id') == $wilayah->id)
+                            >
+                                {{ $wilayah->kecamatan }} — {{ $wilayah->desa }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('wilayah_kerja_id')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+
+                <div class="mb-4">
+                    <label for="alamat" class="form-label fw-semibold">
+                        Alamat Posyandu <span class="text-danger">*</span>
+                    </label>
+                    <textarea
+                        name="alamat"
+                        id="alamat"
+                        rows="3"
+                        class="form-control @error('alamat') is-invalid @enderror"
+                        placeholder="Masukkan alamat Posyandu"
+                        required
+                    >{{ old('alamat') }}</textarea>
+                    @error('alamat')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+
+                <div class="d-flex justify-content-end gap-2">
+                    <a
+                        href="{{ route('admin.posyandu.index') }}"
+                        class="btn btn-light border"
+                    >
+                        Kembali
+                    </a>
+
+                    <button type="submit" class="btn btn-primary">
+                        Simpan Posyandu
+                    </button>
+                </div>
+            </form>
         </div>
 
         <form method="POST" action="{{ route('admin.posyandu.store') }}" class="space-y-6 p-6 sm:p-8">
