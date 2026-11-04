@@ -24,7 +24,7 @@ class AnakRequest extends FormRequest
             'nik_anak' => ['required', 'string', 'digits:16', Rule::unique('anak', 'nik_anak')->ignore($id)],
             'nama_anak' => ['required', 'string', 'max:100'],
             'tempat_lahir' => ['required', 'string', 'max:100'],
-            'tanggal_lahir' => ['required', 'date', 'before_or_equal:today'],
+            'tgl_lahir' => ['required', 'date', 'before_or_equal:today'],
             'jenis_kelamin' => ['required', Rule::in(['L', 'P'])],
             'nama_ayah' => ['required', 'string', 'max:100'],
         ];
@@ -43,8 +43,8 @@ class AnakRequest extends FormRequest
             'nik_anak.unique' => 'NIK anak sudah terdaftar.',
             'nama_anak.required' => 'Nama anak wajib diisi.',
             'tempat_lahir.required' => 'Tempat lahir wajib diisi.',
-            'tanggal_lahir.required' => 'Tanggal lahir wajib diisi.',
-            'tanggal_lahir.before_or_equal' => 'Tanggal lahir tidak boleh setelah hari ini.',
+            'tgl_lahir.required' => 'Tanggal lahir wajib diisi.',
+            'tgl_lahir.before_or_equal' => 'Tanggal lahir tidak boleh setelah hari ini.',
             'jenis_kelamin.required' => 'Jenis kelamin wajib dipilih.',
             'nama_ayah.required' => 'Nama ayah wajib diisi.',
         ];

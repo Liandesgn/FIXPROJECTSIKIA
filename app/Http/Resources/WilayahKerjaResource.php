@@ -1,21 +1,52 @@
 <?php
 
-namespace App\Http\Resources;
+namespace App\Http\Requests;
 
-use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
-class WilayahKerjaResource extends JsonResource
+class AnakRequest extends FormRequest
 {
+    public function authorize(): bool
+    {
+        return true;
+    }
+
     /**
-     * @return array<string, mixed>
+     * @return array<string, array<int, mixed>>
      */
-    public function toArray(Request $request): array
+    public function rules(): array
+    {
+        $id = $this->route('anak')?->id;
+
+        return [
+            'ibu_id' => ['required', 'integer', Rule::exists('ibu', 'id')],
+            'nik_anak' => ['required', 'string', 'digits:16', Rule::unique('anak', 'nik_anak')->ignore($id)],
+            'nama_anak' => ['required', 'string', 'max:100'],
+            'tempat_lahir' => ['required', 'string', 'max:100'],
+            'tgl_lahir' => ['required', 'date', 'before_or_equal:today'],
+            'jenis_kelamin' => ['required', Rule::in(['L', 'P'])],
+            'nama_ayah' => ['required', 'string', 'max:100'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
     {
         return [
-            'id' => $this->id,
-            'nama' => $this->nama,
-            'deskripsi' => $this->deskripsi,
+            'ibu_id.required' => 'Ibu wajib dipilih.',
+            'ibu_id.exists' => 'Data ibu tidak ditemukan.',
+            'nik_anak.required' => 'NIK anak wajib diisi.',
+            'nik_anak.digits' => 'NIK anak harus terdiri dari 16 digit.',
+            'nik_anak.unique' => 'NIK anak sudah terdaftar.',
+            'nama_anak.required' => 'Nama anak wajib diisi.',
+            'tempat_lahir.required' => 'Tempat lahir wajib diisi.',
+            'tgl_lahir.required' => 'Tanggal lahir wajib diisi.',
+            'tgl_lahir.before_or_equal' => 'Tanggal lahir tidak boleh setelah hari ini.',
+            'jenis_kelamin.required' => 'Jenis kelamin wajib dipilih.',
+            'nama_ayah.required' => 'Nama ayah wajib diisi.',
         ];
     }
 }

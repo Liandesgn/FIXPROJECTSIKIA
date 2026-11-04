@@ -19,9 +19,14 @@ class IbuController extends Controller
 {
     public function index(Request $request): View
     {
+        $wilayahId = $request->user()->loadMissing('admin')->managedWilayahId();
+
         $ibus = User::query()
             ->role(RoleEnum::Ibu->value)
             ->with('ibu.wilayahKerja')
+            ->when($wilayahId, fn ($query) => $query
+                ->whereHas('ibu', fn ($i) => $i->where('wilayah_kerja_id', $wilayahId)))
+            ->when(! $wilayahId, fn ($query) => $query->whereRaw('1 = 0'))
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = '%'.$request->string('search').'%';
 
@@ -29,9 +34,6 @@ class IbuController extends Controller
                     ->where('name', 'like', $search)
                     ->orWhereHas('ibu', fn ($i) => $i->where('nik', 'like', $search)));
             })
-            ->when($request->filled('wilayah_kerja_id'), fn ($query) => $query
-                ->whereHas('ibu', fn ($i) => $i
-                    ->where('wilayah_kerja_id', $request->integer('wilayah_kerja_id'))))
             ->when($request->filled('status'), fn ($query) => $query
                 ->where('status', $request->string('status')))
             ->latest()
@@ -40,25 +42,29 @@ class IbuController extends Controller
 
         return view('admin.ibu.index', [
             'ibus' => $ibus,
-            'wilayahs' => WilayahKerja::query()
-                ->orderBy('kecamatan')
-                ->orderBy('desa')
-                ->get(),
+            'wilayahs' => $this->wilayahs($wilayahId),
             'statuses' => UserStatusEnum::cases(),
         ]);
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
-        return view('admin.ibu.create', $this->formData());
+        return view('admin.ibu.create', $this->formData(
+            $request->user()->loadMissing('admin')->managedWilayahId()
+        ));
     }
 
     public function store(StoreIbuRequest $request): RedirectResponse
     {
         $data = $request->validated();
+        $wilayahId = $request->user()->loadMissing('admin')->managedWilayahId();
+
+        abort_unless($wilayahId, 403, 'Admin belum memiliki wilayah kerja.');
+        abort_unless((int) $data['wilayah_kerja_id'] === $wilayahId, 403);
+
         $hamil = $data['status_kehamilan'] === StatusKehamilanEnum::Hamil->value;
 
-        DB::transaction(function () use ($data, $hamil) {
+        DB::transaction(function () use ($data, $hamil, $wilayahId) {
             $user = User::create([
                 'name' => $data['name'],
                 'email' => $data['email'],
@@ -70,10 +76,10 @@ class IbuController extends Controller
             $user->assignRole(RoleEnum::Ibu->value);
 
             $user->ibu()->create([
-                'wilayah_kerja_id' => $data['wilayah_kerja_id'],
+                'wilayah_kerja_id' => $wilayahId,
                 'nik' => $data['nik'],
                 'tempat_lahir' => $data['tempat_lahir'],
-                'tanggal_lahir' => $data['tanggal_lahir'],
+                'tgl_lahir' => $data['tgl_lahir'],
                 'status_kehamilan' => $data['status_kehamilan'],
                 'hpl' => $hamil ? ($data['hpl'] ?? null) : null,
                 'usia_kehamilan' => $hamil ? ($data['usia_kehamilan'] ?? null) : null,
@@ -85,21 +91,27 @@ class IbuController extends Controller
             ->with('success', 'Data ibu berhasil didaftarkan.');
     }
 
-    public function edit(User $ibu): View
+    public function edit(Request $request, User $ibu): View
     {
         abort_unless($ibu->hasRole(RoleEnum::Ibu->value), 404);
+
+        $wilayahId = $request->user()->loadMissing('admin')->managedWilayahId();
+        abort_unless($ibu->ibu?->wilayah_kerja_id === $wilayahId, 403);
 
         $ibu->load('ibu');
 
         return view('admin.ibu.edit', [
             'ibu' => $ibu,
-            ...$this->formData(),
+            ...$this->formData($wilayahId),
         ]);
     }
 
     public function update(Request $request, User $ibu): RedirectResponse
     {
         abort_unless($ibu->hasRole(RoleEnum::Ibu->value), 404);
+
+        $wilayahId = $request->user()->loadMissing('admin')->managedWilayahId();
+        abort_unless($ibu->ibu?->wilayah_kerja_id === $wilayahId, 403);
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -110,10 +122,9 @@ class IbuController extends Controller
                 Rule::unique('users', 'email')->ignore($ibu->id),
             ],
             'phone' => ['nullable', 'string', 'max:20'],
-            'wilayah_kerja_id' => ['required', 'exists:wilayah_kerja,id'],
             'nik' => ['required', 'string', 'max:16'],
             'tempat_lahir' => ['required', 'string', 'max:255'],
-            'tanggal_lahir' => ['required', 'date'],
+            'tgl_lahir' => ['required', 'date'],
             'status_kehamilan' => [
                 'required',
                 Rule::enum(StatusKehamilanEnum::class),
@@ -124,7 +135,7 @@ class IbuController extends Controller
 
         $hamil = $data['status_kehamilan'] === StatusKehamilanEnum::Hamil->value;
 
-        DB::transaction(function () use ($ibu, $data, $hamil) {
+        DB::transaction(function () use ($ibu, $data, $hamil, $wilayahId) {
             $ibu->update([
                 'name' => $data['name'],
                 'email' => $data['email'],
@@ -134,10 +145,10 @@ class IbuController extends Controller
             $ibu->ibu()->updateOrCreate(
                 ['user_id' => $ibu->id],
                 [
-                    'wilayah_kerja_id' => $data['wilayah_kerja_id'],
+                    'wilayah_kerja_id' => $wilayahId,
                     'nik' => $data['nik'],
                     'tempat_lahir' => $data['tempat_lahir'],
-                    'tanggal_lahir' => $data['tanggal_lahir'],
+                    'tgl_lahir' => $data['tgl_lahir'],
                     'status_kehamilan' => $data['status_kehamilan'],
                     'hpl' => $hamil ? ($data['hpl'] ?? null) : null,
                     'usia_kehamilan' => $hamil ? ($data['usia_kehamilan'] ?? null) : null,
@@ -150,9 +161,13 @@ class IbuController extends Controller
             ->with('success', 'Data ibu berhasil diperbarui.');
     }
 
-    public function toggleStatus(User $ibu): RedirectResponse
+    public function toggleStatus(Request $request, User $ibu): RedirectResponse
     {
         abort_unless($ibu->hasRole(RoleEnum::Ibu->value), 404);
+        abort_unless(
+            $ibu->ibu?->wilayah_kerja_id === $request->user()->loadMissing('admin')->managedWilayahId(),
+            403
+        );
 
         if ($ibu->id === auth()->id()) {
             return back()->with('error', 'Anda tidak dapat menonaktifkan akun sendiri.');
@@ -174,17 +189,24 @@ class IbuController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function formData(): array
+    private function formData(?int $wilayahId): array
     {
-        $wilayahs = WilayahKerja::query()
-            ->orderBy('kecamatan')
-            ->orderBy('desa')
-            ->get();
+        $wilayahs = $this->wilayahs($wilayahId);
 
         return [
             'wilayahs' => $wilayahs,
             'kabupaten' => $wilayahs->pluck('kabupaten')->filter()->unique()->first() ?? 'Gresik',
             'statuses' => StatusKehamilanEnum::cases(),
         ];
+    }
+
+    private function wilayahs(?int $wilayahId)
+    {
+        return WilayahKerja::query()
+            ->when($wilayahId, fn ($q) => $q->where('id', $wilayahId))
+            ->when(! $wilayahId, fn ($q) => $q->whereRaw('1 = 0'))
+            ->orderBy('kecamatan')
+            ->orderBy('kelurahan')
+            ->get();
     }
 }

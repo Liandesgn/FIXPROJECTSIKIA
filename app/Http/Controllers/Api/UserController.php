@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\RoleEnum;
 use App\Enums\UserStatusEnum;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\User\StoreUserRequest;
@@ -21,6 +22,11 @@ class UserController extends Controller
 
         $users = User::query()
             ->with(['roles', 'wilayahKerja'])
+            ->when($request->user()->isAdmin(), function ($query) use ($request) {
+                $wilayahId = $request->user()->loadMissing('admin')->managedWilayahId();
+                abort_unless($wilayahId, 403, 'Akun Admin belum memiliki wilayah kerja.');
+                $query->where('wilayah_kerja_id', $wilayahId);
+            })
             ->when($request->filled('role'), fn ($query) => $query->role((string) $request->string('role')))
             ->when($request->filled('status'), fn ($query) => $query->where('status', (string) $request->string('status')))
             ->when($request->filled('search'), function ($query) use ($request) {
@@ -42,6 +48,12 @@ class UserController extends Controller
 
         $data = $request->validated();
 
+        if ($request->user()->isAdmin()) {
+            $wilayahId = $request->user()->loadMissing('admin')->managedWilayahId();
+            abort_unless($wilayahId, 403, 'Akun Admin belum memiliki wilayah kerja.');
+            $data['wilayah_kerja_id'] = $wilayahId;
+        }
+
         $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
@@ -53,15 +65,21 @@ class UserController extends Controller
 
         $user->assignRole($data['role']);
 
+        if (in_array($data['role'], [RoleEnum::Bidan->value, RoleEnum::Kader->value], true)
+            && ! empty($data['wilayah_kerja_id'])) {
+            $user->assignWilayah((int) $data['wilayah_kerja_id']);
+        }
+
         return response()->json([
             'message' => 'User berhasil dibuat.',
             'data' => (new UserResource($user->load('roles', 'wilayahKerja')))->resolve(),
         ], 201);
     }
 
-    public function show(User $user): JsonResponse
+    public function show(Request $request, User $user): JsonResponse
     {
         $this->authorize('view', $user);
+        $this->ensureManaged($request->user(), $user);
 
         return response()->json([
             'data' => (new UserResource($user->load('roles', 'wilayahKerja')))->resolve(),
@@ -71,8 +89,13 @@ class UserController extends Controller
     public function update(UpdateUserRequest $request, User $user): JsonResponse
     {
         $this->authorize('update', $user);
+        $this->ensureManaged($request->user(), $user);
 
         $data = $request->validated();
+
+        if ($request->user()->isAdmin()) {
+            $data['wilayah_kerja_id'] = $request->user()->loadMissing('admin')->managedWilayahId();
+        }
 
         $user->fill(Arr::only($data, ['name', 'email', 'phone', 'status', 'wilayah_kerja_id']));
 
@@ -85,6 +108,14 @@ class UserController extends Controller
         if (! empty($data['role'])) {
             $this->authorize('assignRole', $user);
             $user->syncRoles([$data['role']]);
+            $user->unsetRelation('roles');
+        }
+
+        $role = $data['role'] ?? $user->primaryRole()?->value;
+
+        if (in_array($role, [RoleEnum::Bidan->value, RoleEnum::Kader->value], true)
+            && ! empty($data['wilayah_kerja_id'])) {
+            $user->assignWilayah((int) $data['wilayah_kerja_id']);
         }
 
         return response()->json([
@@ -93,9 +124,10 @@ class UserController extends Controller
         ]);
     }
 
-    public function destroy(User $user): JsonResponse
+    public function destroy(Request $request, User $user): JsonResponse
     {
         $this->authorize('delete', $user);
+        $this->ensureManaged($request->user(), $user);
 
         $user->tokens()->delete();
         $user->delete();
@@ -105,9 +137,10 @@ class UserController extends Controller
         ]);
     }
 
-    public function activate(User $user): JsonResponse
+    public function activate(Request $request, User $user): JsonResponse
     {
         $this->authorize('activate', $user);
+        $this->ensureManaged($request->user(), $user);
 
         $user->update(['status' => UserStatusEnum::Active->value]);
 
@@ -117,9 +150,10 @@ class UserController extends Controller
         ]);
     }
 
-    public function deactivate(User $user): JsonResponse
+    public function deactivate(Request $request, User $user): JsonResponse
     {
         $this->authorize('deactivate', $user);
+        $this->ensureManaged($request->user(), $user);
 
         $user->update(['status' => UserStatusEnum::Inactive->value]);
         $user->tokens()->delete();
@@ -128,5 +162,20 @@ class UserController extends Controller
             'message' => 'Akun berhasil dinonaktifkan.',
             'data' => (new UserResource($user->load('roles', 'wilayahKerja')))->resolve(),
         ]);
+    }
+
+    private function ensureManaged(User $actor, User $target): void
+    {
+        if (! $actor->isAdmin()) {
+            return;
+        }
+
+        $wilayahId = $actor->loadMissing('admin')->managedWilayahId();
+
+        abort_unless(
+            $wilayahId && (int) $target->wilayah_kerja_id === (int) $wilayahId,
+            403,
+            'Akses ditolak.'
+        );
     }
 }

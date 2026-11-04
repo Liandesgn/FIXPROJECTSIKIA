@@ -4,6 +4,7 @@ namespace App\Enums;
 
 enum RoleEnum: string
 {
+    case SuperAdmin = 'super_admin';
     case Admin = 'admin';
     case Ibu = 'ibu';
     case Bidan = 'bidan';
@@ -12,6 +13,7 @@ enum RoleEnum: string
     public function label(): string
     {
         return match ($this) {
+            self::SuperAdmin => 'Super Admin',
             self::Admin => 'Admin',
             self::Ibu => 'Ibu',
             self::Bidan => 'Bidan',
@@ -39,6 +41,7 @@ enum RoleEnum: string
     public function dashboard(): string
     {
         return match ($this) {
+            self::SuperAdmin => 'superadmin.dashboard',
             self::Admin => 'admin.dashboard',
             self::Ibu => 'ibu.dashboard',
             self::Bidan => 'bidan.dashboard',

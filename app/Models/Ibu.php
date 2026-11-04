@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'wilayah_kerja_id',
     'nik',
     'tempat_lahir',
-    'tanggal_lahir',
+    'tgl_lahir',
     'status_kehamilan',
     'usia_kehamilan',
     'tanggal_pemeriksaan_awal',
@@ -30,7 +30,7 @@ class Ibu extends Model
     protected function casts(): array
     {
         return [
-            'tanggal_lahir' => 'date',
+            'tgl_lahir' => 'date',
             'tanggal_pemeriksaan_awal' => 'date',
             'hpl' => 'date',
             'status_kehamilan' => StatusKehamilanEnum::class,
@@ -106,11 +106,11 @@ class Ibu extends Model
      */
     public function ttl(): ?string
     {
-        if (! $this->tempat_lahir && ! $this->tanggal_lahir) {
+        if (! $this->tempat_lahir && ! $this->tgl_lahir) {
             return null;
         }
 
-        return trim(($this->tempat_lahir ?? '').', '.($this->tanggal_lahir?->format('d-m-Y') ?? ''), ', ');
+        return trim(($this->tempat_lahir ?? '').', '.($this->tgl_lahir?->format('d-m-Y') ?? ''), ', ');
     }
 
     /**
@@ -118,8 +118,16 @@ class Ibu extends Model
      */
     public function scopeVisibleTo(Builder $query, User $user): Builder
     {
-        if ($user->isAdmin()) {
+        if ($user->isSuperAdmin()) {
             return $query;
+        }
+
+        if ($user->isAdmin()) {
+            $wilayahId = $user->managedWilayahId();
+
+            return $wilayahId
+                ? $query->where('wilayah_kerja_id', $wilayahId)
+                : $query->whereRaw('1 = 0');
         }
 
         if ($user->isOrangTua()) {

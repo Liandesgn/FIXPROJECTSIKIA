@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
-#[Fillable(['nama_wilayah', 'kabupaten', 'kecamatan', 'desa', 'deskripsi'])]
+#[Fillable(['nama_wilayah', 'kabupaten', 'kecamatan', 'kelurahan', 'deskripsi'])]
 class WilayahKerja extends Model
 {
     use HasFactory;
@@ -21,14 +21,24 @@ class WilayahKerja extends Model
         return $this->hasMany(User::class);
     }
 
-
-        public function posyandu(): HasMany
+    public function admins(): HasMany
     {
-        return $this->hasMany(Posyandu::class);
+        return $this->hasMany(Admin::class, 'id_wilayah');
     }
 
+    public function kegiatanPosyandu(): HasMany
+    {
+        return $this->hasMany(KegiatanPosyandu::class, 'id_wilayah');
+    }
 
-    
+    /**
+     * Alias lama untuk tampilan yang belum diperbarui.
+     */
+    public function getDesaAttribute(): ?string
+    {
+        return $this->kelurahan;
+    }
+
     /**
      * Bidan penanggung jawab wilayah ini (satu per wilayah).
      */
@@ -63,7 +73,7 @@ class WilayahKerja extends Model
      */
     public function label(): string
     {
-        $parts = array_filter([$this->kabupaten, $this->kecamatan, $this->desa]);
+        $parts = array_filter([$this->kabupaten, $this->kecamatan, $this->kelurahan]);
 
         return $parts ? implode(' / ', $parts) : (string) $this->nama_wilayah;
     }

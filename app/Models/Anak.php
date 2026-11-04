@@ -15,7 +15,7 @@ class Anak extends Model
         'nik_anak',
         'nama_anak',
         'tempat_lahir',
-        'tanggal_lahir',
+        'tgl_lahir',
         'jenis_kelamin',
         'nama_ayah',
     ];
@@ -23,7 +23,7 @@ class Anak extends Model
     protected function casts(): array
     {
         return [
-            'tanggal_lahir' => 'date',
+            'tgl_lahir' => 'date',
         ];
     }
 
@@ -40,7 +40,7 @@ class Anak extends Model
      */
     public function scopeVisibleTo(Builder $query, User $user): Builder
     {
-        if ($user->isAdmin()) {
+        if ($user->isSuperAdmin()) {
             return $query;
         }
 

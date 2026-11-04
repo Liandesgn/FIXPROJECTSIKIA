@@ -18,9 +18,14 @@ class BidanController extends Controller
 {
     public function index(Request $request): View
     {
+        $wilayahId = $request->user()->loadMissing('admin')->managedWilayahId();
+
         $bidans = User::query()
             ->role(RoleEnum::Bidan->value)
             ->with('bidan.wilayahKerja')
+            ->when($wilayahId, fn ($query) => $query
+                ->whereHas('bidan', fn ($b) => $b->where('wilayah_kerja_id', $wilayahId)))
+            ->when(! $wilayahId, fn ($query) => $query->whereRaw('1 = 0'))
             ->when($request->filled('search'), fn ($query) => $query
                 ->where('name', 'like', '%'.$request->string('search').'%'))
             ->when($request->filled('wilayah_kerja_id'), fn ($query) => $query
@@ -32,14 +37,14 @@ class BidanController extends Controller
 
         return view('admin.bidan.index', [
             'bidans' => $bidans,
-            'wilayahs' => $this->wilayahs(),
+            'wilayahs' => $this->wilayahs($wilayahId),
         ]);
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
         return view('admin.bidan.create', [
-            'wilayahs' => $this->wilayahs(),
+            'wilayahs' => $this->wilayahs($request->user()->loadMissing('admin')->managedWilayahId()),
         ]);
     }
 
@@ -65,19 +70,23 @@ class BidanController extends Controller
             ->with('success', 'Data bidan berhasil ditambahkan.');
     }
 
-    public function edit(User $bidan): View
+    public function edit(Request $request, User $bidan): View
     {
         abort_unless($bidan->hasRole(RoleEnum::Bidan->value), 404);
 
+        $wilayahId = $request->user()->loadMissing('admin')->managedWilayahId();
+        abort_unless($bidan->bidan?->wilayah_kerja_id === $wilayahId, 403);
+
         return view('admin.bidan.edit', [
             'bidan' => $bidan->load('bidan.wilayahKerja'),
-            'wilayahs' => $this->wilayahs(),
+            'wilayahs' => $this->wilayahs($wilayahId),
         ]);
     }
 
     public function update(UpdatePetugasRequest $request, User $bidan): RedirectResponse
     {
         abort_unless($bidan->hasRole(RoleEnum::Bidan->value), 404);
+        abort_unless($bidan->bidan?->wilayah_kerja_id === $request->user()->loadMissing('admin')->managedWilayahId(), 403);
 
         $data = $request->validated();
 
@@ -104,6 +113,7 @@ class BidanController extends Controller
     public function destroy(User $bidan): RedirectResponse
     {
         abort_unless($bidan->hasRole(RoleEnum::Bidan->value), 404);
+        abort_unless($bidan->bidan?->wilayah_kerja_id === auth()->user()->loadMissing('admin')->managedWilayahId(), 403);
 
         if ($bidan->id === auth()->id()) {
             return back()->with('error', 'Anda tidak dapat menghapus akun sendiri.');
@@ -117,11 +127,13 @@ class BidanController extends Controller
             ->with('success', 'Data bidan berhasil dihapus.');
     }
 
-    private function wilayahs()
+    private function wilayahs(?int $wilayahId)
     {
         return WilayahKerja::query()
+            ->when($wilayahId, fn ($q) => $q->where('id', $wilayahId))
+            ->when(! $wilayahId, fn ($q) => $q->whereRaw('1 = 0'))
             ->orderBy('kecamatan')
-            ->orderBy('desa')
+            ->orderBy('kelurahan')
             ->get();
     }
 }

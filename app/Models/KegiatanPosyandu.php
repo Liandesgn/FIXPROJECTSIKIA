@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['posyandu_id', 'tanggal', 'waktu', 'lokasi'])]
+#[Fillable(['id_wilayah', 'jenis_kegiatan', 'tanggal', 'waktu', 'lokasi'])]
 class KegiatanPosyandu extends Model
 {
     protected $table = 'kegiatan_posyandu';
@@ -23,9 +23,9 @@ class KegiatanPosyandu extends Model
         ];
     }
 
-    public function posyandu(): BelongsTo
+    public function wilayah(): BelongsTo
     {
-        return $this->belongsTo(Posyandu::class);
+        return $this->belongsTo(WilayahKerja::class, 'id_wilayah');
     }
 
     public function pemeriksaan(): HasMany
@@ -41,9 +41,9 @@ class KegiatanPosyandu extends Model
             ->orderBy('waktu');
     }
 
-    /** Kegiatan pada Posyandu di wilayah tertentu. */
+    /** Kegiatan pada wilayah tertentu. */
     public function scopeDiWilayah(Builder $query, int $wilayahId): Builder
     {
-        return $query->whereHas('posyandu', fn (Builder $p) => $p->where('wilayah_kerja_id', $wilayahId));
+        return $query->where('id_wilayah', $wilayahId);
     }
 }
