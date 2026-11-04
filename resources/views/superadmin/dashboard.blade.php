@@ -17,7 +17,7 @@
     <div class="space-y-6">
         <div>
             <h1 class="text-2xl font-bold tracking-tight text-[#542D3D] sm:text-3xl">Dashboard Super Admin</h1>
-            <p class="mt-1 text-sm text-slate-600">Selamat datang kembali, {{ auth()->user()->name }}.</p>
+            <p class="mt-1 text-sm text-slate-600">Haii Selamat datang kembali, {{ auth()->user()->name }}.</p>
         </div>
 
         <div class="grid max-w-5xl grid-cols-2 gap-3 md:grid-cols-3">
