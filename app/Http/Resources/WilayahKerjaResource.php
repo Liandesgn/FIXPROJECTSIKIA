@@ -14,8 +14,14 @@ class WilayahKerjaResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'nama' => $this->nama,
-            'deskripsi' => $this->deskripsi,
+            'nama_wilayah' => $this->nama_wilayah,
+            'kelurahan' => $this->kelurahan,
+            'kecamatan' => $this->kecamatan,
+            'kabupaten' => $this->kabupaten,
+            'provinsi' => $this->provinsi,
+            'admin' => $this->whenLoaded('admins', fn () => $this->admins->first()?->user?->name),
+            'bidan' => $this->whenLoaded('bidan', fn () => $this->bidan?->name),
+            'jumlah_kader' => $this->whenLoaded('kaders', fn () => $this->kaders->count()),
         ];
     }
 }

@@ -26,7 +26,7 @@ class WilayahKerjaRequest extends FormRequest
                 'required', 'string', 'max:100',
                 Rule::unique('wilayah_kerja', 'nama_wilayah')->ignore($id),
             ],
-            'desa' => ['required', 'string', 'max:100'],
+            'kelurahan' => ['required', 'string', 'max:100'],
             'kecamatan' => ['required', 'string', 'max:100'],
         ];
     }
@@ -40,7 +40,7 @@ class WilayahKerjaRequest extends FormRequest
             'nama_wilayah.required' => 'Nama wilayah wajib diisi.',
             'nama_wilayah.unique' => 'Nama wilayah sudah digunakan.',
             'nama_wilayah.max' => 'Nama wilayah maksimal 100 karakter.',
-            'desa.required' => 'Kelurahan/desa wajib diisi.',
+            'kelurahan.required' => 'Kelurahan/desa wajib diisi.',
             'kecamatan.required' => 'Kecamatan wajib diisi.',
         ];
     }

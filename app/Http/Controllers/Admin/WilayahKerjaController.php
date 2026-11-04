@@ -16,13 +16,13 @@ class WilayahKerjaController extends Controller
     {
         $wilayahs = WilayahKerja::query()
             ->with('bidan')
-            ->withCount('posyandu')
+            ->withCount('admins')
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = '%' . $request->string('search') . '%';
 
                 $query->where(function ($q) use ($search) {
                     $q->where('nama_wilayah', 'like', $search)
-                        ->orWhere('desa', 'like', $search)
+                        ->orWhere('kelurahan', 'like', $search)
                         ->orWhere('kecamatan', 'like', $search);
                 });
             })
@@ -45,7 +45,7 @@ class WilayahKerjaController extends Controller
         );
 
         return redirect()
-            ->route('admin.wilayah-kerja.index')
+            ->route('superadmin.wilayah-kerja.index')
             ->with('success', 'Data wilayah berhasil ditambahkan.');
     }
 
@@ -61,7 +61,7 @@ class WilayahKerjaController extends Controller
         $wilayah->update($request->validated());
 
         return redirect()
-            ->route('admin.wilayah-kerja.index')
+            ->route('superadmin.wilayah-kerja.index')
             ->with('success', 'Data wilayah berhasil diperbarui.');
     }
 
@@ -69,7 +69,7 @@ class WilayahKerjaController extends Controller
     {
         if (
             $wilayah->users()->exists()
-            || $wilayah->posyandu()->exists()
+            || $wilayah->kegiatanPosyandu()->exists()
             || \App\Models\Ibu::where(
                 'wilayah_kerja_id',
                 $wilayah->id
@@ -92,7 +92,7 @@ class WilayahKerjaController extends Controller
         $wilayah->delete();
 
         return redirect()
-            ->route('admin.wilayah-kerja.index')
+            ->route('superadmin.wilayah-kerja.index')
             ->with('success', 'Data wilayah berhasil dihapus.');
     }
 }

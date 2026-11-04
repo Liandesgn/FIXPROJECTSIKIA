@@ -1,13 +1,13 @@
 @php
     $wk = $ibu->wilayahKerja;
     $wilayah = $wk
-        ? trim(($wk->desa ? 'Desa '.$wk->desa : '').($wk->kecamatan ? ', Kec. '.$wk->kecamatan : ''), ', ')
+        ? trim(($wk->kelurahan ? 'Desa '.$wk->kelurahan : '').($wk->kecamatan ? ', Kec. '.$wk->kecamatan : ''), ', ')
         : '-';
 
     $baris = [
         'NIK' => $ibu->nik ?? '-',
         'Nama' => $ibu->user?->name ?? '-',
-        'Tanggal Lahir' => $ibu->tanggal_lahir?->format('d/m/Y') ?? '-',
+        'Tanggal Lahir' => $ibu->tgl_lahir?->format('d/m/Y') ?? '-',
         'Nomor HP' => $ibu->user?->phone ?? '-',
         'Wilayah' => $wilayah ?: '-',
     ];

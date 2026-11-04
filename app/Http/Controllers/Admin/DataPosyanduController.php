@@ -4,9 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\KegiatanPosyandu;
-use App\Models\Posyandu;
+use App\Models\WilayahKerja;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
@@ -15,11 +16,21 @@ class DataPosyanduController extends Controller
 {
     public function index(Request $request): View
     {
+        $wilayahId = $this->wilayahId($request);
+
         $kegiatans = KegiatanPosyandu::query()
-            ->with('posyandu.wilayahKerja')
-            ->when($request->filled('search'), fn ($q) => $q
-                ->whereHas('posyandu', fn ($p) => $p
-                    ->where('nama_posyandu', 'like', '%'.$request->string('search').'%')))
+            ->with('wilayah')
+            ->when($wilayahId, fn ($q) => $q->where('id_wilayah', $wilayahId))
+            ->when(! $wilayahId, fn ($q) => $q->whereRaw('1 = 0'))
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $search = '%'.$request->string('search').'%';
+                $q->where(fn ($sub) => $sub
+                    ->where('jenis_kegiatan', 'like', $search)
+                    ->orWhere('lokasi', 'like', $search)
+                    ->orWhereHas('wilayah', fn ($w) => $w
+                        ->where('nama_wilayah', 'like', $search)
+                        ->orWhere('kelurahan', 'like', $search)));
+            })
             ->when($this->periode($request->input('periode')), fn ($q, $p) => $q
                 ->whereYear('tanggal', $p[0])
                 ->whereMonth('tanggal', $p[1]))
@@ -29,14 +40,18 @@ class DataPosyanduController extends Controller
 
         return view('admin.data-posyandu.index', [
             'kegiatans' => $kegiatans,
-            'periodes' => $this->daftarPeriode(),
+            'periodes' => $this->daftarPeriode($wilayahId),
             'jumlahAnak' => $this->anakPerKegiatan($kegiatans->pluck('id')),
+            'base' => $this->base($request),
         ]);
     }
 
-    public function show(KegiatanPosyandu $kegiatan): View
+    public function show(Request $request, KegiatanPosyandu $kegiatan): View
     {
-        $kegiatan->load('posyandu.wilayahKerja');
+        $wilayahId = $this->wilayahId($request);
+        abort_unless($wilayahId && $kegiatan->id_wilayah === $wilayahId, 403);
+
+        $kegiatan->load('wilayah');
 
         $tersedia = $this->tabelPemeriksaanAda();
         $pemeriksaan = collect();
@@ -53,30 +68,34 @@ class DataPosyanduController extends Controller
             'kegiatan' => $kegiatan,
             'pemeriksaan' => $pemeriksaan,
             'tersedia' => $tersedia,
+            'base' => $this->base($request),
         ]);
     }
 
     public function rekap(Request $request): View
     {
+        $wilayahId = $this->wilayahId($request);
         $periode = $this->periode($request->input('periode')) ?? [now()->year, now()->month];
 
         $kegiatans = KegiatanPosyandu::query()
-            ->with('posyandu.wilayahKerja')
+            ->with('wilayah')
+            ->when($wilayahId, fn ($q) => $q->where('id_wilayah', $wilayahId))
+            ->when(! $wilayahId, fn ($q) => $q->whereRaw('1 = 0'))
             ->whereYear('tanggal', $periode[0])
             ->whereMonth('tanggal', $periode[1])
-            ->when($request->filled('posyandu_id'), fn ($q) => $q
-                ->where('posyandu_id', $request->integer('posyandu_id')))
+            ->when($request->filled('id_wilayah'), fn ($q) => $q
+                ->where('id_wilayah', $request->integer('id_wilayah')))
             ->get();
 
         $jumlahAnak = $this->anakPerKegiatan($kegiatans->pluck('id'));
 
-        $rekap = $kegiatans->groupBy('posyandu_id')
+        $rekap = $kegiatans->groupBy('id_wilayah')
             ->map(fn ($grup) => [
-                'posyandu' => $grup->first()->posyandu,
+                'wilayah' => $grup->first()->wilayah,
                 'kegiatan' => $grup->count(),
                 'anak' => $grup->sum(fn ($k) => $jumlahAnak[$k->id] ?? 0),
             ])
-            ->sortBy(fn ($baris) => $baris['posyandu']?->nama_posyandu)
+            ->sortBy(fn ($baris) => $baris['wilayah']?->nama_wilayah)
             ->values();
 
         return view('admin.data-posyandu.rekap', [
@@ -84,11 +103,31 @@ class DataPosyanduController extends Controller
             'ringkasan' => [
                 'kegiatan' => $kegiatans->count(),
                 'anak' => $rekap->sum('anak'),
-                'posyandu' => $rekap->count(),
+                'wilayah' => $rekap->count(),
             ],
             'periodeValue' => sprintf('%04d-%02d', $periode[0], $periode[1]),
-            'posyandus' => Posyandu::orderBy('nama_posyandu')->get(),
+            'wilayahs' => WilayahKerja::query()
+                ->when($wilayahId, fn ($q) => $q->where('id', $wilayahId))
+                ->orderBy('nama_wilayah')
+                ->get(),
+            'base' => $this->base($request),
         ]);
+    }
+
+    private function base(Request $request): string
+    {
+        return $request->route()?->getName()
+            ? Str::before($request->route()->getName(), '.')
+            : 'admin';
+    }
+
+    private function wilayahId(Request $request): ?int
+    {
+        $user = $request->user()->loadMissing(['admin', 'bidan', 'kader']);
+
+        return $user->managedWilayahId()
+            ?? $user->bidan?->wilayah_kerja_id
+            ?? $user->kader?->wilayah_kerja_id;
     }
 
     /**
@@ -103,9 +142,11 @@ class DataPosyanduController extends Controller
             : null;
     }
 
-    private function daftarPeriode()
+    private function daftarPeriode(?int $wilayahId)
     {
-        return KegiatanPosyandu::query()->pluck('tanggal')
+        return KegiatanPosyandu::query()
+            ->when($wilayahId, fn ($q) => $q->where('id_wilayah', $wilayahId))
+            ->pluck('tanggal')
             ->map(fn ($t) => Carbon::parse($t)->format('Y-m'))
             ->unique()
             ->sortDesc()

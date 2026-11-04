@@ -20,7 +20,7 @@ class DataIbuController extends Controller
     {
         $user = $request->user();
 
-        // Role Ibu: tampilan kartu sesuai wireframe 5.14
+     
         if ($user->isOrangTua()) {
             return $this->tampilanIbuSendiri($user);
         }
@@ -44,7 +44,7 @@ class DataIbuController extends Controller
 
         return view('data-ibu.index', [
             'ibus' => $ibus,
-            'wilayahs' => $this->wilayahs(),
+            'wilayahs' => $this->wilayahs($user),
             'statuses' => StatusKehamilanEnum::cases(),
             'base' => $this->base($request),
         ]);
@@ -73,21 +73,42 @@ class DataIbuController extends Controller
         ]);
     }
 
-    public function edit(Ibu $ibu): View
+    public function edit(Request $request, Ibu $ibu): View
     {
+        $user = $request->user();
+
+        abort_unless(
+            Ibu::visibleTo($user)->whereKey($ibu->id)->exists(),
+            403,
+            'Akses ditolak.'
+        );
+
         return view('data-ibu.edit', [
             'ibu' => $ibu->load('user'),
-            'wilayahs' => $this->wilayahs(),
+            'wilayahs' => $this->wilayahs($user),
             'statuses' => StatusKehamilanEnum::cases(),
         ]);
     }
 
     public function update(UpdateIbuRequest $request, Ibu $ibu): RedirectResponse
     {
+        $user = $request->user();
+
+        abort_unless(
+            Ibu::visibleTo($user)->whereKey($ibu->id)->exists(),
+            403,
+            'Akses ditolak.'
+        );
+
         $data = $request->validated();
         $hamil = $data['status_kehamilan'] === StatusKehamilanEnum::Hamil->value;
+        $wilayahId = $user->isAdmin()
+            ? $user->loadMissing('admin')->managedWilayahId()
+            : $ibu->wilayah_kerja_id;
 
-        DB::transaction(function () use ($ibu, $data, $hamil) {
+        abort_unless($wilayahId, 403);
+
+        DB::transaction(function () use ($ibu, $data, $hamil, $wilayahId) {
             $ibu->user->update([
                 'name' => $data['name'],
                 'email' => $data['email'],
@@ -95,10 +116,10 @@ class DataIbuController extends Controller
             ]);
 
             $ibu->update([
-                'wilayah_kerja_id' => $data['wilayah_kerja_id'],
+                'wilayah_kerja_id' => $wilayahId,
                 'nik' => $data['nik'],
                 'tempat_lahir' => $data['tempat_lahir'],
-                'tanggal_lahir' => $data['tanggal_lahir'],
+                'tgl_lahir' => $data['tgl_lahir'],
                 'status_kehamilan' => $data['status_kehamilan'],
                 // Melahirkan: usia kehamilan dan HPL dikosongkan
                 'usia_kehamilan' => $hamil ? $data['usia_kehamilan'] : null,
@@ -107,7 +128,7 @@ class DataIbuController extends Controller
         });
 
         return redirect()
-            ->route('admin.data-ibu.show', $ibu)
+            ->route($this->base($request).'.data-ibu.show', $ibu)
             ->with('success', 'Data ibu berhasil diperbarui.');
     }
 
@@ -127,8 +148,17 @@ class DataIbuController extends Controller
         return Str::before($request->route()->getName(), '.');
     }
 
-    private function wilayahs()
+    private function wilayahs(User $user)
     {
-        return WilayahKerja::query()->orderBy('kecamatan')->orderBy('desa')->get();
+        $wilayahId = $user->isAdmin()
+            ? $user->loadMissing('admin')->managedWilayahId()
+            : ($user->bidan?->wilayah_kerja_id ?? $user->kader?->wilayah_kerja_id);
+
+        return WilayahKerja::query()
+            ->when($wilayahId, fn ($q) => $q->where('id', $wilayahId))
+            ->when(! $wilayahId, fn ($q) => $q->whereRaw('1 = 0'))
+            ->orderBy('kecamatan')
+            ->orderBy('kelurahan')
+            ->get();
     }
 }

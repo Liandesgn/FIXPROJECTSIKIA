@@ -194,7 +194,7 @@
                     <thead class="bg-gray-50 text-xs uppercase text-gray-600">
                         <tr>
                             <th class="px-5 py-3">No</th>
-                            <th class="px-5 py-3">Nama Posyandu</th>
+                            <th class="px-5 py-3">Wilayah</th>
                             <th class="px-5 py-3">Tanggal Kegiatan</th>
                             <th class="px-5 py-3">Jumlah Peserta</th>
                             <th class="px-5 py-3">Keterangan</th>
@@ -205,9 +205,9 @@
                         @forelse ($kegiatanPosyandu as $item)
                             <tr class="hover:bg-gray-50">
                                 <td class="px-5 py-3">{{ $loop->iteration }}</td>
-                                <td class="px-5 py-3 font-medium text-gray-800">{{ $item->nama_posyandu }}</td>
+                                <td class="px-5 py-3 font-medium text-gray-800">{{ $item->wilayah?->nama_wilayah ?? '-' }}</td>
                                 <td class="px-5 py-3">{{ \Carbon\Carbon::parse($item->tanggal)->format('d-m-Y') }}</td>
-                                <td class="px-5 py-3">{{ $item->jumlah_peserta }}</td>
+                                <td class="px-5 py-3">{{ $item->pemeriksaan_count }}</td>
                                 <td class="px-5 py-3">{{ $item->keterangan ?? '-' }}</td>
                             </tr>
                         @empty

@@ -43,5 +43,5 @@
 
 <div class="flex gap-2">
     <button type="submit" class="rounded-xl bg-[#C9517E] px-4 py-2 text-sm font-semibold text-white">Simpan</button>
-    <a href="{{ route('admin.permissions.index') }}" class="px-4 py-2 text-sm text-slate-500 hover:underline">Batal</a>
+    <a href="{{ route('superadmin.permissions.index') }}" class="px-4 py-2 text-sm text-slate-500 hover:underline">Batal</a>
 </div>

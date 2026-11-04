@@ -2,7 +2,7 @@
     $baris = [
         'NIK' => $anak->nik_anak ?? '-',
         'Nama' => $anak->nama_anak ?? '-',
-        'Tanggal Lahir' => $anak->tanggal_lahir?->format('d/m/Y') ?? '-',
+        'Tanggal Lahir' => $anak->tgl_lahir?->format('d/m/Y') ?? '-',
         'Tempat Lahir' => $anak->tempat_lahir ?? '-',
         'JK' => $anak->jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan',
     ];

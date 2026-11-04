@@ -56,7 +56,7 @@ public function index(Request $request)
         $permission = Permission::create(['name' => $data['name'], 'guard_name' => 'web']);
         $this->syncRoles($permission, $data['roles'] ?? []);
 
-        return redirect()->route('admin.permissions.index')
+        return redirect()->route('superadmin.permissions.index')
             ->with('success', 'Permission berhasil ditambahkan.');
     }
 
@@ -82,7 +82,7 @@ public function index(Request $request)
 
         $this->syncRoles($permission, $data['roles'] ?? []);
 
-        return redirect()->route('admin.permissions.index')
+        return redirect()->route('superadmin.permissions.index')
             ->with('success', 'Hak akses berhasil diperbarui.');
     }
 
@@ -94,7 +94,7 @@ public function index(Request $request)
 
         $permission->delete();
 
-        return redirect()->route('admin.permissions.index')
+        return redirect()->route('superadmin.permissions.index')
             ->with('success', 'Permission berhasil dihapus.');
     }
 
@@ -124,7 +124,7 @@ public function updateRole(Request $request, Role $role)
 
     $role->syncPermissions($names);
 
-    return redirect()->route('admin.permissions.index')
+    return redirect()->route('superadmin.permissions.index')
         ->with('success', 'Hak akses ' . ucfirst($role->name) . ' berhasil diperbarui.');
 }
 

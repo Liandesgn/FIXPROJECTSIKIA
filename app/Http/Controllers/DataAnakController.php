@@ -17,7 +17,7 @@ class DataAnakController extends Controller
     {
         $user = $request->user();
 
-        // Role Ibu: tampilan kartu sesuai wireframe 5.14
+       
         if ($user->isOrangTua()) {
             $ibu = Ibu::with(['user', 'wilayahKerja', 'anak'])
                 ->where('user_id', $user->id)
@@ -45,17 +45,25 @@ class DataAnakController extends Controller
         ]);
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
-        return view('data-anak.create', ['ibus' => $this->ibus()]);
+        return view('data-anak.create', ['ibus' => $this->ibus($request->user())]);
     }
 
     public function store(AnakRequest $request): RedirectResponse
     {
-        Anak::create($request->validated());
+        $data = $request->validated();
+
+        abort_unless(
+            Ibu::visibleTo($request->user())->whereKey($data['ibu_id'])->exists(),
+            403,
+            'Akses ditolak.'
+        );
+
+        Anak::create($data);
 
         return redirect()
-            ->route('admin.data-anak.index')
+            ->route($this->base($request).'.data-anak.index')
             ->with('success', 'Data anak berhasil ditambahkan.');
     }
 
@@ -83,20 +91,39 @@ class DataAnakController extends Controller
         ]);
     }
 
-    public function edit(Anak $anak): View
+    public function edit(Request $request, Anak $anak): View
     {
+        abort_unless(
+            Anak::visibleTo($request->user())->whereKey($anak->id)->exists(),
+            403,
+            'Akses ditolak.'
+        );
+
         return view('data-anak.edit', [
             'anak' => $anak,
-            'ibus' => $this->ibus(),
+            'ibus' => $this->ibus($request->user()),
         ]);
     }
 
     public function update(AnakRequest $request, Anak $anak): RedirectResponse
     {
-        $anak->update($request->validated());
+        $data = $request->validated();
+
+        abort_unless(
+            Anak::visibleTo($request->user())->whereKey($anak->id)->exists(),
+            403,
+            'Akses ditolak.'
+        );
+        abort_unless(
+            Ibu::visibleTo($request->user())->whereKey($data['ibu_id'])->exists(),
+            403,
+            'Akses ditolak.'
+        );
+
+        $anak->update($data);
 
         return redirect()
-            ->route('admin.data-anak.index')
+            ->route($this->base($request).'.data-anak.index')
             ->with('success', 'Data anak berhasil diperbarui.');
     }
 
@@ -105,8 +132,13 @@ class DataAnakController extends Controller
         return Str::before($request->route()->getName(), '.');
     }
 
-    private function ibus()
+    private function ibus($user)
     {
-        return Ibu::with('user')->get()->sortBy(fn ($i) => $i->user?->name)->values();
+        return Ibu::query()
+            ->visibleTo($user)
+            ->with('user')
+            ->get()
+            ->sortBy(fn ($i) => $i->user?->name)
+            ->values();
     }
 }

@@ -21,8 +21,11 @@ class RolePermissionSeeder extends Seeder
             Permission::findOrCreate($permission, $guard);
         }
 
+        $superAdmin = Role::findOrCreate(RoleEnum::SuperAdmin->value, $guard);
+        $superAdmin->syncPermissions(PermissionEnum::values());
+
         $admin = Role::findOrCreate(RoleEnum::Admin->value, $guard);
-        $admin->syncPermissions(PermissionEnum::values());
+        $admin->syncPermissions(PermissionEnum::adminValues());
 
         foreach ([RoleEnum::Ibu, RoleEnum::Bidan, RoleEnum::Kader] as $role) {
             Role::findOrCreate($role->value, $guard);

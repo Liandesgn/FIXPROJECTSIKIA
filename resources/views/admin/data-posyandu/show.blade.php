@@ -4,6 +4,7 @@
 
 @section('content')
 @php
+    $base = $base ?? 'admin';
     $baris = fn ($label, $nilai) => '<div class="flex justify-between gap-4 border-b border-[#F7E6ED] py-2.5 text-sm"><span class="font-semibold text-slate-600">'.e($label).'</span><span class="text-right font-semibold text-[#542D3D]">'.e($nilai ?: '-').'</span></div>';
 @endphp
 <div class="mx-auto w-full max-w-5xl space-y-5">
@@ -13,17 +14,17 @@
             <h1 class="text-2xl font-bold tracking-tight text-[#542D3D] sm:text-3xl">Detail Kegiatan Posyandu</h1>
             <p class="mt-1 text-sm font-medium text-slate-700">Data Master / Data Posyandu / Detail</p>
         </div>
-        <a href="{{ route('admin.data-posyandu.index') }}"
+        <a href="{{ route($base.'.data-posyandu.index') }}"
            class="rounded-xl border border-[#E99AB7] bg-white px-5 py-2.5 text-sm font-semibold text-[#C9517E] hover:bg-[#FCE7F0]">Kembali</a>
     </div>
 
     <div class="rounded-2xl border border-[#F1D5E0] bg-white p-5 shadow-sm">
         <h2 class="mb-2 text-sm font-bold text-[#542D3D]">Kegiatan</h2>
-        {!! $baris('Posyandu', $kegiatan->posyandu?->nama_posyandu) !!}
-        {!! $baris('Wilayah', $kegiatan->posyandu?->wilayahKerja?->nama_wilayah) !!}
+        {!! $baris('Jenis Kegiatan', $kegiatan->jenis_kegiatan) !!}
+        {!! $baris('Wilayah', $kegiatan->wilayah?->nama_wilayah) !!}
         {!! $baris('Tanggal', $kegiatan->tanggal?->format('d/m/Y')) !!}
         {!! $baris('Waktu', $kegiatan->waktu ? substr($kegiatan->waktu, 0, 5).' WIB' : null) !!}
-        {!! $baris('Lokasi', $kegiatan->lokasi ?: $kegiatan->posyandu?->alamat) !!}
+        {!! $baris('Lokasi', $kegiatan->lokasi) !!}
         {!! $baris('Jumlah Anak Diperiksa', $tersedia ? (string) $pemeriksaan->count() : null) !!}
     </div>
 

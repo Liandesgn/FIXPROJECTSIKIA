@@ -11,18 +11,18 @@ class AdminUserSeeder extends Seeder
 {
     public function run(): void
     {
-        $admin = User::firstOrCreate(
-            ['email' => 'admin@sikia.test'],
+        $superAdmin = User::firstOrCreate(
+            ['email' => 'superadmin@sikia'],
             [
-                'name' => 'Administrator',
+                'name' => 'Super Administrator',
                 'password' => 'password',
                 'phone' => '081000000000',
                 'status' => UserStatusEnum::Active->value,
             ],
         );
 
-        if (! $admin->hasRole(RoleEnum::Admin->value)) {
-            $admin->assignRole(RoleEnum::Admin->value);
+        if (! $superAdmin->hasRole(RoleEnum::SuperAdmin->value)) {
+            $superAdmin->syncRoles([RoleEnum::SuperAdmin->value]);
         }
     }
 }

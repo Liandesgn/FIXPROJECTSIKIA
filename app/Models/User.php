@@ -101,9 +101,22 @@ class User extends Authenticatable
             ->role(RoleEnum::Kader->value);
     }
 
+    public function isSuperAdmin(): bool
+    {
+        return $this->hasRole(RoleEnum::SuperAdmin->value);
+    }
+
     public function isAdmin(): bool
     {
         return $this->hasRole(RoleEnum::Admin->value);
+    }
+
+    /**
+     * Wilayah yang dikelola Admin. Super Admin tidak dibatasi wilayah.
+     */
+    public function managedWilayahId(): ?int
+    {
+        return $this->admin?->id_wilayah;
     }
 
     public function isOrangTua(): bool

@@ -56,10 +56,10 @@
             </div>
 
             <div>
-                <label for="tanggal_lahir" class="{{ $labelClass }}">Tanggal Lahir <span class="text-red-600">*</span></label>
-                <input id="tanggal_lahir" type="date" name="tanggal_lahir"
-                       value="{{ old('tanggal_lahir', $ibu->tanggal_lahir?->format('Y-m-d')) }}" class="{{ $inputClass }}">
-                @error('tanggal_lahir') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
+                <label for="tgl_lahir" class="{{ $labelClass }}">Tanggal Lahir <span class="text-red-600">*</span></label>
+                <input id="tgl_lahir" type="date" name="tgl_lahir"
+                       value="{{ old('tgl_lahir', $ibu->tgl_lahir?->format('Y-m-d')) }}" class="{{ $inputClass }}">
+                @error('tgl_lahir') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
             </div>
 
             <div>
@@ -69,7 +69,7 @@
                     @foreach ($wilayahs->groupBy('kecamatan') as $kecamatan => $desas)
                         <optgroup label="Kec. {{ $kecamatan ?: '-' }}">
                             @foreach ($desas as $w)
-                                <option value="{{ $w->id }}" @selected((string) old('wilayah_kerja_id', $ibu->wilayah_kerja_id) === (string) $w->id)>Desa {{ $w->desa }}</option>
+                                <option value="{{ $w->id }}" @selected((string) old('wilayah_kerja_id', $ibu->wilayah_kerja_id) === (string) $w->id)>Desa {{ $w->kelurahan }}</option>
                             @endforeach
                         </optgroup>
                     @endforeach

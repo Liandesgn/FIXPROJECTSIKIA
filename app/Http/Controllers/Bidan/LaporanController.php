@@ -68,9 +68,7 @@ class LaporanController extends Controller
             $query->whereBetween('tanggal', [
                 $tanggalMulai->toDateString(),
                 $tanggalAkhir->toDateString(),
-            ])->whereHas('posyandu', fn ($posyandu) =>
-                $posyandu->where('wilayah_kerja_id', $wilayahId)
-            );
+            ])->where('id_wilayah', $wilayahId);
         })
             ->distinct()
             ->count('anak_id');
@@ -96,9 +94,7 @@ class LaporanController extends Controller
                 $query->whereBetween('tanggal', [
                     $tanggalMulai->toDateString(),
                     $tanggalAkhir->toDateString(),
-                ])->whereHas('posyandu', fn ($posyandu) =>
-                    $posyandu->where('wilayah_kerja_id', $wilayahId)
-                );
+                ])->where('id_wilayah', $wilayahId);
             })
             ->distinct()
             ->count('anak_id');
@@ -128,7 +124,7 @@ class LaporanController extends Controller
         ];
 
         // Kegiatan Posyandu
-        $kegiatanPosyandu = KegiatanPosyandu::with('posyandu')
+        $kegiatanPosyandu = KegiatanPosyandu::with('wilayah')
             ->withCount('pemeriksaan')
             ->whereBetween('tanggal', [
                 $tanggalMulai->toDateString(),
@@ -211,9 +207,7 @@ class LaporanController extends Controller
             fn ($query) => $query->whereBetween('tanggal', [
                 $tanggalMulai->toDateString(),
                 $tanggalAkhir->toDateString(),
-            ])->whereHas('posyandu', fn ($posyandu) =>
-                $posyandu->where('wilayah_kerja_id', $wilayahId)
-            )
+            ])->where('id_wilayah', $wilayahId)
         )->count();
 
         $rekapPemeriksaan = collect([

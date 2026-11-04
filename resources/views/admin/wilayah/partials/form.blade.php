@@ -13,11 +13,11 @@
 </div>
 
 <div>
-    <label for="desa" class="{{ $labelClass }}">Kelurahan/Desa <span class="text-red-600">*</span></label>
-    <input id="desa" type="text" name="desa" maxlength="100"
-           value="{{ old('desa', $wilayah->desa ?? '') }}"
+    <label for="kelurahan" class="{{ $labelClass }}">Kelurahan/Desa <span class="text-red-600">*</span></label>
+    <input id="kelurahan" type="text" name="kelurahan" maxlength="100"
+           value="{{ old('kelurahan', $wilayah->kelurahan ?? '') }}"
            placeholder="Nama kelurahan/desa" class="{{ $inputClass }}">
-    @error('desa') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
+    @error('kelurahan') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
 </div>
 
 <div>
@@ -29,7 +29,7 @@
 </div>
 
 <div class="flex justify-end gap-3 pt-2">
-    <a href="{{ route('admin.wilayah-kerja.index') }}"
+    <a href="{{ route('superadmin.wilayah-kerja.index') }}"
        class="rounded-xl border border-[#E99AB7] bg-white px-6 py-2.5 text-sm font-semibold text-[#C9517E] transition hover:bg-[#FCE7F0]">Batal</a>
     <button type="submit"
             class="rounded-xl bg-[#C9517E] px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#C9517E]/25 transition hover:bg-[#B7436D]">Simpan</button>

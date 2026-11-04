@@ -44,7 +44,7 @@
         @elseif ($tab === 'kegiatan-posyandu')
             <thead>
                 <tr>
-                    <th>No</th><th>Tanggal</th><th>Posyandu</th>
+                    <th>No</th><th>Tanggal</th><th>Wilayah</th>
                     <th>Lokasi</th><th>Anak Diperiksa</th>
                 </tr>
             </thead>
@@ -53,7 +53,7 @@
                     <tr>
                         <td class="center">{{ $loop->iteration }}</td>
                         <td>{{ $item->tanggal->format('d-m-Y') }}</td>
-                        <td>{{ $item->posyandu?->nama_posyandu ?? '-' }}</td>
+                        <td>{{ $item->wilayah?->nama_wilayah ?? '-' }}</td>
                         <td>{{ $item->lokasi ?? '-' }}</td>
                         <td class="center">{{ $item->pemeriksaan_count }}</td>
                     </tr>

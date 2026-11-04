@@ -23,6 +23,12 @@ class LaporanPdfController extends Controller
             'wilayah_id' => ['nullable', 'exists:wilayah_kerja,id'],
         ]);
 
+        $wilayahId = $request->user()->loadMissing('admin')->managedWilayahId();
+
+        abort_unless($wilayahId, 403, 'Akun Admin belum memiliki wilayah kerja.');
+
+        $request->merge(['wilayah_id' => $wilayahId]);
+
         $tab = $request->input('tab');
         $periode = $request->input('periode', now()->format('Y-m'));
 
@@ -104,15 +110,13 @@ class LaporanPdfController extends Controller
         }
 
         if ($tab === 'kegiatan-posyandu') {
-            $data = KegiatanPosyandu::with('posyandu')
+            $data = KegiatanPosyandu::with('wilayah')
                 ->withCount('pemeriksaan')
                 ->whereBetween('tanggal', [
                     $mulai->toDateString(), $akhir->toDateString()
                 ])
                 ->when($request->filled('wilayah_id'), fn ($q) =>
-                    $q->whereHas('posyandu', fn ($p) =>
-                        $p->where('wilayah_kerja_id', $request->wilayah_id)
-                    )
+                    $q->where('id_wilayah', $request->wilayah_id)
                 )
                 ->orderBy('tanggal')
                 ->get();
@@ -175,18 +179,14 @@ class LaporanPdfController extends Controller
                 $q->whereBetween('tanggal', [
                     $mulai->toDateString(), $akhir->toDateString()
                 ])->when($request->filled('wilayah_id'), fn ($k) =>
-                    $k->whereHas('posyandu', fn ($p) =>
-                        $p->where('wilayah_kerja_id', $request->wilayah_id)
-                    )
+                    $k->where('id_wilayah', $request->wilayah_id)
                 )
             )->count();
 
             $kegiatan = KegiatanPosyandu::whereBetween('tanggal', [
                 $mulai->toDateString(), $akhir->toDateString()
             ])->when($request->filled('wilayah_id'), fn ($q) =>
-                $q->whereHas('posyandu', fn ($p) =>
-                    $p->where('wilayah_kerja_id', $request->wilayah_id)
-                )
+                $q->where('id_wilayah', $request->wilayah_id)
             )->count();
 
             $data->push((object) [

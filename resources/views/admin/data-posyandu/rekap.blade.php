@@ -4,6 +4,7 @@
 
 @section('content')
 @php
+    $base = $base ?? 'admin';
     $inputClass = 'rounded-xl border-2 border-[#C9517E]/60 bg-white px-3 py-2.5 text-sm font-medium text-gray-900 outline-none focus:border-[#C9517E] focus:ring-4 focus:ring-[#E99AB7]/40';
 @endphp
 <div class="mx-auto w-full max-w-[96rem] space-y-5">
@@ -13,15 +14,15 @@
         <p class="mt-1 text-sm font-medium text-slate-700">Data Master / Data Posyandu</p>
     </div>
 
-    @include('admin.data-posyandu.partials.tabs', ['active' => 'rekap'])
+    @include('admin.data-posyandu.partials.tabs', ['active' => 'rekap', 'base' => $base])
 
-    <form method="GET" action="{{ route('admin.data-posyandu.rekap') }}" class="flex flex-wrap items-center gap-2">
+    <form method="GET" action="{{ route($base.'.data-posyandu.rekap') }}" class="flex flex-wrap items-center gap-2">
         <input type="month" name="periode" value="{{ $periodeValue }}" class="{{ $inputClass }}">
 
-        <select name="posyandu_id" class="{{ $inputClass }}">
-            <option value="">Semua Posyandu</option>
-            @foreach ($posyandus as $p)
-                <option value="{{ $p->id }}" @selected((string) request('posyandu_id') === (string) $p->id)>{{ $p->nama_posyandu }}</option>
+        <select name="id_wilayah" class="{{ $inputClass }}">
+            <option value="">Semua Wilayah</option>
+            @foreach ($wilayahs as $w)
+                <option value="{{ $w->id }}" @selected((string) request('id_wilayah') === (string) $w->id)>{{ $w->nama_wilayah }}</option>
             @endforeach
         </select>
 
@@ -38,8 +39,8 @@
             <p class="mt-1 text-3xl font-bold text-[#C9517E]">{{ $ringkasan['anak'] }}</p>
         </div>
         <div class="rounded-2xl border border-[#F1D5E0] bg-white p-5 shadow-sm">
-            <p class="text-xs font-semibold text-slate-600">Posyandu Aktif</p>
-            <p class="mt-1 text-3xl font-bold text-[#C9517E]">{{ $ringkasan['posyandu'] }}</p>
+            <p class="text-xs font-semibold text-slate-600">Wilayah Aktif</p>
+            <p class="mt-1 text-3xl font-bold text-[#C9517E]">{{ $ringkasan['wilayah'] }}</p>
         </div>
     </div>
 
@@ -48,8 +49,8 @@
             <table class="w-full text-left">
                 <thead class="bg-[#FCE7F0] text-xs font-bold uppercase tracking-wide text-[#542D3D]">
                     <tr>
-                        <th class="px-4 py-3">Posyandu</th>
                         <th class="px-4 py-3">Wilayah</th>
+                        <th class="px-4 py-3">Kecamatan</th>
                         <th class="px-4 py-3">Jumlah Kegiatan</th>
                         <th class="px-4 py-3">Anak Diperiksa</th>
                     </tr>
@@ -57,8 +58,8 @@
                 <tbody class="divide-y divide-[#F7E6ED]">
                     @forelse ($rekap as $r)
                         <tr class="hover:bg-[#FCE7F0]/50">
-                            <td class="px-4 py-3.5 text-sm font-bold text-[#542D3D]">{{ $r['posyandu']?->nama_posyandu ?? '-' }}</td>
-                            <td class="px-4 py-3.5 text-sm text-slate-800">{{ $r['posyandu']?->wilayahKerja?->nama_wilayah ?? '-' }}</td>
+                            <td class="px-4 py-3.5 text-sm font-bold text-[#542D3D]">{{ $r['wilayah']?->nama_wilayah ?? '-' }}</td>
+                            <td class="px-4 py-3.5 text-sm text-slate-800">{{ $r['wilayah']?->kecamatan ?? '-' }}</td>
                             <td class="px-4 py-3.5 text-sm text-slate-800">{{ $r['kegiatan'] }}</td>
                             <td class="px-4 py-3.5 text-sm text-slate-800">{{ $r['anak'] }}</td>
                         </tr>

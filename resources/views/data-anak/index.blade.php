@@ -55,7 +55,7 @@
                             <td class="px-4 py-3.5 text-sm font-semibold text-slate-700">{{ $anaks->firstItem() + $loop->index }}</td>
                             <td class="px-4 py-3.5 text-sm text-slate-800">{{ $a->nik_anak }}</td>
                             <td class="px-4 py-3.5 text-sm font-bold text-[#542D3D]">{{ $a->nama_anak }}</td>
-                            <td class="px-4 py-3.5 text-sm text-slate-800">{{ $a->tempat_lahir }}, {{ $a->tanggal_lahir?->format('d/m/Y') }}</td>
+                            <td class="px-4 py-3.5 text-sm text-slate-800">{{ $a->tempat_lahir }}, {{ $a->tgl_lahir?->format('d/m/Y') }}</td>
                             <td class="px-4 py-3.5 text-sm text-slate-800">{{ $a->jenis_kelamin }}</td>
                             <td class="px-4 py-3.5 text-sm text-slate-800">{{ $a->nama_ayah }}</td>
                             <td class="px-4 py-3.5 text-sm text-slate-800">{{ $a->ibu?->user?->name ?? '(belum terhubung)' }}</td>

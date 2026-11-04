@@ -84,7 +84,7 @@
                             <td class="px-4 py-3.5 text-sm font-semibold text-slate-700">{{ $ibus->firstItem() + $loop->index }}</td>
                             <td class="px-4 py-3.5 text-sm text-slate-800">{{ $ibu->nik ?? '-' }}</td>
                             <td class="px-4 py-3.5 text-sm font-bold text-[#542D3D]">{{ $ibu->user?->name ?? '-' }}</td>
-                            <td class="px-4 py-3.5 text-sm text-slate-800">{{ $ibu->wilayahKerja?->desa ?? '-' }}</td>
+                            <td class="px-4 py-3.5 text-sm text-slate-800">{{ $ibu->wilayahKerja?->kelurahan ?? '-' }}</td>
                             <td class="px-4 py-3.5">@include('data-ibu.partials.badge', ['status' => $ibu->status_kehamilan])</td>
                            <td class="px-4 py-3.5 text-sm text-slate-800">
                         {{ $ibu->usia_kehamilan_sekarang !== null ? $ibu->usia_kehamilan_sekarang.' minggu' : '-' }}

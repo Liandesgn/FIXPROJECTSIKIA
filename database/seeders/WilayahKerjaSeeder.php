@@ -8,43 +8,17 @@ use Illuminate\Database\Seeder;
 class WilayahKerjaSeeder extends Seeder
 {
     /**
-     * 20 desa contoh yang tersebar pada 18 kecamatan di Kabupaten Gresik.
-     * Beberapa kecamatan memiliki lebih dari satu desa.
-     *
-     * @var array<int, array{0: string, 1: string}>
+     * 2 wilayah kerja awal (A-B).
      */
-    public const DESA = [
-        ['Wringinanom', 'Sumberame'],
-        ['Wringinanom', 'Lebanisuko'],
-        ['Driyorejo', 'Karangandong'],
-        ['Driyorejo', 'Bambe'],
-        ['Kedamean', 'Slempit'],
-        ['Menganti', 'Hendrosari'],
-        ['Cerme', 'Cerme Lor'],
-        ['Benjeng', 'Bulurejo'],
-        ['Balongpanggang', 'Karangsemanding'],
-        ['Duduksampeyan', 'Duduksampeyan'],
-        ['Kebomas', 'Randuagung'],
-        ['Gresik', 'Tumapel'],
-        ['Manyar', 'Manyarsidomukti'],
-        ['Bungah', 'Bungah'],
-        ['Sidayu', 'Sidomulyo'],
-        ['Dukun', 'Sembungankidul'],
-        ['Panceng', 'Prupuh'],
-        ['Ujungpangkah', 'Banyuurip'],
-        ['Sangkapura', 'Sungaiteluk'],
-        ['Tambak', 'Tambak'],
-    ];
-
-       public function run(): void
+    public function run(): void
     {
-        foreach (self::DESA as [$kecamatan, $desa]) {
+        foreach (range('A', 'B') as $huruf) {
             WilayahKerja::updateOrCreate(
-                ['kecamatan' => $kecamatan, 'desa' => $desa],
+                ['kelurahan' => 'Kelurahan '.$huruf, 'kecamatan' => 'Kecamatan '.$huruf],
                 [
                     'kabupaten' => 'Gresik',
-                    'nama_wilayah' => 'Desa '.$desa.', Kec. '.$kecamatan,
-                    'deskripsi' => 'Wilayah kerja Desa '.$desa.', Kecamatan '.$kecamatan.', Kabupaten Gresik.',
+                    'nama_wilayah' => 'Wilayah '.$huruf,
+                    'deskripsi' => 'Wilayah kerja '.$huruf.', Kabupaten Gresik.',
                 ]
             );
         }

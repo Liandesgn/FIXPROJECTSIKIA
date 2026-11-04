@@ -35,7 +35,7 @@
                                 @endforelse
                             </td>
                             <td class="whitespace-nowrap px-4 py-3.5 text-center">
-                                <a href="{{ route('admin.roles.edit', $role) }}"
+                                <a href="{{ route('superadmin.roles.edit', $role) }}"
                                    class="inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-[#C9517E] px-3 text-xs font-bold text-white shadow-sm transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40">
                                     Edit
                                 </a>

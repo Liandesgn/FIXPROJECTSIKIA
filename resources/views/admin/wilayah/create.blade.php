@@ -9,7 +9,7 @@
         <p class="mt-1 text-sm font-medium text-slate-700">Data Master / Kelola Wilayah Kerja / Tambah</p>
     </div>
 
-    <form method="POST" action="{{ route('admin.wilayah-kerja.store') }}"
+    <form method="POST" action="{{ route('superadmin.wilayah-kerja.store') }}"
           class="space-y-5 rounded-2xl border border-[#F1D5E0] bg-white p-6 shadow-sm">
         @csrf
         @include('admin.wilayah.partials.form')

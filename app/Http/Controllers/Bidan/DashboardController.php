@@ -6,6 +6,7 @@ use App\Enums\StatusKehamilanEnum;
 use App\Http\Controllers\Controller;
 use App\Models\Anak;
 use App\Models\Ibu;
+use App\Models\KegiatanPosyandu;
 use App\Models\PemeriksaanIbu;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -28,7 +29,6 @@ class DashboardController extends Controller
 
         $notifikasiTerbaru = collect();
 
-        // Jadwal belum tersedia karena tabel kegiatan_posyandu belum dibuat.
         $jadwalTerdekat = collect();
 
         if ($wilayahId) {
@@ -55,6 +55,14 @@ class DashboardController extends Controller
                     $query->where('wilayah_kerja_id', $wilayahId);
                 })
                 ->count();
+
+            $jadwalTerdekat = KegiatanPosyandu::query()
+                ->with('wilayah')
+                ->where('id_wilayah', $wilayahId)
+                ->whereDate('tanggal', '>=', today())
+                ->orderBy('tanggal')
+                ->limit(5)
+                ->get();
 
             // Notifikasi dari pemeriksaan ibu yang perlu perhatian.
             $notifikasiTerbaru = PemeriksaanIbu::query()

@@ -128,7 +128,7 @@
                     <div class="border-b border-[#F7E6ED] py-3 last:border-0">
 
                         <p class="font-bold text-[#542D3D]">
-                            {{ $jadwal->posyandu->nama_posyandu }}
+                            {{ $jadwal->jenis_kegiatan ?? 'Kegiatan Posyandu' }}
                         </p>
 
                         <p class="mt-1 text-xs text-slate-500">

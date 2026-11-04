@@ -4,6 +4,7 @@
 
 @section('content')
 @php
+    $base = $base ?? 'admin';
     $inputClass = 'rounded-xl border-2 border-[#C9517E]/60 bg-white px-3 py-2.5 text-sm font-medium text-gray-900 outline-none focus:border-[#C9517E] focus:ring-4 focus:ring-[#E99AB7]/40';
 @endphp
 <div class="mx-auto w-full max-w-[96rem] space-y-5">
@@ -13,14 +14,14 @@
         <p class="mt-1 text-sm font-medium text-slate-700">Data Master / Data Posyandu</p>
     </div>
 
-    @include('admin.data-posyandu.partials.tabs', ['active' => 'kegiatan'])
+    @include('admin.data-posyandu.partials.tabs', ['active' => 'kegiatan', 'base' => $base])
 
     <div class="overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm">
 
         <div class="border-b border-[#E99AB7] bg-[#FCE7F0] p-3 sm:p-4">
-            <form method="GET" action="{{ route('admin.data-posyandu.index') }}" class="flex flex-wrap gap-2">
+            <form method="GET" action="{{ route($base.'.data-posyandu.index') }}" class="flex flex-wrap gap-2">
                 <input type="search" name="search" value="{{ request('search') }}" autocomplete="off"
-                       placeholder="Cari Posyandu" class="{{ $inputClass }} w-full max-w-xs">
+                       placeholder="Cari kegiatan atau wilayah" class="{{ $inputClass }} w-full max-w-xs">
 
                 <select name="periode" onchange="this.form.submit()" class="{{ $inputClass }}">
                     <option value="">Semua Periode</option>
@@ -33,7 +34,7 @@
 
                 <button type="submit" class="rounded-xl bg-[#C9517E] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#B7436D]">Cari</button>
                 @if (request()->hasAny(['search', 'periode']))
-                    <a href="{{ route('admin.data-posyandu.index') }}" class="px-3 py-2.5 text-sm text-slate-600 hover:underline">Reset</a>
+                    <a href="{{ route($base.'.data-posyandu.index') }}" class="px-3 py-2.5 text-sm text-slate-600 hover:underline">Reset</a>
                 @endif
             </form>
         </div>
@@ -44,7 +45,8 @@
                     <tr>
                         <th class="px-4 py-3">No</th>
                         <th class="px-4 py-3">Tanggal</th>
-                        <th class="px-4 py-3">Posyandu</th>
+                        <th class="px-4 py-3">Jenis Kegiatan</th>
+                        <th class="px-4 py-3">Wilayah</th>
                         <th class="px-4 py-3">Lokasi</th>
                         <th class="px-4 py-3">Anak Diperiksa</th>
                         <th class="px-4 py-3 text-center">Aksi</th>
@@ -55,17 +57,18 @@
                         <tr class="hover:bg-[#FCE7F0]/50">
                             <td class="px-4 py-3.5 text-sm font-semibold text-slate-700">{{ $kegiatans->firstItem() + $loop->index }}</td>
                             <td class="px-4 py-3.5 text-sm text-slate-800">{{ $k->tanggal?->format('d/m/Y') }}</td>
-                            <td class="px-4 py-3.5 text-sm font-bold text-[#542D3D]">{{ $k->posyandu?->nama_posyandu ?? '-' }}</td>
-                            <td class="px-4 py-3.5 text-sm text-slate-800">{{ $k->lokasi ?: ($k->posyandu?->alamat ?? '-') }}</td>
+                            <td class="px-4 py-3.5 text-sm font-bold text-[#542D3D]">{{ $k->jenis_kegiatan ?? '-' }}</td>
+                            <td class="px-4 py-3.5 text-sm text-slate-800">{{ $k->wilayah?->nama_wilayah ?? '-' }}</td>
+                            <td class="px-4 py-3.5 text-sm text-slate-800">{{ $k->lokasi ?: '-' }}</td>
                             <td class="px-4 py-3.5 text-sm text-slate-800">{{ ($jumlahAnak[$k->id] ?? 0) ?: '-' }}</td>
                             <td class="px-4 py-3.5 text-center">
-                                <a href="{{ route('admin.data-posyandu.show', $k) }}"
+                                <a href="{{ route($base.'.data-posyandu.show', $k) }}"
                                    class="inline-flex h-8 items-center rounded-lg border border-[#C9517E] px-3 text-xs font-bold text-[#C9517E] hover:bg-[#FCE7F0]">Detail</a>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-5 py-12 text-center">
+                            <td colspan="7" class="px-5 py-12 text-center">
                                 <p class="font-bold text-[#542D3D]">Belum ada data kegiatan.</p>
                             </td>
                         </tr>

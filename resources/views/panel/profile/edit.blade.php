@@ -5,13 +5,18 @@
 @section('content')
 @php
     $roleKey   = \Illuminate\Support\Str::before($user->primaryRole()?->dashboard() ?? '', '.');
-    $roleLabel = $roleKey === 'orang-tua' ? 'Ibu' : ($user->primaryRole()?->label() ?? '-');
+    $roleLabel = $user->primaryRole()?->label() ?? '-';
     $isIbu     = $user->isOrangTua();
-    $isAdmin   = $roleKey === 'admin';
-    $wk        = $isIbu ? $user->ibu?->wilayahKerja : $user->wilayahKerja;
+    $wk        = match ($roleKey) {
+        'admin' => $user->admin?->wilayahKerja,
+        'bidan' => $user->bidan?->wilayahKerja,
+        'kader' => $user->kader?->wilayahKerja,
+        'ibu' => $user->ibu?->wilayahKerja,
+        default => null,
+    };
     $initial   = \Illuminate\Support\Str::upper(\Illuminate\Support\Str::substr($user->name, 0, 1));
 
-    $hamil = $isIbu && method_exists($user, 'sedangHamil') ? $user->ibu?->sedangHamil() : false;
+    $hamil = $isIbu && $user->ibu?->sedangHamil();
 
     // Satu baris informasi: label kecil berwarna + nilai tegas
     $field = fn (string $label, $value) =>
@@ -63,6 +68,9 @@
                 {!! $field('Email', $user->email) !!}
                 {!! $field('Nomor HP', $user->phone) !!}
                 {!! $field('Role', $roleLabel) !!}
+                @if ($wk)
+                    {!! $field('Wilayah Kerja', $wk->label()) !!}
+                @endif
             </dl>
         </div>
     </section>

@@ -101,94 +101,42 @@
             str_contains($l, 'konsultasi')                                  => 'chat',
             str_contains($l, 'edukasi')                                     => 'book',
             str_contains($l, 'notifikasi')                                  => 'bell',
+            str_contains($l, 'role')                                        => 'shield',
+            str_contains($l, 'permission')                                  => 'key',
+            str_contains($l, 'admin')                                       => 'users',
             str_contains($l, 'posyandu') || str_contains($l, 'wilayah')     => 'building',
             default                                                         => 'report',
         };
     };
 
     // ===== MENU PER ROLE =====
-    if ($roleKey === 'admin') {
-        $menu = [
-            ['label' => 'Dashboard', 'icon' => 'home', 'href' => $to('admin.dashboard', 'dashboard'), 'exact' => true],
-            ['label' => 'Manajemen User', 'icon' => 'users', 'items' => [
-                ['label' => 'Kelola Bidan', 'icon' => 'user', 'href' => $to('admin.bidan.index', 'kelola-bidan')],
-                ['label' => 'Kelola Kader', 'icon' => 'user', 'href' => $to('admin.kader.index', 'kelola-kader')],
-                ['label' => 'Kelola Ibu',   'icon' => 'user', 'href' => $to('admin.ibu.index', 'kelola-ibu')],
-            ]],
-            ['label' => 'Data Master', 'icon' => 'building', 'items' => [
-                ['label' => 'Data Ibu',            'icon' => 'user',     'href' => $to('admin.data-ibu.index', 'data-ibu')],
-                ['label' => 'Data Anak',           'icon' => 'child',    'href' => $to('admin.data-anak.index', 'data-anak')],
-                ['label' => 'Data Posyandu',       'icon' => 'building', 'href' => $to('admin.data-posyandu.index', 'data-posyandu')],
-                ['label' => 'Kelola Wilayah ','icon' => 'pin',      'href' => $to('admin.wilayah-kerja.index', 'kelola-wilayah')],
-                ['label' => 'Kelola Jadwal',       'icon' => 'calendar', 'href' => $to('admin.jadwal.index', 'kelola-jadwal')],
-            ]],
-            ['label' => 'Laporan dan Rekapitulasi', 'icon' => 'report', 'href' => $to('admin.laporan.index', 'laporan')],
-            // Akses & Hak ditaruh paling bawah
-                        // Akses & Hak ditaruh paling bawah
-            ['label' => 'Akses & Hak', 'icon' => 'shield', 'items' => [
-                ['label' => 'Kelola Role',       'icon' => 'shield', 'href' => $to('admin.roles.index', 'kelola-role')],
-                ['label' => 'Kelola Permission', 'icon' => 'key',    'href' => $to('admin.permissions.index', 'kelola-permission')],
-            ]],
-        ];
-        } elseif ($roleKey === 'bidan') {
-        $menu = [
-            ['label' => 'Dashboard',           'icon' => 'home',     'href' => $dashboardUrl, 'exact' => true],
-            ['label' => 'Data Ibu',            'icon' => 'user',     'href' => $to('bidan.data-ibu.index', 'data-ibu')],
-            ['label' => 'Data Anak',           'icon' => 'child',    'href' => $to('bidan.data-anak.index', 'data-anak')],
-            ['label' => 'Pemeriksaan Pasien',  'icon' => 'report',   'href' => $to('bidan.pemeriksaan-pasien.index', 'pemeriksaan-pasien')],
-            ['label' => 'Posyandu',            'icon' => 'building', 'href' => $to('bidan.posyandu.index', 'posyandu')],
-            ['label' => 'Riwayat Pemeriksaan', 'icon' => 'book',     'href' => $to('bidan.riwayat-pemeriksaan.index', 'riwayat-pemeriksaan')],
-            ['label' => 'Konsultasi',          'icon' => 'chat',     'href' => $to('bidan.konsultasi.index', 'konsultasi')],
-            ['label' => 'Jadwal',              'icon' => 'calendar', 'href' => $to('bidan.jadwal.index', 'jadwal')],
-            ['label' => 'Laporan Wilayah', 'icon' => 'report', 'href' => $to('bidan.laporan.index', 'laporan-wilayah')],
-        ];
-    } else {
-        // Kader & Ibu: tetap memakai Navigation bawaan project
-        $menu = [
-            ['label' => 'Dashboard', 'icon' => 'home', 'href' => $dashboardUrl, 'exact' => true],
-        ];
+    $menu = [];
 
-        foreach (\App\Support\Navigation::for($user) as $section) {
-            $heading = trim($section['heading'] ?? '');
-            if (preg_match('/akun|profil/i', $heading)) continue;
+    foreach (\App\Support\Navigation::for($user) as $section) {
+        $heading = trim($section['heading'] ?? '');
+        if (preg_match('/akun|profil/i', $heading)) continue;
 
-            $items = [];
-            foreach ($section['items'] as $item) {
-                $label = trim($item['label']);
-                if (preg_match('/^(dashboard|beranda|utama)$/i', $label)) continue;
-                if (preg_match('/profil|akun/i', $label)) continue;
+        $items = [];
+        foreach ($section['items'] as $item) {
+            $label = trim($item['label']);
+            if (preg_match('/profil|akun/i', $label)) continue;
 
-                $items[] = [
-                    'label'  => $label,
-                    'icon'   => $iconFor($label),
-                    'href'   => Route::has($item['route']) ? route($item['route'], $item['params'] ?? []) : '#',
-                    'active' => \App\Support\Navigation::isActive($item),
-                ];
-            }
-            if (! $items) continue;
-
-            if (preg_match('/^(utama|dashboard|beranda)$/i', $heading) || $heading === '') {
-                foreach ($items as $i) $menu[] = $i;
-            } else {
-                $menu[] = ['label' => $heading, 'icon' => $iconFor($heading), 'items' => $items];
-            }
+            $items[] = [
+                'label'  => $label,
+                'icon'   => $iconFor($label),
+                'href'   => Route::has($item['route']) ? route($item['route'], $item['params'] ?? []) : '#',
+                'active' => \App\Support\Navigation::isActive($item),
+            ];
         }
-    }
+        if (! $items) continue;
 
-    // Jika non-admin punya permission user.view, tampilkan Manajemen User
-    if ($roleKey !== 'admin' && $user->can('user.view')) {
-        $menu[] = ['label' => 'Manajemen User', 'icon' => 'users', 'items' => [
-            ['label' => 'Kelola Bidan', 'icon' => 'user', 'href' => $to('admin.bidan.index', 'kelola-bidan')],
-            ['label' => 'Kelola Kader', 'icon' => 'user', 'href' => $to('admin.kader.index', 'kelola-kader')],
-            ['label' => 'Kelola Ibu',   'icon' => 'user', 'href' => $to('admin.ibu.index', 'kelola-ibu')],
-        ]];
-    }
-
-            if ($roleKey !== 'admin' && $user->can('userrole.view')) {
-        $menu[] = ['label' => 'Akses & Hak', 'icon' => 'shield', 'items' => [
-            ['label' => 'Kelola Role',       'icon' => 'shield', 'href' => $to('admin.roles.index', 'role')],
-            ['label' => 'Kelola Permission', 'icon' => 'key',    'href' => $to('admin.permissions.index', 'permission')],
-        ]];
+        if (preg_match('/^(utama|dashboard|beranda)$/i', $heading) || $heading === '') {
+            foreach ($items as $item) {
+                $menu[] = $item;
+            }
+        } else {
+            $menu[] = ['label' => $heading, 'icon' => $iconFor($heading), 'items' => $items];
+        }
     }
 
     $isActive = function (array $item) {

@@ -10,7 +10,7 @@
 
     $wilayahLabel = $wk
         ? trim(
-            ($wk->desa ? 'Desa ' . $wk->desa : '') .
+            ($wk->kelurahan ? 'Desa ' . $wk->kelurahan : '') .
             ($wk->kecamatan ? ', Kec. ' . $wk->kecamatan : ''),
             ', '
         )

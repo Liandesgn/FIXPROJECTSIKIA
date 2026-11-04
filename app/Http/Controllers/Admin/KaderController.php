@@ -18,9 +18,13 @@ class KaderController extends Controller
 {
     public function index(Request $request): View
     {
+        $wilayahId = $request->user()->loadMissing('admin')->managedWilayahId();
+
         $kaders = User::query()
             ->role(RoleEnum::Kader->value)
             ->with('kader.wilayahKerja')
+            ->when($wilayahId, fn ($query) => $query->whereHas('kader', fn ($k) => $k->where('wilayah_kerja_id', $wilayahId)))
+            ->when(! $wilayahId, fn ($query) => $query->whereRaw('1 = 0'))
             ->when($request->filled('search'), fn ($query) => $query
                 ->where('name', 'like', '%'.$request->string('search').'%'))
             ->when($request->filled('wilayah_kerja_id'), fn ($query) => $query
@@ -32,14 +36,14 @@ class KaderController extends Controller
 
         return view('admin.kader.index', [
             'kaders' => $kaders,
-            'wilayahs' => $this->wilayahs(),
+            'wilayahs' => $this->wilayahs($wilayahId),
         ]);
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
         return view('admin.kader.create', [
-            'wilayahs' => $this->wilayahs(),
+            'wilayahs' => $this->wilayahs($request->user()->loadMissing('admin')->managedWilayahId()),
         ]);
     }
 
@@ -65,19 +69,23 @@ class KaderController extends Controller
             ->with('success', 'Data kader berhasil ditambahkan.');
     }
 
-    public function edit(User $kader): View
+    public function edit(Request $request, User $kader): View
     {
         abort_unless($kader->hasRole(RoleEnum::Kader->value), 404);
 
+        $wilayahId = $request->user()->loadMissing('admin')->managedWilayahId();
+        abort_unless($kader->kader?->wilayah_kerja_id === $wilayahId, 403);
+
         return view('admin.kader.edit', [
             'kader' => $kader->load('kader.wilayahKerja'),
-            'wilayahs' => $this->wilayahs(),
+            'wilayahs' => $this->wilayahs($wilayahId),
         ]);
     }
 
     public function update(UpdatePetugasRequest $request, User $kader): RedirectResponse
     {
         abort_unless($kader->hasRole(RoleEnum::Kader->value), 404);
+        abort_unless($kader->kader?->wilayah_kerja_id === $request->user()->loadMissing('admin')->managedWilayahId(), 403);
 
         $data = $request->validated();
 
@@ -104,6 +112,7 @@ class KaderController extends Controller
     public function destroy(User $kader): RedirectResponse
     {
         abort_unless($kader->hasRole(RoleEnum::Kader->value), 404);
+        abort_unless($kader->kader?->wilayah_kerja_id === auth()->user()->loadMissing('admin')->managedWilayahId(), 403);
 
         if ($kader->id === auth()->id()) {
             return back()->with('error', 'Anda tidak dapat menghapus akun sendiri.');
@@ -117,11 +126,13 @@ class KaderController extends Controller
             ->with('success', 'Data kader berhasil dihapus.');
     }
 
-    private function wilayahs()
+    private function wilayahs(?int $wilayahId)
     {
         return WilayahKerja::query()
+            ->when($wilayahId, fn ($q) => $q->where('id', $wilayahId))
+            ->when(! $wilayahId, fn ($q) => $q->whereRaw('1 = 0'))
             ->orderBy('kecamatan')
-            ->orderBy('desa')
+            ->orderBy('kelurahan')
             ->get();
     }
 }

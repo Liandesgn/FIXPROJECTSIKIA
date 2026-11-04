@@ -8,10 +8,12 @@ use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\Concerns\CreatesUsers;
 use Tests\TestCase;
 
 class MultiRolePanelTest extends TestCase
 {
+    use CreatesUsers;
     use RefreshDatabase;
 
     protected function setUp(): void
@@ -23,10 +25,9 @@ class MultiRolePanelTest extends TestCase
 
     private function userWithRole(RoleEnum $role): User
     {
-        $user = User::factory()->create(['password' => 'password']);
-        $user->assignRole($role->value);
-
-        return $user;
+        return $role === RoleEnum::Admin
+            ? $this->makeAdmin()
+            : $this->makeUser($role);
     }
 
     /**
@@ -35,10 +36,11 @@ class MultiRolePanelTest extends TestCase
     public static function dashboardProvider(): array
     {
         return [
-            'admin' => [RoleEnum::Admin->value, '/admin', 'Ringkasan Sistem'],
+            'super_admin' => [RoleEnum::SuperAdmin->value, '/superadmin', 'Dashboard Super Admin'],
+            'admin' => [RoleEnum::Admin->value, '/admin', 'Dashboard Admin'],
             'bidan' => [RoleEnum::Bidan->value, '/bidan', 'Dashboard Bidan'],
             'kader' => [RoleEnum::Kader->value, '/kader', 'Dashboard Kader'],
-            'orang_tua' => [RoleEnum::Ibu->value, '/orang-tua', 'Layanan untuk Anda'],
+            'ibu' => [RoleEnum::Ibu->value, '/ibu', 'Dashboard Ibu'],
         ];
     }
 
@@ -57,7 +59,7 @@ class MultiRolePanelTest extends TestCase
 
     public function test_guest_cannot_access_role_dashboards(): void
     {
-        foreach (['/admin', '/bidan', '/kader', '/orang-tua'] as $path) {
+        foreach (['/superadmin', '/admin', '/bidan', '/kader', '/ibu'] as $path) {
             $this->get($path)->assertRedirect('/login');
         }
     }
@@ -68,22 +70,27 @@ class MultiRolePanelTest extends TestCase
 
         $this->actingAs($bidan)->get('/admin')->assertStatus(403);
         $this->actingAs($bidan)->get('/kader')->assertStatus(403);
-        $this->actingAs($bidan)->get('/orang-tua')->assertStatus(403);
+        $this->actingAs($bidan)->get('/ibu')->assertStatus(403);
+        $this->actingAs($bidan)->get('/superadmin')->assertStatus(403);
 
         $admin = $this->userWithRole(RoleEnum::Admin);
         $this->actingAs($admin)->get('/bidan')->assertStatus(403);
+        $this->actingAs($admin)->get('/superadmin')->assertStatus(403);
 
-        $orangTua = $this->userWithRole(RoleEnum::Ibu);
-        $this->actingAs($orangTua)->get('/kader')->assertStatus(403);
+        $ibu = $this->userWithRole(RoleEnum::Ibu);
+        $this->actingAs($ibu)->get('/kader')->assertStatus(403);
+
+        $superAdmin = $this->userWithRole(RoleEnum::SuperAdmin);
+        $this->actingAs($superAdmin)->get('/admin')->assertStatus(403);
     }
 
     public function test_every_role_can_open_shared_profile(): void
     {
-        foreach ([RoleEnum::Admin, RoleEnum::Bidan, RoleEnum::Kader, RoleEnum::Ibu] as $role) {
+        foreach ([RoleEnum::SuperAdmin, RoleEnum::Admin, RoleEnum::Bidan, RoleEnum::Kader, RoleEnum::Ibu] as $role) {
             $this->actingAs($this->userWithRole($role))
                 ->get('/profile')
                 ->assertOk()
-                ->assertSee('Informasi Profil');
+                ->assertSee('Informasi akun yang terdaftar di SI-KIA');
         }
     }
 
@@ -105,7 +112,7 @@ class MultiRolePanelTest extends TestCase
     public function test_inactive_user_cannot_login(): void
     {
         $user = $this->userWithRole(RoleEnum::Kader);
-        $user->update(['status' => UserStatusEnum::Inactive]);
+        $user->update(['status' => UserStatusEnum::Inactive->value]);
 
         $this->post('/login', [
             'email' => $user->email,

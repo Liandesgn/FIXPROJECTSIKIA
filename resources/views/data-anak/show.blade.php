@@ -30,7 +30,7 @@
         <h2 class="mb-2 text-sm font-bold text-[#542D3D]">Data Anak</h2>
         {!! $baris('NIK', $anak->nik_anak) !!}
         {!! $baris('Nama', $anak->nama_anak) !!}
-        {!! $baris('Tanggal Lahir', $anak->tanggal_lahir?->format('d/m/Y')) !!}
+        {!! $baris('Tanggal Lahir', $anak->tgl_lahir?->format('d/m/Y')) !!}
         {!! $baris('Tempat Lahir', $anak->tempat_lahir) !!}
         {!! $baris('Jenis Kelamin', $anak->jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan') !!}
         {!! $baris('Nama Ayah', $anak->nama_ayah) !!}
@@ -41,7 +41,7 @@
         @if ($ibu)
             {!! $baris('NIK', $ibu->nik) !!}
             {!! $baris('Nama', $ibu->user?->name) !!}
-            {!! $baris('Tanggal Lahir', $ibu->tanggal_lahir?->format('d/m/Y')) !!}
+            {!! $baris('Tanggal Lahir', $ibu->tgl_lahir?->format('d/m/Y')) !!}
             {!! $baris('Nomor HP', $ibu->user?->phone) !!}
             {!! $baris('Wilayah', $ibu->wilayahKerja?->nama_wilayah) !!}
         @else

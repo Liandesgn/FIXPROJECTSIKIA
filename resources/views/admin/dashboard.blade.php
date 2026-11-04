@@ -13,7 +13,7 @@
             ['label' => 'Jadwal Posyandu',       'value' => $stats['jadwal'],    'icon' => 'M7 3v4m10-4v4M4 9h16M5 5h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z'],
         ];
 
-        $editRoutes = ['bidan' => 'admin.bidan.edit', 'kader' => 'admin.kader.edit', 'orang-tua' => 'admin.ibu.edit'];
+        $editRoutes = ['bidan' => 'admin.bidan.edit', 'kader' => 'admin.kader.edit', 'ibu' => 'admin.ibu.edit'];
     @endphp
 
     <div class="space-y-6">
@@ -76,7 +76,7 @@
                                     @endif
                                 </td>
                                 <td class="px-5 py-3 text-slate-700">{{ $u->email }}</td>
-                                <td class="px-5 py-3 text-slate-700">{{ $uKey === 'orang-tua' ? 'Ibu' : ($u->primaryRole()?->label() ?? '-') }}</td>
+                                <td class="px-5 py-3 text-slate-700">{{ $u->primaryRole()?->label() ?? '-' }}</td>
                                 <td class="px-5 py-3">
                                     @include('admin.partials.status', ['status' => $u->status])
                                 </td>

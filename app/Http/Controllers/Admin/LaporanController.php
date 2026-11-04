@@ -24,12 +24,18 @@ class LaporanController extends Controller
             'wilayah_id' => ['nullable', 'exists:wilayah_kerja,id'],
         ]);
 
+        $wilayahId = $request->user()->loadMissing('admin')->managedWilayahId();
+
+        abort_unless($wilayahId, 403, 'Akun Admin belum memiliki wilayah kerja.');
+
+        $request->merge(['wilayah_id' => $wilayahId]);
+
         $periode = $request->input('periode', now()->format('Y-m'));
 
         $tanggalMulai = Carbon::createFromFormat('Y-m', $periode)->startOfMonth();
         $tanggalAkhir = Carbon::createFromFormat('Y-m', $periode)->endOfMonth();
 
-        $wilayah = WilayahKerja::orderBy('nama_wilayah')->get();
+        $wilayah = WilayahKerja::whereKey($wilayahId)->get();
 
         $daftarWilayah = WilayahKerja::query()
             ->when(
@@ -136,7 +142,7 @@ class LaporanController extends Controller
         });
 
         // Laporan kegiatan Posyandu
-        $kegiatanPosyandu = KegiatanPosyandu::with('posyandu')
+        $kegiatanPosyandu = KegiatanPosyandu::with('wilayah')
             ->withCount('pemeriksaan')
             ->whereBetween('tanggal', [
                 $tanggalMulai->toDateString(),
@@ -144,13 +150,7 @@ class LaporanController extends Controller
             ])
             ->when(
                 $request->filled('wilayah_id'),
-                fn ($query) => $query->whereHas(
-                    'posyandu',
-                    fn ($posyandu) => $posyandu->where(
-                        'wilayah_kerja_id',
-                        $request->wilayah_id
-                    )
-                )
+                fn ($query) => $query->where('id_wilayah', $request->wilayah_id)
             )
             ->orderBy('tanggal')
             ->get();
@@ -255,12 +255,9 @@ class LaporanController extends Controller
 
                 $query->when(
                     $request->filled('wilayah_id'),
-                    fn ($kegiatan) => $kegiatan->whereHas(
-                        'posyandu',
-                        fn ($posyandu) => $posyandu->where(
-                            'wilayah_kerja_id',
-                            $request->wilayah_id
-                        )
+                    fn ($kegiatan) => $kegiatan->where(
+                        'id_wilayah',
+                        $request->wilayah_id
                     )
                 );
             }

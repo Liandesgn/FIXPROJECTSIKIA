@@ -63,7 +63,7 @@
                         <tr>
                             <td class="px-5 py-3 text-slate-800">{{ $a->nik_anak }}</td>
                             <td class="px-5 py-3 font-semibold text-[#542D3D]">{{ $a->nama_anak }}</td>
-                            <td class="px-5 py-3 text-slate-800">{{ $a->tanggal_lahir?->format('d/m/Y') }}</td>
+                            <td class="px-5 py-3 text-slate-800">{{ $a->tgl_lahir?->format('d/m/Y') }}</td>
                             <td class="px-5 py-3 text-slate-800">{{ $a->jenis_kelamin }}</td>
                         </tr>
                     @empty

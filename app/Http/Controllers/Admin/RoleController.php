@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\PermissionEnum;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -37,18 +38,19 @@ class RoleController extends Controller
         $nama = collect($data['permissions'] ?? []);
 
        
-if ($role->name === 'admin') {
-    $nama = $nama->merge(
-        Permission::where('name', 'like', 'user.%')
-            ->pluck('name')
-    );
-}
+        if ($role->name === 'super_admin') {
+            $nama = collect(PermissionEnum::values());
+        }
+
+        if ($role->name === 'admin') {
+            $nama = $nama->merge(PermissionEnum::adminValues());
+        }
 
 
         $role->syncPermissions($nama->unique()->values()->all());
 
         return redirect()
-            ->route('admin.roles.index')
+            ->route('superadmin.roles.index')
             ->with('success', 'Hak akses role ' . ucfirst($role->name) . ' berhasil diperbarui.');
     }
 }
