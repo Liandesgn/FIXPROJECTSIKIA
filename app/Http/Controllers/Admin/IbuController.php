@@ -40,9 +40,11 @@ class IbuController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return view('admin.ibu.index', [
+            return view('admin.ibu.index', [
             'ibus' => $ibus,
-            'wilayahs' => $this->wilayahs($wilayahId),
+            'wilayahs' => WilayahKerja::orderBy('kecamatan')
+                ->orderBy('kelurahan')
+                ->get(),
             'statuses' => UserStatusEnum::cases(),
         ]);
     }

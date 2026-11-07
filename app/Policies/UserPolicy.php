@@ -44,6 +44,6 @@ class UserPolicy
 
     public function assignRole(User $user, User $model): bool
     {
-        return $user->can(PermissionEnum::UserAssignRole->value);
+        return $user->isSuperAdmin() || $user->can(PermissionEnum::UserUpdate->value);
     }
 }

@@ -32,7 +32,7 @@
                 <optgroup label="Kec. {{ $kecamatan ?: '-' }}">
                     @foreach ($desas as $wilayah)
                         <option value="{{ $wilayah->id }}" @selected((string) $selectedWilayah === (string) $wilayah->id)>
-                            Desa {{ $wilayah->desa }}
+                            Desa {{ $wilayah->kelurahan }}
                         </option>
                     @endforeach
                 </optgroup>

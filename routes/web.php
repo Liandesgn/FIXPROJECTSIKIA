@@ -1,5 +1,9 @@
 <?php
 
+
+use App\Http\Controllers\SuperAdmin\LaporanController as SuperAdminLaporanController;
+use App\Http\Controllers\SuperAdmin\LaporanPdfController as SuperAdminLaporanPdfController;
+
 use App\Http\Controllers\Admin\BidanController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\DataPosyanduController;
@@ -46,11 +50,32 @@ Route::middleware('auth')->group(function () {
 
     Route::get('modul/{module}', [ComingSoonController::class, 'show'])->name('panel.module');
 
+
+
+    //superadmin
     Route::middleware('role:super_admin')
         ->prefix('superadmin')
         ->name('superadmin.')
         ->group(function () {
             Route::get('/', [SuperAdminDashboardController::class, 'index'])->name('dashboard');
+
+           Route::get('laporan', [SuperAdminLaporanController::class, 'index'])
+                ->name('laporan.index');
+
+            Route::get('laporan/pdf', [SuperAdminLaporanPdfController::class, 'download'])
+                ->name('laporan.pdf');
+
+             // Lihat data Bidan
+            Route::get('bidan', [\App\Http\Controllers\SuperAdmin\BidanController::class, 'index'])
+                ->name('bidan.index');
+
+            // Lihat data Kader
+            Route::get('kader', [\App\Http\Controllers\SuperAdmin\KaderController::class, 'index'])
+                ->name('kader.index');
+
+            // Lihat data Ibu
+            Route::get('ibu', [\App\Http\Controllers\SuperAdmin\IbuController::class, 'index'])
+                ->name('ibu.index');
 
             Route::get('admins', [AdminController::class, 'index'])->name('admins.index');
             Route::get('admins/create', [AdminController::class, 'create'])->name('admins.create');
@@ -59,12 +84,28 @@ Route::middleware('auth')->group(function () {
             Route::put('admins/{admin}', [AdminController::class, 'update'])->name('admins.update');
             Route::delete('admins/{admin}', [AdminController::class, 'destroy'])->name('admins.destroy');
 
-            Route::get('roles', [RoleController::class, 'index'])->name('roles.index');
-            Route::get('roles/{role}/edit', [RoleController::class, 'edit'])->name('roles.edit');
-            Route::put('roles/{role}', [RoleController::class, 'update'])->name('roles.update');
+                        // Kelola Role - Khusus Super Admin
+            Route::get('roles', [RoleController::class, 'index'])
+                ->name('roles.index');
+
+            Route::get('roles/create', [RoleController::class, 'create'])
+                ->name('roles.create');
+
+            Route::post('roles', [RoleController::class, 'store'])
+                ->name('roles.store');
+
+            Route::get('roles/{role}/edit', [RoleController::class, 'edit'])
+                ->name('roles.edit');
+
+            Route::put('roles/{role}', [RoleController::class, 'update'])
+                ->name('roles.update');
+
+            Route::delete('roles/{role}', [RoleController::class, 'destroy'])
+            ->name('roles.destroy');
+
 
             Route::get('permissions', [PermissionController::class, 'index'])
-                ->middleware('can:userrole.view')->name('permissions.index');
+                ->middleware('can:userpermission.view')->name('permissions.index');
             Route::get('permissions/role/{role}/edit', [PermissionController::class, 'editRole'])
                 ->middleware('can:userrole.update')->name('permissions.role.edit');
             Route::put('permissions/role/{role}', [PermissionController::class, 'updateRole'])
@@ -92,13 +133,69 @@ Route::middleware('auth')->group(function () {
                 ->middleware('can:wilayah.update')->name('wilayah-kerja.update');
             Route::delete('wilayah-kerja/{wilayah}', [WilayahKerjaController::class, 'destroy'])
                 ->middleware('can:wilayah.delete')->name('wilayah-kerja.destroy');
+            
         });
 
+
+        //admin
     Route::middleware('role:admin')
         ->prefix('admin')
         ->name('admin.')
         ->group(function () {
             Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
+
+        // Kelola Role - Admin hanya bisa melihat dan mengedit
+        Route::get('roles', [RoleController::class, 'index'])
+            ->middleware('can:userrole.view')
+            ->name('roles.index');
+
+        Route::get('roles/{role}/edit', [RoleController::class, 'edit'])
+            ->middleware('can:userrole.update')
+            ->name('roles.edit');
+
+        Route::put('roles/{role}', [RoleController::class, 'update'])
+            ->middleware('can:userrole.update')
+            ->name('roles.update');
+
+        Route::delete('roles/{role}', [RoleController::class, 'destroy'])
+        ->middleware('can:userrole.delete')
+        ->name('roles.destroy');
+
+
+    // Akses & Hak - Permission
+    Route::get('permissions', [PermissionController::class, 'index'])
+        ->middleware('can:userpermission.view')
+        ->name('permissions.index');
+
+    Route::get('permissions/create', [PermissionController::class, 'create'])
+        ->middleware('can:userpermission.create')
+        ->name('permissions.create');
+
+    Route::post('permissions', [PermissionController::class, 'store'])
+        ->middleware('can:userpermission.create')
+        ->name('permissions.store');
+
+    Route::get('permissions/{permission}/edit', [PermissionController::class, 'edit'])
+        ->middleware('can:userpermission.update')
+        ->name('permissions.edit');
+
+    Route::put('permissions/{permission}', [PermissionController::class, 'update'])
+        ->middleware('can:userpermission.update')
+        ->name('permissions.update');
+
+    Route::delete('permissions/{permission}', [PermissionController::class, 'destroy'])
+        ->middleware('can:userpermission.delete')
+        ->name('permissions.destroy');
+
+
+    // Akses & Hak - Mengatur Permission milik Role
+    Route::get('permissions/role/{role}/edit', [PermissionController::class, 'editRole'])
+        ->middleware('can:userrole.update')
+        ->name('permissions.role.edit');
+
+    Route::put('permissions/role/{role}', [PermissionController::class, 'updateRole'])
+        ->middleware('can:userrole.update')
+        ->name('permissions.role.update');
 
             Route::get('laporan', [LaporanController::class, 'index'])->name('laporan.index');
             Route::get('laporan/pdf', [LaporanPdfController::class, 'download'])->name('laporan.pdf');
@@ -172,6 +269,8 @@ Route::middleware('auth')->group(function () {
                 ->middleware('can:user.activate')->name('ibu.toggle-status');
         });
 
+
+        //bidan
     Route::middleware('role:bidan')
         ->prefix('bidan')
         ->name('bidan.')

@@ -10,7 +10,7 @@
         <p class="mt-1 text-sm font-medium text-slate-700">Akses &amp; Hak / Kelola Role / Edit</p>
     </div>
 
-    <form method="POST" action="{{ route('admin.roles.update', $role) }}"
+    <form method="POST" action="{{ route('superadmin.roles.update', $role) }}"
           class="space-y-4 rounded-2xl border border-[#F1D5E0] bg-white p-6 shadow-sm">
         @csrf
         @method('PUT')
@@ -39,7 +39,7 @@
 
         <div class="flex gap-2">
             <button type="submit" class="rounded-xl bg-[#C9517E] px-4 py-2 text-sm font-semibold text-white">Simpan</button>
-            <a href="{{ route('admin.roles.index') }}" class="px-4 py-2 text-sm text-slate-500 hover:underline">Batal</a>
+            <a href="{{ route('superadmin.roles.index') }}" class="px-4 py-2 text-sm text-slate-500 hover:underline">Batal</a>
         </div>
     </form>
 </div>

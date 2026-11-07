@@ -1,7 +1,8 @@
 @php
+    $base = $base ?? 'admin';
     $tabs = [
-        'kegiatan' => ['label' => 'Kegiatan', 'route' => 'admin.data-posyandu.index'],
-        'rekap'    => ['label' => 'Rekap',    'route' => 'admin.data-posyandu.rekap'],
+        'kegiatan' => ['label' => 'Kegiatan', 'route' => $base.'.data-posyandu.index'],
+        'rekap'    => ['label' => 'Rekap',    'route' => $base.'.data-posyandu.rekap'],
     ];
 @endphp
 

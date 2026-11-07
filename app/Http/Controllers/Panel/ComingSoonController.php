@@ -28,12 +28,13 @@ public const MODULES = [
         'grafik-perkembangan' => ['Grafik Perkembangan', 'Pantau grafik tumbuh kembang anak.'],
         'konsultasi' => ['Konsultasi Bidan', 'Ruang tanya jawab antara orang tua dan bidan.'],
         'jadwal-pemeriksaan' => ['Jadwal Pemeriksaan', 'Lihat jadwal pemeriksaan kesehatan.'],
-         'jadwal' => ['Jadwal', 'Lihat jadwal.'],
         'jadwal-posyandu' => ['Jadwal Posyandu', 'Lihat jadwal kegiatan posyandu.'],
         'laporan-wilayah' => ['Laporan Kesehatan Wilayah', 'Unduh laporan kesehatan per wilayah kerja.'],
         'pendataan-posyandu' => ['Pendataan Kegiatan Posyandu', 'Catat kehadiran dan kegiatan posyandu.'],
         'cari-ibu' => ['Cari Data Ibu', 'Cari data ibu berdasarkan nama atau identitas.'],
         'edukasi' => ['Edukasi Kesehatan', 'Artikel dan materi edukasi kesehatan ibu dan anak.'],
+        'pemeriksaan-pasien' => ['Pemeriksaan Pasien', 'Catat hasil pemeriksaan ibu hamil dan anak.'],
+        'posyandu' => ['Posyandu', 'Data dan kegiatan Posyandu di wilayah Anda.'],
     ];
 
     public function show(string $module): View

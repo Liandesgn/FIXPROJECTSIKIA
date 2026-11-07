@@ -1,11 +1,19 @@
 {{-- Kartu ringkas data anak. Parameter: $anak, $judul (opsional) --}}
 @php
     $baris = [
+<<<<<<< HEAD
         'NIK'           => $anak->nik_anak ?? '-',
         'Nama'          => $anak->nama_anak ?? '-',
         'Tanggal Lahir' => $anak->tanggal_lahir?->format('d/m/Y') ?? '-',
         'Tempat Lahir'  => $anak->tempat_lahir ?? '-',
         'JK'            => $anak->jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan',
+=======
+        'NIK' => $anak->nik_anak ?? '-',
+        'Nama' => $anak->nama_anak ?? '-',
+        'Tanggal Lahir' => $anak->tgl_lahir?->format('d/m/Y') ?? '-',
+        'Tempat Lahir' => $anak->tempat_lahir ?? '-',
+        'JK' => $anak->jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan',
+>>>>>>> c2c3578db03f43e9582063b4e1b16d459ea2148e
     ];
 @endphp
 

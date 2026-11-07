@@ -12,7 +12,7 @@
     @if ($ibu)
         @include('data-ibu.partials.kartu-ibu', ['ibu' => $ibu])
 
-        @php $daftarAnak = $ibu->anak->sortBy('tanggal_lahir')->values(); @endphp
+        @php $daftarAnak = $ibu->anak->sortBy('tgl_lahir')->values(); @endphp
 
         @forelse ($daftarAnak as $anak)
             @include('data-anak.partials.kartu-anak', [

@@ -72,7 +72,7 @@
                             <optgroup label="Kec. {{ $kecamatan ?: '-' }}">
                                 @foreach ($desas as $wilayah)
                                     <option value="{{ $wilayah->id }}" @selected((string) request('wilayah_kerja_id') === (string) $wilayah->id)>
-                                        Desa {{ $wilayah->desa }}
+                                        Desa {{ $wilayah->kelurahan }}
                                     </option>
                                 @endforeach
                             </optgroup>
@@ -119,7 +119,7 @@
                         @forelse ($ibus as $ibu)
                             @php
                                 $isActive = $ibu->status === \App\Enums\UserStatusEnum::Active;
-                                $desa     = $ibu->ibu?->wilayahKerja?->desa;
+                                $desa     = $ibu->ibu?->wilayahKerja?->kelurahan;
                                 $kec      = $ibu->ibu?->wilayahKerja?->kecamatan;
                             @endphp
                             <tr class="row-item transition hover:bg-[#FCE7F0]/50">

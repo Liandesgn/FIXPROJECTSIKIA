@@ -3,14 +3,15 @@
 namespace Tests\Feature;
 
 use App\Enums\RoleEnum;
-use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
+use Tests\Concerns\CreatesUsers;
 use Tests\TestCase;
 
 class ProfileTest extends TestCase
 {
+    use CreatesUsers;
     use RefreshDatabase;
 
     protected function setUp(): void
@@ -22,8 +23,7 @@ class ProfileTest extends TestCase
 
     public function test_user_can_view_own_profile(): void
     {
-        $user = User::factory()->create();
-        $user->assignRole(RoleEnum::OrangTua->value);
+        $user = $this->makeUser(RoleEnum::Ibu);
         Sanctum::actingAs($user);
 
         $this->getJson('/api/profile')
@@ -31,18 +31,25 @@ class ProfileTest extends TestCase
             ->assertJsonPath('data.email', $user->email);
     }
 
-    public function test_user_can_update_own_profile(): void
+    public function test_web_profile_is_read_only(): void
     {
-        $user = User::factory()->create();
-        $user->assignRole(RoleEnum::OrangTua->value);
+        $user = $this->makeUser(RoleEnum::Bidan);
+
+        $this->actingAs($user)
+            ->get('/profile')
+            ->assertOk()
+            ->assertSee('Informasi akun yang terdaftar di SI-KIA')
+            ->assertDontSee('name="name"', false);
+    }
+
+    public function test_api_profile_cannot_be_updated(): void
+    {
+        $user = $this->makeUser(RoleEnum::Ibu);
         Sanctum::actingAs($user);
 
         $this->putJson('/api/profile', [
             'name' => 'Nama Diubah',
             'phone' => '089876543210',
-        ])
-            ->assertOk()
-            ->assertJsonPath('data.name', 'Nama Diubah')
-            ->assertJsonPath('data.phone', '089876543210');
+        ])->assertStatus(405);
     }
 }

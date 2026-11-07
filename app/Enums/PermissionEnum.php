@@ -17,6 +17,7 @@ enum PermissionEnum: string
 
     case UserRoleView = 'userrole.view';
     case UserRoleUpdate = 'userrole.update';
+    case UserRoleDelete = 'userrole.delete';
 
     case UserPermissionView = 'userpermission.view';
     case UserPermissionCreate = 'userpermission.create';
@@ -50,6 +51,7 @@ enum PermissionEnum: string
             self::AdminDelete => 'Menghapus admin',
             self::UserRoleView => 'Melihat role',
             self::UserRoleUpdate => 'Mengubah role',
+            self::UserRoleDelete => 'Menghapus role',
             self::UserPermissionView => 'Melihat permission',
             self::UserPermissionCreate => 'Menambah permission',
             self::UserPermissionUpdate => 'Mengubah permission',

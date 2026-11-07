@@ -2,9 +2,7 @@
 @php
     $active = $active ?? 'wilayah';
     $tabs = [
-        'wilayah'   => ['label' => 'Wilayah',   'route' => 'admin.wilayah-kerja.index'],
-        'posyandu'  => ['label' => 'Posyandu',  'route' => 'admin.posyandu.index'],
-        'penugasan' => ['label' => 'Penugasan', 'route' => 'admin.penugasan.index'],
+        'wilayah' => ['label' => 'Wilayah', 'route' => 'superadmin.wilayah-kerja.index'],
     ];
 @endphp
 

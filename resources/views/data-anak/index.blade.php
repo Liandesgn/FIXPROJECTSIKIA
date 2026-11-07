@@ -49,11 +49,52 @@
             </form>
         </div>
 
+<<<<<<< HEAD
         {{-- Tabel (virtual scrolling) --}}
         <div id="listWrap" data-next="{{ $nextUrl }}">
             <div id="listScroll" class="max-h-[28rem] overflow-x-auto overflow-y-auto">
                 <table class="w-full text-left">
                     <thead class="sticky top-0 z-10 text-xs font-bold uppercase tracking-wide text-[#542D3D]">
+=======
+        <div class="overflow-x-auto">
+            <table class="w-full text-left">
+                <thead class="bg-[#FCE7F0] text-xs font-bold uppercase tracking-wide text-[#542D3D]">
+                    <tr>
+                        <th class="px-4 py-3">No</th>
+                        <th class="px-4 py-3">NIK Anak</th>
+                        <th class="px-4 py-3">Nama Anak</th>
+                        <th class="px-4 py-3">Tempat, Tgl Lahir</th>
+                        <th class="px-4 py-3">JK</th>
+                        <th class="px-4 py-3">Nama Ayah</th>
+                        <th class="px-4 py-3">Nama Ibu</th>
+                        <th class="px-4 py-3 text-center">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-[#F7E6ED]">
+                    @forelse ($anaks as $a)
+                        <tr class="hover:bg-[#FCE7F0]/50">
+                            <td class="px-4 py-3.5 text-sm font-semibold text-slate-700">{{ $anaks->firstItem() + $loop->index }}</td>
+                            <td class="px-4 py-3.5 text-sm text-slate-800">{{ $a->nik_anak }}</td>
+                            <td class="px-4 py-3.5 text-sm font-bold text-[#542D3D]">{{ $a->nama_anak }}</td>
+                            <td class="px-4 py-3.5 text-sm text-slate-800">{{ $a->tempat_lahir }}, {{ $a->tgl_lahir?->format('d/m/Y') }}</td>
+                            <td class="px-4 py-3.5 text-sm text-slate-800">{{ $a->jenis_kelamin }}</td>
+                            <td class="px-4 py-3.5 text-sm text-slate-800">{{ $a->nama_ayah }}</td>
+                            <td class="px-4 py-3.5 text-sm text-slate-800">{{ $a->ibu?->user?->name ?? '(belum terhubung)' }}</td>
+                            <td class="px-4 py-3.5">
+                                <div class="flex items-center justify-center gap-2">
+                                    <a href="{{ route($base.'.data-anak.show', $a) }}"
+                                       class="inline-flex h-8 items-center rounded-lg border border-[#C9517E] px-3 text-xs font-bold text-[#C9517E] hover:bg-[#FCE7F0]">Detail</a>
+                                    @if ($base === 'admin')
+                                        @can('anak.update')
+                                            <a href="{{ route('admin.data-anak.edit', $a) }}"
+                                               class="inline-flex h-8 items-center rounded-lg bg-[#C9517E] px-3 text-xs font-bold text-white hover:bg-[#B7436D]">Edit</a>
+                                        @endcan
+                                    @endif
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+>>>>>>> c2c3578db03f43e9582063b4e1b16d459ea2148e
                         <tr>
                             <th class="whitespace-nowrap bg-[#FCE7F0] px-3 py-3 lg:px-4">No</th>
                             <th class="hidden whitespace-nowrap bg-[#FCE7F0] px-4 py-3 xl:table-cell">NIK Anak</th>

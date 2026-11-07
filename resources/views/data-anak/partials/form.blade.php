@@ -48,10 +48,17 @@
     </div>
 
     <div>
+<<<<<<< HEAD
         <label for="tanggal_lahir" class="{{ $labelClass }}">Tanggal Lahir {!! $star !!}</label>
         <input id="tanggal_lahir" type="date" name="tanggal_lahir" max="{{ now()->format('Y-m-d') }}"
                value="{{ old('tanggal_lahir', $anak?->tanggal_lahir?->format('Y-m-d')) }}" class="{{ $inputClass }}">
         @error('tanggal_lahir') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
+=======
+        <label for="tgl_lahir" class="{{ $labelClass }}">Tanggal Lahir <span class="text-red-600">*</span></label>
+        <input id="tgl_lahir" type="date" name="tgl_lahir" max="{{ now()->format('Y-m-d') }}"
+               value="{{ old('tgl_lahir', isset($anak) ? $anak->tgl_lahir?->format('Y-m-d') : '') }}" class="{{ $inputClass }}">
+        @error('tgl_lahir') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
+>>>>>>> c2c3578db03f43e9582063b4e1b16d459ea2148e
     </div>
 
     <div>

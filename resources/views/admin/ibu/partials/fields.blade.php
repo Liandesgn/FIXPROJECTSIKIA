@@ -52,9 +52,9 @@
     </div>
 
     <div>
-        <label for="tanggal_lahir" class="{{ $labelClass }}">Tanggal Lahir {!! $star !!}</label>
-        <input id="tanggal_lahir" type="date" name="tanggal_lahir" value="{{ old('tanggal_lahir', $profil?->tanggal_lahir?->format('Y-m-d')) }}" required class="{{ $inputClass }}">
-        @error('tanggal_lahir') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
+        <label for="tgl_lahir" class="{{ $labelClass }}">Tanggal Lahir {!! $star !!}</label>
+        <input id="tgl_lahir" type="date" name="tgl_lahir" value="{{ old('tgl_lahir', $profil?->tgl_lahir?->format('Y-m-d')) }}" required class="{{ $inputClass }}">
+        @error('tgl_lahir') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
     </div>
 
     <div>
@@ -76,7 +76,7 @@
                 <optgroup label="Kec. {{ $kecamatan ?: '-' }}">
                     @foreach ($desas as $wilayah)
                         <option value="{{ $wilayah->id }}" @selected((string) $selectedWilayah === (string) $wilayah->id)>
-                            Desa {{ $wilayah->desa }}
+                            Desa {{ $wilayah->kelurahan }}
                         </option>
                     @endforeach
                 </optgroup>

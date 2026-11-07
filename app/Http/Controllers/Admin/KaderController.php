@@ -2,292 +2,139 @@
 
 namespace App\Http\Controllers\Admin;
 
-
-use App\Enums\StatusKehamilanEnum;
+use App\Enums\RoleEnum;
+use App\Enums\UserStatusEnum;
 use App\Http\Controllers\Controller;
-use App\Models\Anak;
-use App\Models\Ibu;
-use App\Models\KegiatanPosyandu;
-use App\Models\PemeriksaanIbu;
-use App\Models\PemeriksaanPosyandu;
+use App\Http\Requests\Admin\StorePetugasRequest;
+use App\Http\Requests\Admin\UpdatePetugasRequest;
+use App\Models\User;
 use App\Models\WilayahKerja;
-use Carbon\Carbon;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
-class LaporanController extends Controller
+class KaderController extends Controller
 {
     public function index(Request $request): View
     {
-        $request->validate([
-            'periode' => ['nullable', 'date_format:Y-m'],
-            'wilayah_id' => ['nullable', 'exists:wilayah_kerja,id'],
-        ]);
-
         $wilayahId = $request->user()->loadMissing('admin')->managedWilayahId();
 
-        abort_unless($wilayahId, 403, 'Akun Admin belum memiliki wilayah kerja.');
+        $kaders = User::query()
+            ->role(RoleEnum::Kader->value)
+            ->with('kader.wilayahKerja')
+            ->when($wilayahId, fn ($query) => $query->whereHas('kader', fn ($k) => $k->where('wilayah_kerja_id', $wilayahId)))
+            ->when(! $wilayahId, fn ($query) => $query->whereRaw('1 = 0'))
+            ->when($request->filled('search'), fn ($query) => $query
+                ->where('name', 'like', '%'.$request->string('search').'%'))
+            ->when($request->filled('wilayah_kerja_id'), fn ($query) => $query
+                ->whereHas('kader', fn ($k) => $k
+                    ->where('wilayah_kerja_id', $request->integer('wilayah_kerja_id'))))
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
 
-        $request->merge(['wilayah_id' => $wilayahId]);
+        return view('admin.kader.index', [
+        'kaders' => $kaders,
+        'wilayahs' => WilayahKerja::orderBy('kecamatan')
+            ->orderBy('kelurahan')
+            ->get(),
+    ]);
+    }
 
-        $periode = $request->input('periode', now()->format('Y-m'));
+    public function create(Request $request): View
+    {
+        return view('admin.kader.create', [
+            'wilayahs' => $this->wilayahs($request->user()->loadMissing('admin')->managedWilayahId()),
+        ]);
+    }
 
-        $tanggalMulai = Carbon::createFromFormat('Y-m', $periode)->startOfMonth();
-        $tanggalAkhir = Carbon::createFromFormat('Y-m', $periode)->endOfMonth();
+    public function store(StorePetugasRequest $request): RedirectResponse
+    {
+        $data = $request->validated();
 
-        $wilayah = WilayahKerja::whereKey($wilayahId)->get();
+        DB::transaction(function () use ($data) {
+            $kader = User::create([
+                'name' => $data['name'],
+                'email' => $data['email'],
+                'password' => $data['password'],
+                'phone' => $data['phone'] ?? null,
+                'status' => UserStatusEnum::Active->value,
+            ]);
 
-        $daftarWilayah = WilayahKerja::query()
-            ->when(
-                $request->filled('wilayah_id'),
-                fn ($query) => $query->where('id', $request->wilayah_id)
-            )
-            ->orderBy('nama_wilayah')
-            ->get();
-
-        $rekapWilayah = $daftarWilayah->map(function ($wilayahItem) use (
-            $tanggalMulai,
-            $tanggalAkhir
-        ) {
-            // Jumlah ibu hamil di wilayah
-            $jumlahIbuHamil = Ibu::where(
-                'wilayah_kerja_id',
-                $wilayahItem->id
-            )
-                ->where(
-                    'status_kehamilan',
-                    StatusKehamilanEnum::Hamil->value
-                )
-                ->count();
-
-            // Jumlah anak terdaftar di wilayah
-            $jumlahAnak = Anak::whereHas('ibu', function ($query) use ($wilayahItem) {
-                $query->where('wilayah_kerja_id', $wilayahItem->id);
-            })->count();
-
-            // Ibu yang diperiksa pada periode terpilih
-            $ibuDiperiksa = PemeriksaanIbu::whereBetween(
-                'tgl_pemeriksaan',
-                [$tanggalMulai, $tanggalAkhir]
-            )
-                ->whereHas('ibu', function ($query) use ($wilayahItem) {
-                    $query->where('wilayah_kerja_id', $wilayahItem->id);
-                })
-                ->distinct()
-                ->count('ibu_id');
-
-            // Anak yang diperiksa pada periode terpilih
-            $anakDiperiksa = PemeriksaanPosyandu::whereHas(
-                'kegiatan',
-                function ($query) use ($tanggalMulai, $tanggalAkhir) {
-                    $query->whereBetween(
-                        'tanggal',
-                        [$tanggalMulai, $tanggalAkhir]
-                    );
-                }
-            )
-                ->whereHas('anak.ibu', function ($query) use ($wilayahItem) {
-                    $query->where('wilayah_kerja_id', $wilayahItem->id);
-                })
-                ->distinct()
-                ->count('anak_id');
-
-            // Ibu dengan status perlu perhatian
-            $ibuPerluPerhatian = PemeriksaanIbu::whereBetween(
-                'tgl_pemeriksaan',
-                [$tanggalMulai, $tanggalAkhir]
-            )
-                ->where('status_kesehatan', PemeriksaanIbu::PERLU_PERHATIAN)
-                ->whereHas('ibu', function ($query) use ($wilayahItem) {
-                    $query->where('wilayah_kerja_id', $wilayahItem->id);
-                })
-                ->distinct()
-                ->count('ibu_id');
-
-            // Anak dengan status perlu perhatian
-            $anakPerluPerhatian = PemeriksaanPosyandu::where(
-                'status_kesehatan',
-                PemeriksaanPosyandu::PERLU_PERHATIAN
-            )
-                ->whereHas('kegiatan', function ($query) use (
-                    $tanggalMulai,
-                    $tanggalAkhir
-                ) {
-                    $query->whereBetween(
-                        'tanggal',
-                        [$tanggalMulai, $tanggalAkhir]
-                    );
-                })
-                ->whereHas('anak.ibu', function ($query) use ($wilayahItem) {
-                    $query->where('wilayah_kerja_id', $wilayahItem->id);
-                })
-                ->distinct()
-                ->count('anak_id');
-
-            $diperiksa = $ibuDiperiksa + $anakDiperiksa;
-            $perluPerhatian = $ibuPerluPerhatian + $anakPerluPerhatian;
-
-            $persentase = $diperiksa > 0
-                ? round(($perluPerhatian / $diperiksa) * 100, 1)
-                : 0;
-
-            return (object) [
-                'nama_wilayah' => $wilayahItem->nama_wilayah,
-                'ibu_hamil' => $jumlahIbuHamil,
-                'anak' => $jumlahAnak,
-                'diperiksa' => $diperiksa,
-                'perlu_perhatian' => $perluPerhatian,
-                'persentase' => $persentase,
-            ];
+            $kader->assignRole(RoleEnum::Kader->value);
+            $kader->assignWilayah((int) $data['wilayah_kerja_id']);
         });
 
-        // Laporan kegiatan Posyandu
-        $kegiatanPosyandu = KegiatanPosyandu::with('wilayah')
-            ->withCount('pemeriksaan')
-            ->whereBetween('tanggal', [
-                $tanggalMulai->toDateString(),
-                $tanggalAkhir->toDateString(),
-            ])
-            ->when(
-                $request->filled('wilayah_id'),
-                fn ($query) => $query->where('id_wilayah', $request->wilayah_id)
-            )
-            ->orderBy('tanggal')
-            ->get();
+        return redirect()
+            ->route('admin.kader.index')
+            ->with('success', 'Data kader berhasil ditambahkan.');
+    }
 
-        // Data risiko ibu: hanya pemeriksaan terakhir setiap ibu
-        $risikoIbu = PemeriksaanIbu::with([
-            'ibu.user',
-            'ibu.wilayahKerja',
-        ])
-            ->terakhirPerIbu()
-            ->where('status_kesehatan', PemeriksaanIbu::PERLU_PERHATIAN)
-            ->whereBetween('tgl_pemeriksaan', [
-                $tanggalMulai->toDateString(),
-                $tanggalAkhir->toDateString(),
-            ])
-            ->whereHas('ibu', function ($query) use ($request) {
-                $query->when(
-                    $request->filled('wilayah_id'),
-                    fn ($ibuQuery) => $ibuQuery->where(
-                        'wilayah_kerja_id',
-                        $request->wilayah_id
-                    )
-                );
-            })
-            ->get();
+    public function edit(Request $request, User $kader): View
+    {
+        abort_unless($kader->hasRole(RoleEnum::Kader->value), 404);
 
-        // Data risiko anak: hanya pemeriksaan terakhir setiap anak
-        $risikoAnak = PemeriksaanPosyandu::with([
-            'anak.ibu.wilayahKerja',
-            'kegiatan',
-        ])
-            ->terakhirPerAnak()
-            ->where('status_kesehatan', PemeriksaanPosyandu::PERLU_PERHATIAN)
-            ->whereHas('kegiatan', function ($query) use ($tanggalMulai, $tanggalAkhir) {
-                $query->whereBetween('tanggal', [
-                    $tanggalMulai->toDateString(),
-                    $tanggalAkhir->toDateString(),
-                ]);
-            })
-            ->whereHas('anak.ibu', function ($query) use ($request) {
-                $query->when(
-                    $request->filled('wilayah_id'),
-                    fn ($ibuQuery) => $ibuQuery->where(
-                        'wilayah_kerja_id',
-                        $request->wilayah_id
-                    )
-                );
-            })
-            ->get();
+        $wilayahId = $request->user()->loadMissing('admin')->managedWilayahId();
+        abort_unless($kader->kader?->wilayah_kerja_id === $wilayahId, 403);
 
-        // Gabungkan data risiko ibu dan anak
-        $dataRisiko = collect();
-
-        foreach ($risikoAnak as $pemeriksaan) {
-            $dataRisiko->push((object) [
-                'nama' => $pemeriksaan->anak?->nama_anak ?? '-',
-                'jenis' => 'Anak',
-                'wilayah' => $pemeriksaan->anak?->ibu?->wilayahKerja?->nama_wilayah ?? '-',
-                'tanggal' => $pemeriksaan->kegiatan?->tanggal,
-                'indikator' => 'BB: '.($pemeriksaan->berat_badan ?? '-').' kg, TB: '.($pemeriksaan->tinggi_badan ?? '-').' cm',
-                'penanda' => 'Perlu Perhatian',
-            ]);
-        }
-
-        foreach ($risikoIbu as $pemeriksaan) {
-            $dataRisiko->push((object) [
-                'nama' => $pemeriksaan->ibu?->user?->name ?? '-',
-                'jenis' => 'Ibu',
-                'wilayah' => $pemeriksaan->ibu?->wilayahKerja?->nama_wilayah ?? '-',
-                'tanggal' => $pemeriksaan->tgl_pemeriksaan,
-                'indikator' => 'Status pemeriksaan: Perlu Perhatian',
-                'penanda' => 'Perlu Perhatian',
-            ]);
-        }
-
-
-                // Rekap pemeriksaan berdasarkan bulan
-        $rekapPemeriksaan = collect();
-
-        $jumlahPemeriksaanIbu = PemeriksaanIbu::whereBetween(
-            'tgl_pemeriksaan',
-            [$tanggalMulai, $tanggalAkhir]
-        )
-            ->whereHas('ibu', function ($query) use ($request) {
-                $query->when(
-                    $request->filled('wilayah_id'),
-                    fn ($ibuQuery) => $ibuQuery->where(
-                        'wilayah_kerja_id',
-                        $request->wilayah_id
-                    )
-                );
-            })
-            ->count();
-
-        $jumlahPemeriksaanAnak = PemeriksaanPosyandu::whereHas(
-            'kegiatan',
-            function ($query) use ($tanggalMulai, $tanggalAkhir, $request) {
-                $query->whereBetween('tanggal', [
-                    $tanggalMulai->toDateString(),
-                    $tanggalAkhir->toDateString(),
-                ]);
-
-                $query->when(
-                    $request->filled('wilayah_id'),
-                    fn ($kegiatan) => $kegiatan->where(
-                        'id_wilayah',
-                        $request->wilayah_id
-                    )
-                );
-            }
-        )->count();
-
-        $jumlahKegiatan = $kegiatanPosyandu->count();
-
-        $rekapPemeriksaan->push((object) [
-            'bulan' => $tanggalMulai->translatedFormat('F Y'),
-            'pemeriksaan_ibu' => $jumlahPemeriksaanIbu,
-            'pemeriksaan_anak' => $jumlahPemeriksaanAnak,
-            'kegiatan_posyandu' => $jumlahKegiatan,
+        return view('admin.kader.edit', [
+            'kader' => $kader->load('kader.wilayahKerja'),
+            'wilayahs' => $this->wilayahs($wilayahId),
         ]);
+    }
 
+    public function update(UpdatePetugasRequest $request, User $kader): RedirectResponse
+    {
+        abort_unless($kader->hasRole(RoleEnum::Kader->value), 404);
+        abort_unless($kader->kader?->wilayah_kerja_id === $request->user()->loadMissing('admin')->managedWilayahId(), 403);
 
+        $data = $request->validated();
 
-        $ringkasan = [
-            'ibu_hamil' => $rekapWilayah->sum('ibu_hamil'),
-            'anak' => $rekapWilayah->sum('anak'),
-            'perlu_perhatian' => $rekapWilayah->sum('perlu_perhatian'),
-        ];
+        DB::transaction(function () use ($data, $kader) {
+            $kader->fill([
+                'name' => $data['name'],
+                'email' => $data['email'],
+                'phone' => $data['phone'] ?? null,
+            ]);
 
-        return view('admin.laporan.index', compact(
-            'wilayah',
-            'rekapWilayah',
-            'ringkasan',
-            'periode',
-            'kegiatanPosyandu',
-            'dataRisiko',
-            'rekapPemeriksaan'
-        ));
+            if (! empty($data['password'])) {
+                $kader->password = $data['password'];
+            }
+
+            $kader->save();
+            $kader->assignWilayah((int) $data['wilayah_kerja_id']);
+        });
+
+        return redirect()
+            ->route('admin.kader.index')
+            ->with('success', 'Data kader berhasil diperbarui.');
+    }
+
+    public function destroy(User $kader): RedirectResponse
+    {
+        abort_unless($kader->hasRole(RoleEnum::Kader->value), 404);
+        abort_unless($kader->kader?->wilayah_kerja_id === auth()->user()->loadMissing('admin')->managedWilayahId(), 403);
+
+        if ($kader->id === auth()->id()) {
+            return back()->with('error', 'Anda tidak dapat menghapus akun sendiri.');
+        }
+
+        $kader->tokens()->delete();
+        $kader->delete();
+
+        return redirect()
+            ->route('admin.kader.index')
+            ->with('success', 'Data kader berhasil dihapus.');
+    }
+
+    private function wilayahs(?int $wilayahId)
+    {
+        return WilayahKerja::query()
+            ->when($wilayahId, fn ($q) => $q->where('id', $wilayahId))
+            ->when(! $wilayahId, fn ($q) => $q->whereRaw('1 = 0'))
+            ->orderBy('kecamatan')
+            ->orderBy('kelurahan')
+            ->get();
     }
 }

@@ -11,7 +11,7 @@
             <p class="mt-1 text-sm font-medium text-slate-700">Akses &amp; Hak / Kelola Permission</p>
         </div>
 
-        <a href="{{ route('admin.permissions.create') }}"
+        <a href="{{ route('superadmin.permissions.create') }}"
            class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#C9517E] px-5 py-3 text-sm font-semibold text-white shadow-md shadow-[#C9517E]/25 transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40">
             <span class="text-lg leading-none">+</span> Tambah Permission
         </a>
@@ -43,12 +43,12 @@
                             </td>
                             <td class="whitespace-nowrap px-4 py-3.5">
                                 <div class="flex flex-nowrap items-center justify-center gap-2">
-                                    <a href="{{ route('admin.permissions.edit', $permission) }}"
+                                    <a href="{{ route('superadmin.permissions.edit', $permission) }}"
                                        class="inline-flex h-8 items-center justify-center rounded-lg bg-[#C9517E] px-3 text-xs font-bold text-white shadow-sm transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40">
                                         Edit
                                     </a>
 
-                                    <form method="POST" action="{{ route('admin.permissions.destroy', $permission) }}" class="m-0"
+                                    <form method="POST" action="{{ route('superadmin.permissions.destroy', $permission) }}" class="m-0"
                                           onsubmit="return confirm('Hapus permission {{ $permission->name }}?')">
                                         @csrf
                                         @method('DELETE')

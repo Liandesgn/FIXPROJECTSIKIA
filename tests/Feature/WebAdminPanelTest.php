@@ -8,33 +8,35 @@ use App\Models\User;
 use App\Models\WilayahKerja;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\CreatesUsers;
 use Tests\TestCase;
 
 class WebAdminPanelTest extends TestCase
 {
+    use CreatesUsers;
     use RefreshDatabase;
+
+    private WilayahKerja $wilayah;
 
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->seed(RolePermissionSeeder::class);
+        $this->wilayah = $this->makeWilayah();
     }
 
     private function admin(): User
     {
-        $admin = User::factory()->create([
+        return $this->makeAdmin($this->wilayah, [
             'email' => 'admin-panel@sikia.test',
             'password' => 'password',
         ]);
-        $admin->assignRole(RoleEnum::Admin->value);
-
-        return $admin;
     }
 
     public function test_login_page_is_accessible_for_guests(): void
     {
-        $this->get('/login')->assertOk()->assertSee('Masuk ke SI-KIA');
+        $this->get('/login')->assertOk()->assertSee('Login')->assertSee('SI-KIA');
     }
 
     public function test_guest_is_redirected_to_login(): void
@@ -53,7 +55,7 @@ class WebAdminPanelTest extends TestCase
 
         $this->assertAuthenticated();
 
-        $this->get('/admin')->assertOk()->assertSee('Ringkasan Sistem');
+        $this->get('/admin')->assertOk()->assertSee('Dashboard Admin');
     }
 
     public function test_login_failure_shows_indonesian_message(): void
@@ -70,14 +72,13 @@ class WebAdminPanelTest extends TestCase
 
     public function test_non_admin_is_redirected_to_own_dashboard(): void
     {
-        $bidan = User::factory()->create([
+        $bidan = $this->makeUser(RoleEnum::Bidan, $this->wilayah, [
             'email' => 'bidan-panel@sikia.test',
             'password' => 'password',
         ]);
-        $bidan->assignRole(RoleEnum::Bidan->value);
 
         $this->post('/login', [
-            'email' => 'bidan-panel@sikia.test',
+            'email' => $bidan->email,
             'password' => 'password',
         ])->assertRedirect('/bidan');
 
@@ -86,8 +87,7 @@ class WebAdminPanelTest extends TestCase
 
     public function test_non_admin_cannot_access_admin_area(): void
     {
-        $bidan = User::factory()->create();
-        $bidan->assignRole(RoleEnum::Bidan->value);
+        $bidan = $this->makeUser(RoleEnum::Bidan, $this->wilayah);
 
         $this->actingAs($bidan)->get('/admin')->assertStatus(403);
         $this->actingAs($bidan)->get('/admin/bidan')->assertStatus(403);
@@ -106,8 +106,6 @@ class WebAdminPanelTest extends TestCase
 
     public function test_admin_can_create_bidan_from_panel(): void
     {
-        $wilayah = WilayahKerja::create(['nama' => 'Puskesmas Panel']);
-
         $this->actingAs($this->admin())
             ->post('/admin/bidan', [
                 'name' => 'Bidan Baru',
@@ -115,17 +113,17 @@ class WebAdminPanelTest extends TestCase
                 'password' => 'password123',
                 'password_confirmation' => 'password123',
                 'phone' => '081122334455',
-                'wilayah_kerja_id' => $wilayah->id,
+                'wilayah_kerja_id' => $this->wilayah->id,
             ])
             ->assertRedirect('/admin/bidan');
 
-        $this->assertDatabaseHas('users', ['email' => 'bidan-baru@sikia.test']);
+        $user = User::where('email', 'bidan-baru@sikia.test')->firstOrFail();
+
+        $this->assertSame($this->wilayah->id, $user->bidan?->wilayah_kerja_id);
     }
 
     public function test_admin_can_create_kader_from_panel(): void
     {
-        $wilayah = WilayahKerja::create(['nama' => 'Puskesmas Panel']);
-
         $this->actingAs($this->admin())
             ->post('/admin/kader', [
                 'name' => 'Kader Baru',
@@ -133,17 +131,41 @@ class WebAdminPanelTest extends TestCase
                 'password' => 'password123',
                 'password_confirmation' => 'password123',
                 'phone' => '081122334455',
-                'wilayah_kerja_id' => $wilayah->id,
+                'wilayah_kerja_id' => $this->wilayah->id,
             ])
             ->assertRedirect('/admin/kader');
 
-        $this->assertDatabaseHas('users', ['email' => 'kader-baru@sikia.test']);
+        $user = User::where('email', 'kader-baru@sikia.test')->firstOrFail();
+
+        $this->assertSame($this->wilayah->id, $user->kader?->wilayah_kerja_id);
+    }
+
+    public function test_admin_cannot_create_bidan_in_another_wilayah(): void
+    {
+        $otherWilayah = $this->makeWilayah([
+            'nama_wilayah' => 'Desa Banjaran, Kec. Driyorejo',
+            'kecamatan' => 'Driyorejo',
+            'kelurahan' => 'Banjaran',
+        ]);
+
+        $this->actingAs($this->admin())
+            ->post('/admin/bidan', [
+                'name' => 'Bidan Luar',
+                'email' => 'bidan-luar@sikia.test',
+                'password' => 'password123',
+                'password_confirmation' => 'password123',
+                'wilayah_kerja_id' => $otherWilayah->id,
+            ])
+            ->assertSessionHasErrors('wilayah_kerja_id');
+
+        $this->assertDatabaseMissing('users', ['email' => 'bidan-luar@sikia.test']);
     }
 
     public function test_admin_can_toggle_ibu_status_from_panel(): void
     {
-        $ibu = User::factory()->create(['status' => UserStatusEnum::Active->value]);
-        $ibu->assignRole(RoleEnum::OrangTua->value);
+        $ibu = $this->makeUser(RoleEnum::Ibu, $this->wilayah, [
+            'status' => UserStatusEnum::Active->value,
+        ]);
 
         $this->actingAs($this->admin())
             ->patch("/admin/ibu/{$ibu->id}/toggle-status")

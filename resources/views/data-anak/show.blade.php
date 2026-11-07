@@ -29,6 +29,7 @@
         </div>
     </div>
 
+<<<<<<< HEAD
     <div class="overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm">
         <h2 class="border-b border-[#E99AB7]/60 bg-[#FCE7F0] px-5 py-3 text-sm font-bold text-[#542D3D]">Data Anak</h2>
         <div class="px-5 py-2">
@@ -54,6 +55,29 @@
                 <p class="py-5 text-sm font-medium text-slate-700">(belum terhubung)</p>
             @endif
         </div>
+=======
+    <div class="rounded-2xl border border-[#F1D5E0] bg-white p-5 shadow-sm">
+        <h2 class="mb-2 text-sm font-bold text-[#542D3D]">Data Anak</h2>
+        {!! $baris('NIK', $anak->nik_anak) !!}
+        {!! $baris('Nama', $anak->nama_anak) !!}
+        {!! $baris('Tanggal Lahir', $anak->tgl_lahir?->format('d/m/Y')) !!}
+        {!! $baris('Tempat Lahir', $anak->tempat_lahir) !!}
+        {!! $baris('Jenis Kelamin', $anak->jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan') !!}
+        {!! $baris('Nama Ayah', $anak->nama_ayah) !!}
+    </div>
+
+    <div class="rounded-2xl border border-[#F1D5E0] bg-white p-5 shadow-sm">
+        <h2 class="mb-2 text-sm font-bold text-[#542D3D]">Data Ibu</h2>
+        @if ($ibu)
+            {!! $baris('NIK', $ibu->nik) !!}
+            {!! $baris('Nama', $ibu->user?->name) !!}
+            {!! $baris('Tanggal Lahir', $ibu->tgl_lahir?->format('d/m/Y')) !!}
+            {!! $baris('Nomor HP', $ibu->user?->phone) !!}
+            {!! $baris('Wilayah', $ibu->wilayahKerja?->nama_wilayah) !!}
+        @else
+            <p class="py-4 text-sm text-slate-500">(belum terhubung)</p>
+        @endif
+>>>>>>> c2c3578db03f43e9582063b4e1b16d459ea2148e
     </div>
 </div>
 @endsection
