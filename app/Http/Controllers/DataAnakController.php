@@ -72,56 +72,50 @@ class DataAnakController extends Controller
             ->with('success', 'Data anak berhasil ditambahkan.');
     }
 
-    public function show(Request $request, Anak $anak): View|RedirectResponse
-    {
-        $user = $request->user();
+   
+public function show(Request $request, Anak $anak): View
+{
+    $user = $request->user();
 
-        // Kader hanya boleh mencari, tidak boleh membuka detail.
-        abort_if(
-            $user->hasRole(RoleEnum::Kader->value),
-            403,
-            'Akses ditolak.'
-        );
+    // Pastikan anak termasuk dalam cakupan akses pengguna.
+    // Admin, Bidan, dan Kader dibatasi berdasarkan wilayah.
+    // Ibu hanya dapat melihat anak miliknya sendiri.
+    abort_unless(
+        Anak::visibleTo($user)
+            ->whereKey($anak->id)
+            ->exists(),
+        403,
+        'Akses ditolak.'
+    );
 
-        // Pastikan anak termasuk dalam wilayah yang boleh diakses pengguna.
-        abort_unless(
-            Anak::visibleTo($user)->whereKey($anak->id)->exists(),
-            403,
-            'Akses ditolak.'
-        );
+    // Ambil data anak dan ibu yang terhubung.
+    $anak->load([
+        'ibu.user',
+        'ibu.wilayahKerja',
+    ]);
 
-        // Ibu melihat data anak melalui halaman miliknya sendiri.
-        if ($user->isOrangTua()) {
-            return redirect()->route('ibu.data-anak.index');
-        }
+    // Ambil seluruh riwayat pemeriksaan anak.
+    $riwayatPemeriksaan = PemeriksaanPosyandu::query()
+        ->with('kegiatan')
+        ->where('anak_id', $anak->id)
+        ->whereHas('kegiatan')
+        ->get()
+        ->sortBy(function ($pemeriksaan) {
+            return $pemeriksaan->kegiatan?->tanggal?->format('Y-m-d') ?? '';
+        })
+        ->values();
 
-        // Ambil data anak dan data ibu.
-        $anak->load([
-            'ibu.user',
-            'ibu.wilayahKerja',
-        ]);
+    // Pemeriksaan terakhir.
+    $pemeriksaanTerakhir = $riwayatPemeriksaan->last();
 
-        // Ambil seluruh riwayat pemeriksaan anak.
-        // Tanggal pemeriksaan mengikuti tanggal kegiatan Posyandu.
-        $riwayatPemeriksaan = PemeriksaanPosyandu::with('kegiatan')
-            ->where('anak_id', $anak->id)
-            ->whereHas('kegiatan')
-            ->get()
-            ->sortBy(function ($pemeriksaan) {
-                return $pemeriksaan->kegiatan?->tanggal?->format('Y-m-d') ?? '';
-            })
-            ->values();
+    return view('data-anak.show', [
+        'anak' => $anak,
+        'base' => $this->base($request),
+        'riwayatPemeriksaan' => $riwayatPemeriksaan,
+        'pemeriksaanTerakhir' => $pemeriksaanTerakhir,
+    ]);
+}
 
-        // Pemeriksaan terakhir untuk bagian Status Terkini.
-        $pemeriksaanTerakhir = $riwayatPemeriksaan->last();
-
-        return view('data-anak.show', [
-            'anak' => $anak,
-            'base' => $this->base($request),
-            'riwayatPemeriksaan' => $riwayatPemeriksaan,
-            'pemeriksaanTerakhir' => $pemeriksaanTerakhir,
-        ]);
-    }
 
     public function edit(Request $request, Anak $anak): View
     {

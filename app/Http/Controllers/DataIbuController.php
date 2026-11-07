@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\PemeriksaanIbu;
 use App\Enums\RoleEnum;
 use App\Enums\StatusKehamilanEnum;
 use App\Http\Requests\Admin\UpdateIbuRequest;
@@ -51,27 +52,55 @@ class DataIbuController extends Controller
     }
 
     public function show(Request $request, Ibu $ibu): View
-    {
-        $user = $request->user();
+{
+    $user = $request->user();
 
-        // Kader hanya boleh mencari, tidak boleh membuka detail
-        abort_if($user->hasRole(RoleEnum::Kader->value), 403, 'Akses ditolak.');
+    // Kader tidak memiliki akses ke detail ibu.
+    abort_if(
+        $user->hasRole(RoleEnum::Kader->value),
+        403,
+        'Akses ditolak.'
+    );
 
+    // Memastikan ibu termasuk dalam cakupan wilayah pengguna.
+    abort_unless(
+        Ibu::visibleTo($user)->whereKey($ibu->id)->exists(),
+        403,
+        'Akses ditolak.'
+    );
+
+    // Ibu hanya boleh melihat data dirinya sendiri.
+    if ($user->isOrangTua()) {
         abort_unless(
-            Ibu::visibleTo($user)->whereKey($ibu->id)->exists(),
+            (int) $ibu->user_id === (int) $user->id,
             403,
             'Akses ditolak.'
         );
-
-        if ($user->isOrangTua()) {
-            return $this->tampilanIbuSendiri($user);
-        }
-
-        return view('data-ibu.show', [
-            'ibu' => $ibu->load(['user', 'wilayahKerja', 'anak']),
-            'base' => $this->base($request),
-        ]);
     }
+
+    // Mengambil data akun, wilayah kerja, dan anak.
+    $ibu->load([
+        'user',
+        'wilayahKerja',
+        'anak',
+    ]);
+
+    // Mengambil seluruh riwayat pemeriksaan kehamilan.
+    $riwayatPemeriksaanIbu = PemeriksaanIbu::query()
+        ->where('ibu_id', $ibu->id)
+        ->orderByDesc('tgl_pemeriksaan')
+        ->get();
+
+    // Mengambil pemeriksaan paling baru.
+    $pemeriksaanIbuTerakhir = $riwayatPemeriksaanIbu->first();
+
+    return view('data-ibu.show', [
+        'ibu' => $ibu,
+        'base' => $this->base($request),
+        'riwayatPemeriksaanIbu' => $riwayatPemeriksaanIbu,
+        'pemeriksaanIbuTerakhir' => $pemeriksaanIbuTerakhir,
+    ]);
+}
 
     public function edit(Request $request, Ibu $ibu): View
     {
