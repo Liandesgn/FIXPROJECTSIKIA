@@ -427,7 +427,7 @@
         @else
             <div class="px-5 py-12 text-center">
                 <p class="text-sm font-semibold text-slate-600">
-                    Belum ada riwayat pemeriksaan anak.
+                    Tidak ada riwayat pemeriksaan anak.
                 </p>
                 <p class="mt-1 text-xs text-slate-400">
                     Data akan ditampilkan setelah pemeriksaan tersimpan.
