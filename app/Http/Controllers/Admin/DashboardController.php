@@ -28,41 +28,12 @@ class DashboardController extends Controller
             'jadwal' => 0,
         ];
 
-        $latestUsers = collect();
+       
+        $jadwalPosyandu = kegiatanPosyandu::with('wilayah')
+        ->mendatang()
+        ->limit(5)
+        ->get();
 
-        if ($wilayahId) {
-            $stats['bidan'] = User::role(RoleEnum::Bidan->value)
-                ->whereHas('bidan', fn ($q) => $q->where('wilayah_kerja_id', $wilayahId))
-                ->count();
-
-            $stats['kader'] = User::role(RoleEnum::Kader->value)
-                ->whereHas('kader', fn ($q) => $q->where('wilayah_kerja_id', $wilayahId))
-                ->count();
-
-            $stats['ibu_hamil'] = Ibu::where('wilayah_kerja_id', $wilayahId)
-                ->where('status_kehamilan', StatusKehamilanEnum::Hamil->value)
-                ->count();
-
-            $stats['anak'] = Anak::whereHas(
-                'ibu',
-                fn ($q) => $q->where('wilayah_kerja_id', $wilayahId)
-            )->count();
-
-            $stats['jadwal'] = KegiatanPosyandu::where('id_wilayah', $wilayahId)
-                ->whereDate('tanggal', '>=', today())
-                ->count();
-
-            $latestUsers = User::with(['roles', 'wilayahKerja', 'ibu.wilayahKerja'])
-                ->where(function ($query) use ($wilayahId) {
-                    $query->whereHas('bidan', fn ($q) => $q->where('wilayah_kerja_id', $wilayahId))
-                        ->orWhereHas('kader', fn ($q) => $q->where('wilayah_kerja_id', $wilayahId))
-                        ->orWhereHas('ibu', fn ($q) => $q->where('wilayah_kerja_id', $wilayahId));
-                })
-                ->latest()
-                ->take(5)
-                ->get();
-        }
-
-        return view('admin.dashboard', compact('stats', 'latestUsers'));
+        return view('admin.dashboard', compact('stats', 'jadwalPosyandu'));
     }
 }

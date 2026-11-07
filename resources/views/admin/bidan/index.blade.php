@@ -1,3 +1,4 @@
+
 @extends('layouts.app')
 
 @section('title', 'Kelola Bidan')
@@ -6,6 +7,7 @@
 @php
     $total   = method_exists($bidans, 'total') ? $bidans->total() : $bidans->count();
     $nextUrl = method_exists($bidans, 'nextPageUrl') ? ($bidans->nextPageUrl() ?? '') : '';
+    $readOnly = $readOnly ?? false;
 @endphp
 
 <div class="mx-auto w-full max-w-[96rem] space-y-5">
@@ -16,17 +18,19 @@
             <h1 class="text-2xl font-bold tracking-tight text-[#542D3D] sm:text-3xl">Kelola Bidan</h1>
             <p class="mt-1 text-sm font-medium text-slate-700">Manajemen User / Kelola Bidan</p>
         </div>
-@can('user.create')
-        <a href="{{ route('admin.bidan.create') }}"
-           class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#C9517E] px-5 py-3 text-sm font-semibold text-white shadow-md shadow-[#C9517E]/25 transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40">
-            <span class="text-lg leading-none">+</span> Tambah Bidan
-        </a>
-@endcan
+
+        {{-- Tombol Tambah hanya untuk Admin --}}
+        @if (!$readOnly)
+            @can('user.create')
+                <a href="{{ route('admin.bidan.create') }}"
+                   class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#C9517E] px-5 py-3 text-sm font-semibold text-white shadow-md shadow-[#C9517E]/25 transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40">
+                    <span class="text-lg leading-none">+</span> Tambah Bidan
+                </a>
+            @endcan
+        @endif
     </div>
 
-    {{-- Pesan berhasil / gagal ditampilkan sebagai popup SweetAlert dari layout --}}
-
-    {{-- Ringkasan (ringkas) --}}
+    {{-- Ringkasan --}}
     <div class="inline-flex items-center gap-3 rounded-xl border border-[#F1D5E0] bg-white px-4 py-2.5 shadow-sm">
         <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-[#FCE7F0] text-[#C9517E]">
             <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
@@ -63,7 +67,7 @@
             </div>
         </div>
 
-        {{-- Tabel (virtual scrolling) --}}
+        {{-- Tabel --}}
         <div id="listWrap" data-next="{{ $nextUrl }}">
             <div id="listScroll" class="max-h-[28rem] overflow-y-auto overflow-x-auto">
                 <table class="w-full text-left">
@@ -74,19 +78,26 @@
                             <th class="hidden whitespace-nowrap bg-[#FCE7F0] px-4 py-3 2xl:table-cell">Email</th>
                             <th class="hidden whitespace-nowrap bg-[#FCE7F0] px-4 py-3 xl:table-cell">No. Telepon</th>
                             <th class="whitespace-nowrap bg-[#FCE7F0] px-3 py-3 lg:px-4">Wilayah Kerja</th>
-                            <th class="whitespace-nowrap bg-[#FCE7F0] px-3 py-3 text-center lg:px-4">Aksi</th>
+
+                            {{-- Kolom Aksi hanya untuk Admin --}}
+                            @if (!$readOnly)
+                                <th class="whitespace-nowrap bg-[#FCE7F0] px-3 py-3 text-center lg:px-4">Aksi</th>
+                            @endif
                         </tr>
                     </thead>
 
                     <tbody id="listBody" class="divide-y divide-[#F7E6ED]">
                         @forelse ($bidans as $bidan)
                             @php $wilayah = optional($bidan->bidan?->wilayahKerja)->kelurahan ?? '-'; @endphp
+
                             <tr class="row-item transition hover:bg-[#FCE7F0]/50"
                                 data-wilayah="{{ $wilayah }}"
                                 data-search="{{ mb_strtolower(($bidan->name ?? '') . ' ' . ($bidan->email ?? '') . ' ' . ($bidan->phone ?? '') . ' ' . $wilayah) }}">
-                                <td class="px-3 py-3 text-sm font-semibold text-slate-700 lg:px-4"><span class="row-no">{{ $loop->iteration }}</span></td>
 
-                                {{-- Nama (+ email & HP ditumpuk di layar yang lebih kecil) --}}
+                                <td class="px-3 py-3 text-sm font-semibold text-slate-700 lg:px-4">
+                                    <span class="row-no">{{ $loop->iteration }}</span>
+                                </td>
+
                                 <td class="px-3 py-3 lg:px-4">
                                     <div class="flex items-center gap-3">
                                         <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#C9517E] text-sm font-bold text-white">
@@ -104,38 +115,44 @@
                                 <td class="hidden whitespace-nowrap px-4 py-3 text-sm text-slate-800 xl:table-cell">{{ $bidan->phone ?? '-' }}</td>
                                 <td class="px-3 py-3 text-sm font-semibold text-slate-800 lg:whitespace-nowrap lg:px-4">{{ $wilayah }}</td>
 
-                                <td class="whitespace-nowrap px-3 py-3 lg:px-4">
-                                    <div class="flex flex-nowrap items-center justify-center gap-2">
-                                        {{-- EDIT: pink tua solid --}}
-                                        @can('user.update')
-                                        <a href="{{ route('admin.bidan.edit', $bidan->id) }}"
-                                           class="inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-[#C9517E] px-3 text-xs font-bold text-white shadow-sm transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40 sm:px-3.5">
-                                            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 20h4L19 9l-4-4L4 16v4Zm9-13 4 4"/></svg>
-                                            Edit
-                                        </a>
-                                        @endcan
+                                {{-- Tombol Edit dan Hapus hanya untuk Admin --}}
+                                @if (!$readOnly)
+                                    <td class="whitespace-nowrap px-3 py-3 lg:px-4">
+                                        <div class="flex flex-nowrap items-center justify-center gap-2">
 
-                                        {{-- HAPUS: merah solid. Konfirmasi memakai SweetAlert (diatur di layout) --}}
-                                        @can('user.delete')
-                                        <form action="{{ route('admin.bidan.destroy', $bidan->id) }}" method="POST" class="m-0"
-                                              data-confirm-delete data-name="{{ $bidan->name }}">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit"
-                                                    class="inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-red-600 px-3 text-xs font-bold text-white shadow-sm transition hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-200 sm:px-3.5">
-                                                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 7h14M10 11v6m4-6v6M6 7l1 12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-12M9 7V4h6v3"/></svg>
-                                                Hapus
-                                            </button>
-                                        </form>
-                                        @endcan
-                                    </div>
-                                </td>
+                                            @can('user.update')
+                                                <a href="{{ route('admin.bidan.edit', $bidan->id) }}"
+                                                   class="inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-[#C9517E] px-3 text-xs font-bold text-white shadow-sm transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40 sm:px-3.5">
+                                                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 20h4L19 9l-4-4L4 16v4Zm9-13 4 4"/></svg>
+                                                    Edit
+                                                </a>
+                                            @endcan
+
+                                            @can('user.delete')
+                                                <form action="{{ route('admin.bidan.destroy', $bidan->id) }}" method="POST" class="m-0"
+                                                      data-confirm-delete data-name="{{ $bidan->name }}">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit"
+                                                            class="inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-red-600 px-3 text-xs font-bold text-white shadow-sm transition hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-200 sm:px-3.5">
+                                                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 7h14M10 11v6m4-6v6M6 7l1 12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-12M9 7V4h6v3"/></svg>
+                                                        Hapus
+                                                    </button>
+                                                </form>
+                                            @endcan
+
+                                        </div>
+                                    </td>
+                                @endif
+
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-5 py-12 text-center">
+                                <td colspan="{{ $readOnly ? 5 : 6 }}" class="px-5 py-12 text-center">
                                     <p class="font-bold text-[#542D3D]">Belum ada data bidan.</p>
-                                    <p class="mt-1 text-sm text-slate-700">Tambahkan data bidan melalui tombol Tambah Bidan.</p>
+                                    @if (!$readOnly)
+                                        <p class="mt-1 text-sm text-slate-700">Tambahkan data bidan melalui tombol Tambah Bidan.</p>
+                                    @endif
                                 </td>
                             </tr>
                         @endforelse
@@ -197,7 +214,8 @@ document.addEventListener('DOMContentLoaded', function () {
             if (ok) {
                 matched++;
                 if (matched <= limit) {
-                    show = true; shown++;
+                    show = true;
+                    shown++;
                     const no = r.querySelector('.row-no');
                     if (no) no.textContent = matched;
                 }
@@ -210,37 +228,58 @@ document.addEventListener('DOMContentLoaded', function () {
         info.textContent = 'Menampilkan ' + shown + ' dari ' + matched + ' data' + (loading ? ' · memuat data...' : '');
     }
 
-    // Muat sisa halaman di latar belakang agar pencarian & filter mencakup semua data
     async function loadAll() {
         if (loading) return;
-        loading = true; apply();
+        loading = true;
+        apply();
+
         try {
             while (next) {
-                const res = await fetch(next, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' });
+                const res = await fetch(next, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    credentials: 'same-origin'
+                });
+
                 if (!res.ok) break;
+
                 const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
-                doc.querySelectorAll('tr.row-item').forEach(r => body.appendChild(document.importNode(r, true)));
+
+                doc.querySelectorAll('tr.row-item').forEach(r => {
+                    body.appendChild(document.importNode(r, true));
+                });
+
                 const w = doc.getElementById('listWrap');
                 next = (w && w.dataset.next) || '';
             }
-        } catch (e) { /* abaikan: data yang sudah termuat tetap tampil */ }
+        } catch (e) {
+            /* Data yang sudah termuat tetap tampil */
+        }
+
         loading = false;
         buildOptions();
         apply();
     }
 
-    // Virtual scrolling: tampilkan 20 baris tambahan setiap kali mendekati dasar daftar
     scroller.addEventListener('scroll', function () {
         const nearBottom = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 80;
-        if (nearBottom && limit < lastMatched) { limit += CHUNK; apply(); }
+        if (nearBottom && limit < lastMatched) {
+            limit += CHUNK;
+            apply();
+        }
     });
 
-    const reset = () => { limit = CHUNK; scroller.scrollTop = 0; apply(); };
+    const reset = () => {
+        limit = CHUNK;
+        scroller.scrollTop = 0;
+        apply();
+    };
+
     q.addEventListener('input', reset);
     sel.addEventListener('change', reset);
 
     buildOptions();
     apply();
+
     if (next) loadAll();
 });
 </script>

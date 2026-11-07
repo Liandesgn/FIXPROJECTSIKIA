@@ -8,11 +8,11 @@ use Illuminate\Database\Seeder;
 class WilayahKerjaSeeder extends Seeder
 {
     /**
-     * 2 wilayah kerja awal (A-B).
+     * 5 wilayah kerja awal (A-E).
      */
     public function run(): void
     {
-        foreach (range('A', 'B') as $huruf) {
+        foreach (range('A', 'E') as $huruf) {
             WilayahKerja::updateOrCreate(
                 ['kelurahan' => 'Kelurahan '.$huruf, 'kecamatan' => 'Kecamatan '.$huruf],
                 [

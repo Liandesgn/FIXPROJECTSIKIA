@@ -19,7 +19,11 @@ class KegiatanPosyandu extends Model
     protected function casts(): array
     {
         return [
+            'id_wilayah' => 'integer',
             'tanggal' => 'date',
+            'waktu' => 'time',
+            'lokasi' => 'string',
+            'jenis_kegiatan' => 'string',
         ];
     }
 

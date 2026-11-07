@@ -6,6 +6,7 @@ use App\Enums\RoleEnum;
 use App\Http\Requests\AnakRequest;
 use App\Models\Anak;
 use App\Models\Ibu;
+use App\Models\PemeriksaanPosyandu;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -17,7 +18,6 @@ class DataAnakController extends Controller
     {
         $user = $request->user();
 
-       
         if ($user->isOrangTua()) {
             $ibu = Ibu::with(['user', 'wilayahKerja', 'anak'])
                 ->where('user_id', $user->id)
@@ -31,6 +31,7 @@ class DataAnakController extends Controller
             ->with('ibu.user')
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = '%'.$request->string('search').'%';
+
                 $query->where(fn ($q) => $q
                     ->where('nama_anak', 'like', $search)
                     ->orWhere('nik_anak', 'like', $search));
@@ -47,7 +48,9 @@ class DataAnakController extends Controller
 
     public function create(Request $request): View
     {
-        return view('data-anak.create', ['ibus' => $this->ibus($request->user())]);
+        return view('data-anak.create', [
+            'ibus' => $this->ibus($request->user()),
+        ]);
     }
 
     public function store(AnakRequest $request): RedirectResponse
@@ -55,7 +58,9 @@ class DataAnakController extends Controller
         $data = $request->validated();
 
         abort_unless(
-            Ibu::visibleTo($request->user())->whereKey($data['ibu_id'])->exists(),
+            Ibu::visibleTo($request->user())
+                ->whereKey($data['ibu_id'])
+                ->exists(),
             403,
             'Akses ditolak.'
         );
@@ -71,23 +76,50 @@ class DataAnakController extends Controller
     {
         $user = $request->user();
 
-        // Kader hanya boleh mencari, tidak boleh membuka detail
-        abort_if($user->hasRole(RoleEnum::Kader->value), 403, 'Akses ditolak.');
+        // Kader hanya boleh mencari, tidak boleh membuka detail.
+        abort_if(
+            $user->hasRole(RoleEnum::Kader->value),
+            403,
+            'Akses ditolak.'
+        );
 
+        // Pastikan anak termasuk dalam wilayah yang boleh diakses pengguna.
         abort_unless(
             Anak::visibleTo($user)->whereKey($anak->id)->exists(),
             403,
             'Akses ditolak.'
         );
 
-        // Ibu: semua data anaknya sudah tampil di halaman Data Anak
+        // Ibu melihat data anak melalui halaman miliknya sendiri.
         if ($user->isOrangTua()) {
             return redirect()->route('ibu.data-anak.index');
         }
 
+        // Ambil data anak dan data ibu.
+        $anak->load([
+            'ibu.user',
+            'ibu.wilayahKerja',
+        ]);
+
+        // Ambil seluruh riwayat pemeriksaan anak.
+        // Tanggal pemeriksaan mengikuti tanggal kegiatan Posyandu.
+        $riwayatPemeriksaan = PemeriksaanPosyandu::with('kegiatan')
+            ->where('anak_id', $anak->id)
+            ->whereHas('kegiatan')
+            ->get()
+            ->sortBy(function ($pemeriksaan) {
+                return $pemeriksaan->kegiatan?->tanggal?->format('Y-m-d') ?? '';
+            })
+            ->values();
+
+        // Pemeriksaan terakhir untuk bagian Status Terkini.
+        $pemeriksaanTerakhir = $riwayatPemeriksaan->last();
+
         return view('data-anak.show', [
-            'anak' => $anak->load('ibu.user', 'ibu.wilayahKerja'),
+            'anak' => $anak,
             'base' => $this->base($request),
+            'riwayatPemeriksaan' => $riwayatPemeriksaan,
+            'pemeriksaanTerakhir' => $pemeriksaanTerakhir,
         ]);
     }
 
@@ -114,8 +146,11 @@ class DataAnakController extends Controller
             403,
             'Akses ditolak.'
         );
+
         abort_unless(
-            Ibu::visibleTo($request->user())->whereKey($data['ibu_id'])->exists(),
+            Ibu::visibleTo($request->user())
+                ->whereKey($data['ibu_id'])
+                ->exists(),
             403,
             'Akses ditolak.'
         );

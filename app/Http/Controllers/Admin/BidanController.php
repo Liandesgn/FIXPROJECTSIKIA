@@ -77,10 +77,12 @@ class BidanController extends Controller
         $wilayahId = $request->user()->loadMissing('admin')->managedWilayahId();
         abort_unless($bidan->bidan?->wilayah_kerja_id === $wilayahId, 403);
 
-        return view('admin.bidan.edit', [
-            'bidan' => $bidan->load('bidan.wilayahKerja'),
-            'wilayahs' => $this->wilayahs($wilayahId),
-        ]);
+       return view('admin.bidan.index', [
+        'bidans' => $bidans,
+        'wilayahs' => WilayahKerja::orderBy('kecamatan')
+            ->orderBy('kelurahan')
+            ->get(),
+    ]);
     }
 
     public function update(UpdatePetugasRequest $request, User $bidan): RedirectResponse

@@ -1,17 +1,18 @@
+
 @extends('layouts.app')
 
 @section('title', 'Kelola Ibu')
 
 @section('content')
 @php
-    // Bawa filter aktif ke halaman berikutnya (untuk virtual scrolling)
     if (method_exists($ibus, 'appends')) {
         $ibus->appends(request()->query());
     }
+
     $total   = method_exists($ibus, 'total') ? $ibus->total() : $ibus->count();
     $nextUrl = method_exists($ibus, 'nextPageUrl') ? ($ibus->nextPageUrl() ?? '') : '';
+    $readOnly = $readOnly ?? false;
 
-    // Jika controller sudah mengirim pesan flash, popup hasil dari layout yang dipakai
     $hasFlash = session()->has('success') || session()->has('status') || session()->has('message') || session()->has('error');
 @endphp
 
@@ -24,17 +25,18 @@
             <p class="mt-1 text-sm font-medium text-slate-700">Manajemen User / Kelola Ibu</p>
         </div>
 
-        @can('user.create')
-        <a href="{{ route('admin.ibu.create') }}"
-           class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#C9517E] px-5 py-3 text-sm font-semibold text-white shadow-md shadow-[#C9517E]/25 transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40">
-            <span class="text-lg leading-none">+</span> Registrasi Ibu
-        </a>
-        @endcan
+        {{-- Registrasi hanya untuk Admin --}}
+        @if (!$readOnly)
+            @can('user.create')
+                <a href="{{ route('admin.ibu.create') }}"
+                   class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#C9517E] px-5 py-3 text-sm font-semibold text-white shadow-md shadow-[#C9517E]/25 transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40">
+                    <span class="text-lg leading-none">+</span> Registrasi Ibu
+                </a>
+            @endcan
+        @endif
     </div>
 
-    {{-- Pesan berhasil / gagal ditampilkan sebagai popup SweetAlert --}}
-
-    {{-- Ringkasan (ringkas) --}}
+    {{-- Ringkasan --}}
     <div class="inline-flex items-center gap-3 rounded-xl border border-[#F1D5E0] bg-white px-4 py-2.5 shadow-sm">
         <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-[#FCE7F0] text-[#C9517E]">
             <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
@@ -50,7 +52,7 @@
     {{-- Daftar --}}
     <div class="overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm">
 
-        {{-- Bar cari + filter (dikirim ke controller seperti sebelumnya) --}}
+        {{-- Bar cari + filter --}}
         <div class="border-b border-[#E99AB7] bg-[#FCE7F0] p-3 sm:p-4">
             <p class="mb-2.5 text-sm font-semibold text-[#542D3D]">Temukan ibu lewat nama, wilayah, atau status akun</p>
 
@@ -100,7 +102,7 @@
             </form>
         </div>
 
-        {{-- Tabel (virtual scrolling) --}}
+        {{-- Tabel --}}
         <div id="listWrap" data-next="{{ $nextUrl }}">
             <div id="listScroll" class="max-h-[28rem] overflow-y-auto overflow-x-auto">
                 <table class="w-full text-left">
@@ -111,7 +113,11 @@
                             <th class="hidden whitespace-nowrap bg-[#FCE7F0] px-4 py-3 2xl:table-cell">Kontak</th>
                             <th class="hidden whitespace-nowrap bg-[#FCE7F0] px-4 py-3 lg:table-cell">Wilayah</th>
                             <th class="hidden whitespace-nowrap bg-[#FCE7F0] px-6 py-3 lg:table-cell">Status Akun</th>
-                            <th class="whitespace-nowrap bg-[#FCE7F0] px-3 py-3 text-center lg:px-4">Aksi</th>
+
+                            {{-- Kolom Aksi hanya untuk Admin --}}
+                            @if (!$readOnly)
+                                <th class="whitespace-nowrap bg-[#FCE7F0] px-3 py-3 text-center lg:px-4">Aksi</th>
+                            @endif
                         </tr>
                     </thead>
 
@@ -122,10 +128,13 @@
                                 $desa     = $ibu->ibu?->wilayahKerja?->kelurahan;
                                 $kec      = $ibu->ibu?->wilayahKerja?->kecamatan;
                             @endphp
-                            <tr class="row-item transition hover:bg-[#FCE7F0]/50">
-                                <td class="px-3 py-3.5 text-sm font-semibold text-slate-700 lg:px-4"><span class="row-no">{{ $loop->iteration }}</span></td>
 
-                                {{-- Nama + NIK (+ kontak, wilayah, status ditumpuk hanya di layar kecil) --}}
+                            <tr class="row-item transition hover:bg-[#FCE7F0]/50">
+                                <td class="px-3 py-3.5 text-sm font-semibold text-slate-700 lg:px-4">
+                                    <span class="row-no">{{ $loop->iteration }}</span>
+                                </td>
+
+                                {{-- Nama + NIK --}}
                                 <td class="px-3 py-3.5 lg:px-4">
                                     <div class="flex items-center gap-3">
                                         <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#C9517E] text-sm font-bold text-white">
@@ -138,12 +147,14 @@
                                             <p class="mt-0.5 break-all text-xs text-slate-700 lg:break-normal lg:whitespace-nowrap 2xl:hidden">{{ $ibu->email ?? '-' }}</p>
                                             <p class="text-xs text-slate-700 2xl:hidden">{{ $ibu->phone ?? '-' }}</p>
                                             <p class="text-xs font-semibold text-slate-800 lg:hidden">{{ $desa ? 'Desa ' . $desa : '-' }}{{ $kec ? ', Kec. ' . $kec : '' }}</p>
-                                            <div class="mt-1.5 lg:hidden">@include('admin.partials.status', ['status' => $ibu->status])</div>
+                                            <div class="mt-1.5 lg:hidden">
+                                                @include('admin.partials.status', ['status' => $ibu->status])
+                                            </div>
                                         </div>
                                     </div>
                                 </td>
 
-                                {{-- Kontak: email di atas, nomor HP di bawah --}}
+                                {{-- Kontak --}}
                                 <td class="hidden whitespace-nowrap px-4 py-3.5 2xl:table-cell">
                                     <p class="text-sm text-slate-800">{{ $ibu->email ?? '-' }}</p>
                                     <p class="mt-0.5 text-xs font-medium text-slate-600">{{ $ibu->phone ?? '-' }}</p>
@@ -152,52 +163,56 @@
                                 {{-- Wilayah --}}
                                 <td class="hidden whitespace-nowrap px-4 py-3.5 lg:table-cell">
                                     <p class="text-sm font-semibold text-slate-800">{{ $desa ?? '-' }}</p>
-                                    @if ($kec) <p class="mt-0.5 text-xs font-medium text-slate-600">Kec. {{ $kec }}</p> @endif
+                                    @if ($kec)
+                                        <p class="mt-0.5 text-xs font-medium text-slate-600">Kec. {{ $kec }}</p>
+                                    @endif
                                 </td>
 
-                                {{-- Status Akun (kolom tersendiri) --}}
+                                {{-- Status Akun --}}
                                 <td class="hidden whitespace-nowrap px-6 py-3.5 lg:table-cell">
                                     @include('admin.partials.status', ['status' => $ibu->status])
                                 </td>
 
-                                {{-- Aksi --}}
-                                <td class="whitespace-nowrap px-3 py-3.5 lg:px-4">
-                                    <div class="flex flex-nowrap items-center justify-center gap-2">
-                                
+                                {{-- Aktifkan / Nonaktifkan hanya untuk Admin --}}
+                                @if (!$readOnly)
+                                    <td class="whitespace-nowrap px-3 py-3.5 lg:px-4">
+                                        <div class="flex flex-nowrap items-center justify-center gap-2">
 
-                                        {{-- Tidak ada tombol Hapus: akun ibu hanya bisa diaktifkan / dinonaktifkan.
-                                             NONAKTIFKAN: amber solid | AKTIFKAN: hijau solid.
-                                             Konfirmasi + popup hasil memakai SweetAlert (script di bawah) --}}
-                                        @can('user.activate')
-                                        <form method="POST" action="{{ route('admin.ibu.toggle-status', $ibu) }}" class="m-0"
-                                              data-ibu-toggle
-                                              data-active="{{ $isActive ? '1' : '0' }}"
-                                              data-name="{{ $ibu->name }}">
-                                            @csrf
-                                            @method('PATCH')
-                                            @if ($isActive)
-                                                <button type="submit"
-                                                        class="inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-amber-500 px-3 text-xs font-bold text-amber-950 shadow-sm transition hover:bg-amber-600 focus:outline-none focus:ring-4 focus:ring-amber-200 sm:px-3.5">
-                                                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5.6 5.6l12.8 12.8M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z"/></svg>
-                                                    Aktifkan
-                                                </button>
-                                            @else
-                                                <button type="submit"
-                                                        class="inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-emerald-700 px-3 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-800 focus:outline-none focus:ring-4 focus:ring-emerald-200 sm:px-3.5">
-                                                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m5 12 5 5 9-10"/></svg>
-                                                    Nonaktifkan
-                                                </button>
-                                            @endif
-                                        </form>
-                                        @endcan
-                                    </div>
-                                </td>
+                                            @can('user.activate')
+                                                <form method="POST" action="{{ route('admin.ibu.toggle-status', $ibu) }}" class="m-0"
+                                                      data-ibu-toggle
+                                                      data-active="{{ $isActive ? '1' : '0' }}"
+                                                      data-name="{{ $ibu->name }}">
+                                                    @csrf
+                                                    @method('PATCH')
+
+                                                    @if ($isActive)
+                                                        <button type="submit"
+                                                                class="inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-amber-500 px-3 text-xs font-bold text-amber-950 shadow-sm transition hover:bg-amber-600 focus:outline-none focus:ring-4 focus:ring-amber-200 sm:px-3.5">
+                                                            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5.6 5.6l12.8 12.8M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z"/></svg>
+                                                            Nonaktifkan
+                                                        </button>
+                                                    @else
+                                                        <button type="submit"
+                                                                class="inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-emerald-700 px-3 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-800 focus:outline-none focus:ring-4 focus:ring-emerald-200 sm:px-3.5">
+                                                            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m5 12 5 5 9-10"/></svg>
+                                                            Aktifkan
+                                                        </button>
+                                                    @endif
+                                                </form>
+                                            @endcan
+
+                                        </div>
+                                    </td>
+                                @endif
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-5 py-12 text-center">
+                                <td colspan="{{ $readOnly ? 5 : 6 }}" class="px-5 py-12 text-center">
                                     <p class="font-bold text-[#542D3D]">Belum ada data ibu.</p>
-                                    <p class="mt-1 text-sm text-slate-700">Tambahkan data ibu melalui tombol Registrasi Ibu.</p>
+                                    @if (!$readOnly)
+                                        <p class="mt-1 text-sm text-slate-700">Tambahkan data ibu melalui tombol Registrasi Ibu.</p>
+                                    @endif
                                 </td>
                             </tr>
                         @endforelse
@@ -227,58 +242,83 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const rows = () => Array.from(body.querySelectorAll('tr.row-item'));
 
-    // Virtual scrolling: tampilkan 20 baris pertama, tambah 20 setiap kali mendekati dasar daftar
     function apply() {
         const all = rows();
         let shown = 0;
+
         all.forEach((r, i) => {
             const show = i < limit;
             r.classList.toggle('hidden', !show);
+
             if (show) {
                 shown++;
                 const no = r.querySelector('.row-no');
                 if (no) no.textContent = i + 1;
             }
         });
+
         info.textContent = all.length
             ? 'Menampilkan ' + shown + ' dari ' + all.length + ' data' + (loading ? ' · memuat data...' : '')
             : '';
     }
 
-    // Muat sisa halaman di latar belakang (filter yang aktif ikut terbawa)
     async function loadAll() {
         if (loading) return;
-        loading = true; apply();
+
+        loading = true;
+        apply();
+
         try {
             while (next) {
-                const res = await fetch(next, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' });
+                const res = await fetch(next, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    credentials: 'same-origin'
+                });
+
                 if (!res.ok) break;
+
                 const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
-                doc.querySelectorAll('tr.row-item').forEach(r => body.appendChild(document.importNode(r, true)));
+
+                doc.querySelectorAll('tr.row-item').forEach(r => {
+                    body.appendChild(document.importNode(r, true));
+                });
+
                 const w = doc.getElementById('listWrap');
                 next = (w && w.dataset.next) || '';
             }
-        } catch (e) { /* abaikan: data yang sudah termuat tetap tampil */ }
+        } catch (e) {
+            /* Data yang sudah termuat tetap tampil */
+        }
+
         loading = false;
         apply();
     }
 
     scroller.addEventListener('scroll', function () {
         const nearBottom = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 80;
-        if (nearBottom && limit < rows().length) { limit += CHUNK; apply(); }
+
+        if (nearBottom && limit < rows().length) {
+            limit += CHUNK;
+            apply();
+        }
     });
 
     apply();
+
     if (next) loadAll();
 
-    // ===== SweetAlert: popup hasil setelah Aktifkan / Nonaktifkan =====
+    // Popup hasil setelah perubahan status, hanya untuk Admin
     const serverHasFlash = @json($hasFlash);
+
     try {
         const raw = sessionStorage.getItem('sikia_ibu_toggle');
+
         if (raw) {
             sessionStorage.removeItem('sikia_ibu_toggle');
+
             if (!serverHasFlash && window.SikiaSwal) {
                 const d = JSON.parse(raw);
+
                 SikiaSwal.fire({
                     icon: 'success',
                     iconColor: '#C9517E',
@@ -288,26 +328,33 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
             }
         }
-    } catch (e) { /* abaikan */ }
+    } catch (e) {
+        /* Abaikan */
+    }
 });
 
-// ===== SweetAlert: konfirmasi sebelum Aktifkan / Nonaktifkan =====
+// Konfirmasi perubahan status akun, hanya tersedia untuk Admin
 document.addEventListener('submit', function (e) {
     const form = e.target;
+
     if (!(form instanceof HTMLFormElement) || !form.hasAttribute('data-ibu-toggle') || form.dataset.confirmed) return;
 
     e.preventDefault();
+
     const active = form.dataset.active === '1';
     const name = form.dataset.name || '';
 
     SikiaConfirm({
         title: (active ? 'Apakah akan menonaktifkan akun ' : 'Apakah akan mengaktifkan akun ') + name + '?',
         text: active
-            ? 'Akun aktif  dapat login ke sistem. Lanjutkan?'
+            ? 'Akun aktif dapat login ke sistem. Lanjutkan?'
             : 'Akun nonaktif tidak dapat login ke sistem. Lanjutkan?',
         confirmText: active ? 'Ya, Nonaktifkan' : 'Ya, Aktifkan'
     }, function () {
-        try { sessionStorage.setItem('sikia_ibu_toggle', JSON.stringify({ name: name, active: active })); } catch (err) {}
+        try {
+            sessionStorage.setItem('sikia_ibu_toggle', JSON.stringify({ name: name, active: active }));
+        } catch (err) {}
+
         form.dataset.confirmed = '1';
         form.submit();
     });

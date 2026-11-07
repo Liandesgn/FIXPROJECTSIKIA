@@ -3,18 +3,24 @@
 namespace App\Models;
 
 use App\Enums\RoleEnum;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
-#[Fillable(['nama_wilayah', 'kabupaten', 'kecamatan', 'kelurahan', 'deskripsi'])]
 class WilayahKerja extends Model
 {
     use HasFactory;
 
     protected $table = 'wilayah_kerja';
+
+    protected $fillable = [
+        'nama_wilayah',
+        'kabupaten',
+        'kecamatan',
+        'kelurahan',
+        'deskripsi',
+    ];
 
     public function users(): HasMany
     {

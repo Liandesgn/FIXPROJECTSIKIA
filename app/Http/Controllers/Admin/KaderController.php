@@ -35,9 +35,11 @@ class KaderController extends Controller
             ->withQueryString();
 
         return view('admin.kader.index', [
-            'kaders' => $kaders,
-            'wilayahs' => $this->wilayahs($wilayahId),
-        ]);
+        'kaders' => $kaders,
+        'wilayahs' => WilayahKerja::orderBy('kecamatan')
+            ->orderBy('kelurahan')
+            ->get(),
+    ]);
     }
 
     public function create(Request $request): View

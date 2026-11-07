@@ -9,8 +9,7 @@
             ['label' => 'Jumlah Kader',          'value' => $stats['kader'],     'icon' => 'M16 11a3 3 0 1 0 0-6m-8 6a3 3 0 1 0 0-6m-6 13a6 6 0 0 1 12 0m2-5a6 6 0 0 1 6 5'],
             ['label' => 'Jumlah Ibu Hamil',      'value' => $stats['ibu_hamil'], 'icon' => 'M12 7a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Zm-3 3h6l2 5-3 2v5m-4-8-2 3 3 2v3'],
             ['label' => 'Jumlah Anak',           'value' => $stats['anak'],      'icon' => 'M12 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm-4 14v-6l-2-4h12l-2 4v6'],
-            ['label' => 'Jumlah Wilayah Kerja',  'value' => $stats['wilayah'],   'icon' => 'M12 21s-7-6.2-7-11a7 7 0 1 1 14 0c0 4.8-7 11-7 11Zm0-8.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z'],
-            ['label' => 'Jadwal Posyandu',       'value' => $stats['jadwal'],    'icon' => 'M7 3v4m10-4v4M4 9h16M5 5h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z'],
+            ['label' => 'Jumlah Kegiatan Posyandu',       'value' => $stats['jadwal'],    'icon' => 'M7 3v4m10-4v4M4 9h16M5 5h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z'],
         ];
 
         $editRoutes = ['bidan' => 'admin.bidan.edit', 'kader' => 'admin.kader.edit', 'ibu' => 'admin.ibu.edit'];
@@ -39,56 +38,73 @@
             @endforeach
         </div>
 
-        {{-- User yang baru dibuatkan akun --}}
-        <div class="overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm">
-            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[#F1D5E0] px-5 py-4">
-                <div>
-                    <h3 class="font-bold text-[#542D3D]">User Terbaru</h3>
-                    <p class="mt-0.5 text-xs text-slate-600">Akun yang baru dibuatkan oleh admin.</p>
-                </div>
-                <span class="rounded-full bg-[#FCE7F0] px-3 py-1 text-xs font-semibold text-[#C9517E]">
-                    {{ count($latestUsers) }} akun terbaru
-                </span>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full min-w-[520px] text-left text-sm">
-                    <thead class="bg-[#FCE7F0] text-xs font-bold uppercase tracking-wide text-[#542D3D]">
-                        <tr>
-                            <th class="px-5 py-3">Nama</th>
-                            <th class="px-5 py-3">Email</th>
-                            <th class="px-5 py-3">Role</th>
-                            <th class="px-5 py-3">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-[#F7E6ED]">
-                        @forelse ($latestUsers as $u)
-                            @php
-                                $uKey  = \Illuminate\Support\Str::before($u->primaryRole()?->dashboard() ?? '', '.');
-                                $uEdit = isset($editRoutes[$uKey]) && \Illuminate\Support\Facades\Route::has($editRoutes[$uKey])
-                                    ? route($editRoutes[$uKey], $u) : null;
-                            @endphp
-                            <tr class="transition hover:bg-[#FCE7F0]/40">
-                                <td class="px-5 py-3 font-semibold text-[#542D3D]">
-                                    @if ($uEdit)
-                                        <a href="{{ $uEdit }}" class="transition hover:text-[#C9517E] hover:underline">{{ $u->name }}</a>
-                                    @else
-                                        {{ $u->name }}
-                                    @endif
-                                </td>
-                                <td class="px-5 py-3 text-slate-700">{{ $u->email }}</td>
-                                <td class="px-5 py-3 text-slate-700">{{ $u->primaryRole()?->label() ?? '-' }}</td>
-                                <td class="px-5 py-3">
-                                    @include('admin.partials.status', ['status' => $u->status])
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="4" class="px-5 py-10 text-center text-slate-600">Belum ada data user.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
+       
+        {{-- Jadwal Posyandu Terdekat --}}
+<div class="overflow-hidden rounded-xl border border-[#F1D5E0] bg-white shadow-sm">
+    <div class="border-b border-[#F1D5E0] px-5 py-4">
+        <h2 class="text-lg font-bold text-[#542D3D]">
+            Jadwal Posyandu Terdekat
+        </h2>
+
+        <p class="mt-1 text-sm text-gray-500">
+            Daftar kegiatan Posyandu mendatang dari seluruh wilayah kerja.
+        </p>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+            <thead class="bg-[#FCE7F0] text-xs uppercase text-[#542D3D]">
+                <tr>
+                    <th class="px-5 py-3">No</th>
+                    <th class="px-5 py-3">Tanggal</th>
+                    <th class="px-5 py-3">Waktu</th>
+                    <th class="px-5 py-3">Wilayah</th>
+                    <th class="px-5 py-3">Lokasi</th>
+                    <th class="px-5 py-3">Jenis Kegiatan</th>
+                </tr>
+            </thead>
+
+            <tbody class="divide-y divide-gray-100">
+                @forelse ($jadwalPosyandu as $jadwal)
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-5 py-3">
+                            {{ $loop->iteration }}
+                        </td>
+
+                        <td class="px-5 py-3">
+                            {{ $jadwal->tanggal->format('d-m-Y') }}
+                        </td>
+
+                        <td class="px-5 py-3">
+                            {{ $jadwal->waktu
+                                ? \Carbon\Carbon::parse($jadwal->waktu)->format('H:i')
+                                : '-' }}
+                        </td>
+
+                        <td class="px-5 py-3 font-medium text-gray-800">
+                            {{ $jadwal->wilayah?->nama_wilayah ?? '-' }}
+                        </td>
+
+                        <td class="px-5 py-3">
+                            {{ $jadwal->lokasi ?? '-' }}
+                        </td>
+
+                        <td class="px-5 py-3">
+                            {{ $jadwal->jenis_kegiatan ?? '-' }}
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="6"
+                            class="px-5 py-10 text-center text-gray-500">
+                            Belum ada jadwal Posyandu mendatang.
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+</div>
+            
     </div>
 @endsection

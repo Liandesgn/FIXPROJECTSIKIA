@@ -26,7 +26,7 @@
 
     <div>
         <label for="password" class="{{ $labelClass }}">
-            {{ $ibu ? 'Password' : 'Password Awal' }}
+            {{ $ibu ? 'Password' : 'Password' }}
             @unless ($ibu) {!! $star !!} @endunless
             @if ($ibu) <span class="font-normal text-slate-600">(kosongkan bila tidak diubah)</span> @endif
         </label>

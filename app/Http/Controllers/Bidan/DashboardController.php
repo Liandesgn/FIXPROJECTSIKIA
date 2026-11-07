@@ -20,23 +20,34 @@ class DashboardController extends Controller
         $wilayah = $user->bidan?->wilayahKerja;
         $wilayahId = $wilayah?->id;
 
+        // Nilai awal statistik dashboard.
         $stats = [
-            'orang_tua' => 0,
+            'ibu_melahirkan' => 0,
             'ibu_hamil' => 0,
             'anak' => 0,
-            'pemeriksaan' => 0,
+            'pemeriksaan_hari_ini' => 0,
+            'perlu_perhatian' => 0,
+            'kegiatan_posyandu' => 0,
+            'konsultasi_menunggu' => 0,
         ];
 
         $notifikasiTerbaru = collect();
-
         $jadwalTerdekat = collect();
 
+        // Mengambil data sesuai wilayah tugas Bidan.
         if ($wilayahId) {
             $ibuQuery = Ibu::query()
                 ->where('wilayah_kerja_id', $wilayahId);
 
-            $stats['orang_tua'] = (clone $ibuQuery)->count();
+            // Jumlah ibu yang sudah melahirkan.
+            $stats['ibu_melahirkan'] = (clone $ibuQuery)
+                ->where(
+                    'status_kehamilan',
+                    StatusKehamilanEnum::Melahirkan->value
+                )
+                ->count();
 
+            // Jumlah ibu yang masih hamil.
             $stats['ibu_hamil'] = (clone $ibuQuery)
                 ->where(
                     'status_kehamilan',
@@ -44,27 +55,51 @@ class DashboardController extends Controller
                 )
                 ->count();
 
+            // Jumlah anak di wilayah tugas Bidan.
             $stats['anak'] = Anak::query()
                 ->whereHas('ibu', function ($query) use ($wilayahId) {
                     $query->where('wilayah_kerja_id', $wilayahId);
                 })
                 ->count();
 
-            $stats['pemeriksaan'] = PemeriksaanIbu::query()
+            // Jumlah pemeriksaan ibu pada hari ini.
+            $stats['pemeriksaan_hari_ini'] = PemeriksaanIbu::query()
+                ->whereDate('tgl_pemeriksaan', today())
                 ->whereHas('ibu', function ($query) use ($wilayahId) {
                     $query->where('wilayah_kerja_id', $wilayahId);
                 })
                 ->count();
 
+            // Jumlah pemeriksaan ibu yang perlu perhatian.
+            $stats['perlu_perhatian'] = PemeriksaanIbu::query()
+                ->where(
+                    'status_kesehatan',
+                    PemeriksaanIbu::PERLU_PERHATIAN
+                )
+                ->whereHas('ibu', function ($query) use ($wilayahId) {
+                    $query->where('wilayah_kerja_id', $wilayahId);
+                })
+                ->count();
+
+            // Jumlah seluruh kegiatan Posyandu di wilayah Bidan.
+            $stats['kegiatan_posyandu'] = KegiatanPosyandu::query()
+                ->where('id_wilayah', $wilayahId)
+                ->count();
+
+            // Sementara 0 karena fitur konsultasi belum tersedia.
+            $stats['konsultasi_menunggu'] = 0;
+
+            // Jadwal Posyandu terdekat.
             $jadwalTerdekat = KegiatanPosyandu::query()
                 ->with('wilayah')
                 ->where('id_wilayah', $wilayahId)
                 ->whereDate('tanggal', '>=', today())
                 ->orderBy('tanggal')
+                ->orderBy('waktu')
                 ->limit(5)
                 ->get();
 
-            // Notifikasi dari pemeriksaan ibu yang perlu perhatian.
+            // Notifikasi pemeriksaan ibu yang perlu perhatian.
             $notifikasiTerbaru = PemeriksaanIbu::query()
                 ->with(['ibu.user'])
                 ->where(
