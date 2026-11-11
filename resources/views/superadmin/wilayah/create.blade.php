@@ -12,7 +12,7 @@
     <form method="POST" action="{{ route('superadmin.wilayah-kerja.store') }}"
           class="space-y-5 rounded-2xl border border-[#F1D5E0] bg-white p-6 shadow-sm">
         @csrf
-        @include('admin.wilayah.partials.form')
+        @include('superadmin.wilayah.partials.form')
     </form>
 </div>
 @endsection

@@ -99,7 +99,7 @@
             </button>
 
             <a
-                href="{{ route($routePrefix . '.roles.index') }}"
+                href="{{ route('superadmin.roles.index') }}"
                 class="rounded-xl px-4 py-2 text-sm text-slate-500 hover:underline"
             >
                 Batal

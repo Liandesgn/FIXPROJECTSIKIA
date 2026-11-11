@@ -23,8 +23,10 @@ class DataIbuController extends Controller
 
      
         if ($user->isOrangTua()) {
-            return $this->tampilanIbuSendiri($user);
-        }
+        $ibu = Ibu::where('user_id', $user->id)->firstOrFail();
+
+        return $this->show($request, $ibu);
+    }
 
         $ibus = Ibu::query()
             ->visibleTo($user)

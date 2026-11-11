@@ -71,19 +71,18 @@ class BidanController extends Controller
     }
 
     public function edit(Request $request, User $bidan): View
-    {
-        abort_unless($bidan->hasRole(RoleEnum::Bidan->value), 404);
+{
+    abort_unless($bidan->hasRole(RoleEnum::Bidan->value), 404);
 
-        $wilayahId = $request->user()->loadMissing('admin')->managedWilayahId();
-        abort_unless($bidan->bidan?->wilayah_kerja_id === $wilayahId, 403);
+    $wilayahId = $request->user()->loadMissing('admin')->managedWilayahId();
+    abort_unless($bidan->bidan?->wilayah_kerja_id === $wilayahId, 403);
 
-       return view('admin.bidan.index', [
-        'bidans' => $bidans,
-        'wilayahs' => WilayahKerja::orderBy('kecamatan')
-            ->orderBy('kelurahan')
-            ->get(),
+    return view('admin.bidan.edit', [
+        'bidan'   => $bidan,
+        'bidans'  => $bidan, // Menambahkan baris ini agar $bidans tidak undefined di Blade
+        'wilayahs' => $this->wilayahs($wilayahId), // Menggunakan helper private method wilayahs() agar filter wilayah konsisten
     ]);
-    }
+}
 
     public function update(UpdatePetugasRequest $request, User $bidan): RedirectResponse
     {

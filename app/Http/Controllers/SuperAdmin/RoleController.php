@@ -1,7 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
-
+namespace App\Http\Controllers\SuperAdmin;
 
 use App\Enums\PermissionEnum;
 use App\Http\Controllers\Controller;
@@ -15,11 +14,6 @@ use Spatie\Permission\Models\Role;
 
 class RoleController extends Controller
 {
-    private function routePrefix(): string
-    {
-        return request()->routeIs('admin.*') ? 'admin' : 'superadmin';
-    }
-
     // Menampilkan daftar role
     public function index(): View
     {
@@ -27,13 +21,13 @@ class RoleController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('admin.roles.index', compact('roles'));
+        return view('superadmin.roles.index', compact('roles'));
     }
 
     // Form tambah role (Super Admin)
     public function create(): View
     {
-        return view('admin.roles.create', [
+        return view('superadmin.roles.create', [
             'permissions' => Permission::orderBy('name')->get(),
         ]);
     }
@@ -73,7 +67,7 @@ class RoleController extends Controller
     // Form edit role
     public function edit(Role $role): View
     {
-        return view('admin.roles.edit', [
+        return view('superadmin.roles.edit', [
             'role' => $role->load('permissions'),
             'permissions' => Permission::orderBy('name')->get(),
         ]);
@@ -107,7 +101,7 @@ class RoleController extends Controller
         );
 
         return redirect()
-            ->route($this->routePrefix() . '.roles.index')
+            ->route('superadmin.roles.index')
             ->with(
                 'success',
                 'Hak akses role ' . ucfirst($role->name) . ' berhasil diperbarui.'
@@ -116,25 +110,25 @@ class RoleController extends Controller
 
     // Menghapus role (Super Admin)
     public function destroy(Role $role): RedirectResponse
-{
-    // Super Admin tidak boleh dihapus.
-    if ($role->name === 'super_admin') {
+    {
+        // Super Admin tidak boleh dihapus.
+        if ($role->name === 'super_admin') {
+            return redirect()
+                ->route('superadmin.roles.index')
+                ->with('error', 'Role Super Admin tidak boleh dihapus.');
+        }
+
+        // Jangan hapus role yang masih digunakan user.
+        if ($role->users()->exists()) {
+            return redirect()
+                ->route('superadmin.roles.index')
+                ->with('error', 'Role tidak dapat dihapus karena masih digunakan oleh user.');
+        }
+
+        $role->delete();
+
         return redirect()
-            ->route($this->routePrefix() . '.roles.index')
-            ->with('error', 'Role Super Admin tidak boleh dihapus.');
+            ->route('superadmin.roles.index')
+            ->with('success', 'Role berhasil dihapus.');
     }
-
-    // Jangan hapus role yang masih digunakan user.
-    if ($role->users()->exists()) {
-        return redirect()
-            ->route($this->routePrefix() . '.roles.index')
-            ->with('error', 'Role tidak dapat dihapus karena masih digunakan oleh user.');
-    }
-
-    $role->delete();
-
-    return redirect()
-        ->route($this->routePrefix() . '.roles.index')
-        ->with('success', 'Role berhasil dihapus.');
-}
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\WilayahKerjaRequest;
@@ -29,13 +29,13 @@ class WilayahKerjaController extends Controller
             ->orderByDesc('id')
             ->get();
 
-        return view('admin.wilayah.index', compact('wilayahs'));
+        return view('superadmin.wilayah.index', compact('wilayahs'));
     }
 
     
     public function create(): View
     {
-        return view('admin.wilayah.create');
+        return view('superadmin.wilayah.create');
     }
 
     public function store(WilayahKerjaRequest $request): RedirectResponse
@@ -51,7 +51,7 @@ class WilayahKerjaController extends Controller
 
     public function edit(WilayahKerja $wilayah): View
     {
-        return view('admin.wilayah.edit', compact('wilayah'));
+        return view('superadmin.wilayah.edit', compact('wilayah'));
     }
 
     public function update(

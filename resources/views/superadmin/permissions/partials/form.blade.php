@@ -1,14 +1,9 @@
-
 @php
     $locked = $locked ?? false;
     $selected = old(
         'roles',
         isset($permission) ? $permission->roles->pluck('name')->all() : []
     );
-
-    $routePrefix = request()->routeIs('admin.*')
-        ? 'admin'
-        : 'superadmin';
 @endphp
 
 <div>
@@ -81,7 +76,7 @@
     </button>
 
     <a
-        href="{{ route($routePrefix . '.permissions.index') }}"
+        href="{{ route('superadmin.permissions.index') }}"
         class="px-4 py-2 text-sm text-slate-500 hover:underline"
     >
         Batal

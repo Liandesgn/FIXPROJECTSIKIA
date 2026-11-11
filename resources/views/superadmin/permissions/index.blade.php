@@ -3,10 +3,6 @@
 @section('title', 'Kelola Permission')
 
 @section('content')
-@php
-    $routePrefix = request()->routeIs('admin.*') ? 'admin' : 'superadmin';
-@endphp
-
 <div class="mx-auto w-full max-w-[96rem] space-y-5">
 
     <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -23,7 +19,7 @@
 
         @can('userpermission.create')
             <a
-                href="{{ route($routePrefix . '.permissions.create') }}"
+                href="{{ route('superadmin.permissions.create') }}"
                 class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#C9517E] px-5 py-3 text-sm font-semibold text-white shadow-md shadow-[#C9517E]/25 transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40"
             >
                 <span class="text-lg leading-none">+</span>
@@ -75,7 +71,7 @@
 
                                     @can('userpermission.update')
                                         <a
-                                            href="{{ route($routePrefix . '.permissions.edit', $permission) }}"
+                                            href="{{ route('superadmin.permissions.edit', $permission) }}"
                                             class="inline-flex h-8 items-center justify-center rounded-lg bg-[#C9517E] px-3 text-xs font-bold text-white shadow-sm transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40"
                                         >
                                             Edit
@@ -85,7 +81,7 @@
                                     @can('userpermission.delete')
                                         <form
                                             method="POST"
-                                            action="{{ route($routePrefix . '.permissions.destroy', $permission) }}"
+                                            action="{{ route('superadmin.permissions.destroy', $permission) }}"
                                             class="m-0"
                                             onsubmit="return confirm('Hapus permission {{ $permission->name }}?')"
                                         >

@@ -11,9 +11,9 @@ use App\Http\Controllers\Admin\IbuController;
 use App\Http\Controllers\Admin\KaderController;
 use App\Http\Controllers\Admin\LaporanController;
 use App\Http\Controllers\Admin\LaporanPdfController;
-use App\Http\Controllers\Admin\PermissionController;
-use App\Http\Controllers\Admin\RoleController;
-use App\Http\Controllers\Admin\WilayahKerjaController;
+use App\Http\Controllers\SuperAdmin\PermissionController;
+use App\Http\Controllers\SuperAdmin\RoleController;
+use App\Http\Controllers\SuperAdmin\WilayahKerjaController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Bidan\DashboardController as BidanDashboardController;
 use App\Http\Controllers\Bidan\LaporanController as BidanLaporanController;
@@ -106,10 +106,6 @@ Route::middleware('auth')->group(function () {
 
             Route::get('permissions', [PermissionController::class, 'index'])
                 ->middleware('can:userpermission.view')->name('permissions.index');
-            Route::get('permissions/role/{role}/edit', [PermissionController::class, 'editRole'])
-                ->middleware('can:userrole.update')->name('permissions.role.edit');
-            Route::put('permissions/role/{role}', [PermissionController::class, 'updateRole'])
-                ->middleware('can:userrole.update')->name('permissions.role.update');
             Route::get('permissions/create', [PermissionController::class, 'create'])
                 ->middleware('can:userpermission.create')->name('permissions.create');
             Route::post('permissions', [PermissionController::class, 'store'])
@@ -144,59 +140,8 @@ Route::middleware('auth')->group(function () {
         ->group(function () {
             Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
 
-        // Kelola Role - Admin hanya bisa melihat dan mengedit
-        Route::get('roles', [RoleController::class, 'index'])
-            ->middleware('can:userrole.view')
-            ->name('roles.index');
-
-        Route::get('roles/{role}/edit', [RoleController::class, 'edit'])
-            ->middleware('can:userrole.update')
-            ->name('roles.edit');
-
-        Route::put('roles/{role}', [RoleController::class, 'update'])
-            ->middleware('can:userrole.update')
-            ->name('roles.update');
-
-        Route::delete('roles/{role}', [RoleController::class, 'destroy'])
-        ->middleware('can:userrole.delete')
-        ->name('roles.destroy');
-
-
-    // Akses & Hak - Permission
-    Route::get('permissions', [PermissionController::class, 'index'])
-        ->middleware('can:userpermission.view')
-        ->name('permissions.index');
-
-    Route::get('permissions/create', [PermissionController::class, 'create'])
-        ->middleware('can:userpermission.create')
-        ->name('permissions.create');
-
-    Route::post('permissions', [PermissionController::class, 'store'])
-        ->middleware('can:userpermission.create')
-        ->name('permissions.store');
-
-    Route::get('permissions/{permission}/edit', [PermissionController::class, 'edit'])
-        ->middleware('can:userpermission.update')
-        ->name('permissions.edit');
-
-    Route::put('permissions/{permission}', [PermissionController::class, 'update'])
-        ->middleware('can:userpermission.update')
-        ->name('permissions.update');
-
-    Route::delete('permissions/{permission}', [PermissionController::class, 'destroy'])
-        ->middleware('can:userpermission.delete')
-        ->name('permissions.destroy');
-
 
     // Akses & Hak - Mengatur Permission milik Role
-    Route::get('permissions/role/{role}/edit', [PermissionController::class, 'editRole'])
-        ->middleware('can:userrole.update')
-        ->name('permissions.role.edit');
-
-    Route::put('permissions/role/{role}', [PermissionController::class, 'updateRole'])
-        ->middleware('can:userrole.update')
-        ->name('permissions.role.update');
-
             Route::get('laporan', [LaporanController::class, 'index'])->name('laporan.index');
             Route::get('laporan/pdf', [LaporanPdfController::class, 'download'])->name('laporan.pdf');
 

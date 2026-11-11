@@ -10,7 +10,7 @@
         <p class="mt-1 text-sm font-medium text-slate-700">Data Master / Kelola Wilayah Kerja</p>
     </div>
 
-    @include('admin.wilayah.partials.tabs', ['active' => 'wilayah'])
+    @include('superadmin.wilayah.partials.tabs', ['active' => 'wilayah'])
 
     <div class="overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm">
 

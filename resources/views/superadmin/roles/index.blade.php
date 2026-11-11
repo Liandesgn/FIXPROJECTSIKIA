@@ -9,27 +9,28 @@
     $isSuperAdmin = $routePrefix === 'superadmin';
 @endphp
 
-<div class="mx-auto w-full max-w-[96rem] space-y-5">
 
-    <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-        <div>
-            <h1 class="text-2xl font-bold tracking-tight text-[#542D3D] sm:text-3xl">
-                Kelola Role
-            </h1>
-            <p class="mt-1 text-sm font-medium text-slate-700">
-                Akses &amp; Hak / Kelola Role
-            </p>
-        </div>
-
-        @if ($isSuperAdmin)
-            <a
-                href="{{ route('superadmin.roles.create') }}"
-                class="inline-flex h-10 items-center justify-center rounded-xl bg-[#C9517E] px-5 text-sm font-bold text-white shadow-sm transition hover:bg-[#B7436D]"
-            >
-                + Tambah Role
-            </a>
-        @endif
+<div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+    <div>
+        <h1 class="text-2xl font-bold tracking-tight text-[#542D3D] sm:text-3xl">
+            Kelola Role
+        </h1>
+        <p class="mt-1 text-sm font-medium text-slate-700">
+            Akses &amp; Hak / Kelola Role
+        </p>
     </div>
+
+    @if ($isSuperAdmin)
+        <a
+            href="{{ route('superadmin.roles.create') }}"
+            class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#C9517E] px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#B7436D]"
+        >
+            <span class="text-lg">+</span>
+            Tambah Role
+        </a>
+    @endif
+</div>
+
 
     <div class="overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm">
         <div class="overflow-x-auto">
@@ -69,8 +70,8 @@
                             <td class="whitespace-nowrap px-4 py-3.5">
                                 <div class="flex items-center justify-center gap-2">
 
-                                    <a
-                                        href="{{ route($routePrefix . '.roles.edit', $role) }}"
+                                   <a
+                                        href="{{ route('superadmin.roles.edit', $role) }}"
                                         class="inline-flex h-8 items-center justify-center rounded-lg bg-[#C9517E] px-3 text-xs font-bold text-white transition hover:bg-[#B7436D]"
                                     >
                                         Edit

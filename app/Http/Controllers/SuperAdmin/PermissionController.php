@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -39,12 +39,12 @@ public function index(Request $request)
         ->orderBy('name')
         ->get();
 
-    return view('admin.permissions.index', compact('roles', 'permissions'));
+    return view('superadmin.permissions.index', compact('roles', 'permissions'));
 }
 
     public function create()
     {
-        return view('admin.permissions.create', [
+        return view('superadmin.permissions.create', [
             'roles' => Role::orderBy('name')->get(),
         ]);
     }
@@ -62,7 +62,7 @@ public function index(Request $request)
 
     public function edit(Permission $permission)
     {
-        return view('admin.permissions.edit', [
+        return view('superadmin.permissions.edit', [
             'permission' => $permission->load('roles'),
             'roles'      => Role::orderBy('name')->get(),
             'locked'     => in_array($permission->name, self::PROTECTED, true),
@@ -98,35 +98,6 @@ public function index(Request $request)
             ->with('success', 'Permission berhasil dihapus.');
     }
 
-    
-        //view untuk mengedit permission role
-        public function editRole(Role $role)
-{
-    return view('admin.permissions.role-edit', [
-        'role'        => $role->load('permissions'),
-        'permissions' => Permission::orderBy('name')->get(),
-    ]);
-}
-
-public function updateRole(Request $request, Role $role)
-{
-    $data = $request->validate([
-        'permissions'   => ['array'],
-        'permissions.*' => ['exists:permissions,name'],
-    ]);
-
-    $names = $data['permissions'] ?? [];
-
-    // Admin tidak boleh kehilangan permission inti (supaya tidak terkunci)
-    if ($role->name === 'admin') {
-        $names = array_unique(array_merge($names, self::PROTECTED));
-    }
-
-    $role->syncPermissions($names);
-
-    return redirect()->route('superadmin.permissions.index')
-        ->with('success', 'Hak akses ' . ucfirst($role->name) . ' berhasil diperbarui.');
-}
 
 
 

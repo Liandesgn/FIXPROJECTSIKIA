@@ -1,15 +1,8 @@
-
 @extends('layouts.app')
 
 @section('title', 'Tambah Permission')
 
 @section('content')
-@php
-    $routePrefix = request()->routeIs('admin.*')
-        ? 'admin'
-        : 'superadmin';
-@endphp
-
 <div class="max-w-xl space-y-6">
     <div>
         <h1 class="text-xl font-bold text-[#542D3D]">
@@ -23,12 +16,12 @@
 
     <form
         method="POST"
-        action="{{ route($routePrefix . '.permissions.store') }}"
+        action="{{ route('superadmin.permissions.store') }}"
         class="space-y-5"
     >
         @csrf
 
-        @include('admin.permissions.partials.form')
+        @include('superadmin.permissions.partials.form')
     </form>
 </div>
 @endsection

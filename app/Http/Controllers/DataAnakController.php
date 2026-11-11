@@ -15,36 +15,70 @@ use Illuminate\View\View;
 class DataAnakController extends Controller
 {
     public function index(Request $request): View
-    {
-        $user = $request->user();
+{
+    $user = $request->user();
 
-        if ($user->isOrangTua()) {
-            $ibu = Ibu::with(['user', 'wilayahKerja', 'anak'])
-                ->where('user_id', $user->id)
-                ->first();
+    // Tampilan khusus Ibu: seluruh detail anak dalam satu halaman.
+    if ($user->isOrangTua()) {
+        $ibu = Ibu::query()
+            ->where('user_id', $user->id)
+            ->firstOrFail();
 
-            return view('data-anak.ibu-sendiri', ['ibu' => $ibu]);
-        }
+        // Ambil semua anak milik Ibu yang sedang login.
+        $anaks = $ibu->anak()
+            ->with(['ibu.user', 'ibu.wilayahKerja'])
+            ->orderBy('tgl_lahir')
+            ->get();
 
-        $anaks = Anak::query()
-            ->visibleTo($user)
-            ->with('ibu.user')
-            ->when($request->filled('search'), function ($query) use ($request) {
-                $search = '%'.$request->string('search').'%';
+        // Ambil riwayat pemeriksaan seluruh anak sekaligus.
+        $riwayatSemuaAnak = PemeriksaanPosyandu::query()
+            ->with('kegiatan')
+            ->whereIn('anak_id', $anaks->modelKeys())
+            ->whereHas('kegiatan')
+            ->get()
+            ->groupBy('anak_id');
 
-                $query->where(fn ($q) => $q
-                    ->where('nama_anak', 'like', $search)
-                    ->orWhere('nik_anak', 'like', $search));
-            })
-            ->latest()
-            ->paginate(10)
-            ->withQueryString();
+        // Siapkan detail dan riwayat masing-masing anak.
+        $detailAnak = $anaks->map(function ($anak) use ($riwayatSemuaAnak) {
+            $riwayatPemeriksaan = ($riwayatSemuaAnak->get($anak->id) ?? collect())
+                ->sortBy(
+                    fn ($item) => $item->kegiatan?->tanggal?->format('Y-m-d') ?? ''
+                )
+                ->values();
 
-        return view('data-anak.index', [
-            'anaks' => $anaks,
-            'base' => $this->base($request),
+            return [
+                'anak' => $anak,
+                'riwayatPemeriksaan' => $riwayatPemeriksaan,
+                'pemeriksaanTerakhir' => $riwayatPemeriksaan->last(),
+            ];
+        });
+
+        return view('data-anak.ibu-semua', [
+            'detailAnak' => $detailAnak,
+            'base' => 'ibu',
         ]);
     }
+
+    // Tampilan Admin, Bidan, dan Kader tetap seperti sebelumnya.
+    $anaks = Anak::query()
+        ->visibleTo($user)
+        ->with('ibu.user')
+        ->when($request->filled('search'), function ($query) use ($request) {
+            $search = '%'.$request->string('search').'%';
+
+            $query->where(fn ($q) => $q
+                ->where('nama_anak', 'like', $search)
+                ->orWhere('nik_anak', 'like', $search));
+        })
+        ->latest()
+        ->paginate(10)
+        ->withQueryString();
+
+    return view('data-anak.index', [
+        'anaks' => $anaks,
+        'base' => $this->base($request),
+    ]);
+}
 
     public function create(Request $request): View
     {
