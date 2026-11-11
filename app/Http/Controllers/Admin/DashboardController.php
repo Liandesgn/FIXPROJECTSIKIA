@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Enums\RoleEnum;
 use App\Enums\StatusKehamilanEnum;
 use App\Http\Controllers\Controller;
 use App\Models\Anak;
+use App\Models\Bidan;
 use App\Models\Ibu;
+use App\Models\Kader;
 use App\Models\KegiatanPosyandu;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -16,9 +16,14 @@ class DashboardController extends Controller
 {
     public function index(Request $request): View
     {
-        $user = $request->user()->load('admin');
+        $user = $request->user()->load([
+            'admin',
+        ]);
+
+        // Ambil wilayah yang dikelola Admin.
         $wilayahId = $user->managedWilayahId();
 
+        // Nilai awal jika Admin belum memiliki wilayah.
         $stats = [
             'bidan' => 0,
             'kader' => 0,
@@ -28,41 +33,53 @@ class DashboardController extends Controller
             'jadwal' => 0,
         ];
 
-        $latestUsers = collect();
+        // Jadwal Posyandu mendatang.
+        $jadwalPosyandu = collect();
 
+        // Hitung data hanya jika Admin memiliki wilayah.
         if ($wilayahId) {
-            $stats['bidan'] = User::role(RoleEnum::Bidan->value)
-                ->whereHas('bidan', fn ($q) => $q->where('wilayah_kerja_id', $wilayahId))
+
+            // Jumlah Bidan pada wilayah Admin.
+            $stats['bidan'] = Bidan::query()
+                ->where('wilayah_kerja_id', $wilayahId)
                 ->count();
 
-            $stats['kader'] = User::role(RoleEnum::Kader->value)
-                ->whereHas('kader', fn ($q) => $q->where('wilayah_kerja_id', $wilayahId))
+            // Jumlah Kader pada wilayah Admin.
+            $stats['kader'] = Kader::query()
+                ->where('wilayah_kerja_id', $wilayahId)
                 ->count();
 
-            $stats['ibu_hamil'] = Ibu::where('wilayah_kerja_id', $wilayahId)
-                ->where('status_kehamilan', StatusKehamilanEnum::Hamil->value)
+            // Jumlah Ibu dengan status kehamilan Hamil.
+            $stats['ibu_hamil'] = Ibu::query()
+                ->where('wilayah_kerja_id', $wilayahId)
+                ->where(
+                    'status_kehamilan',
+                    StatusKehamilanEnum::Hamil->value
+                )
                 ->count();
 
-            $stats['anak'] = Anak::whereHas(
-                'ibu',
-                fn ($q) => $q->where('wilayah_kerja_id', $wilayahId)
-            )->count();
-
-            $stats['jadwal'] = KegiatanPosyandu::where('id_wilayah', $wilayahId)
-                ->whereDate('tanggal', '>=', today())
+            // Jumlah Anak pada wilayah Admin.
+            $stats['anak'] = Anak::query()
+                ->visibleTo($user)
                 ->count();
 
-            $latestUsers = User::with(['roles', 'wilayahKerja', 'ibu.wilayahKerja'])
-                ->where(function ($query) use ($wilayahId) {
-                    $query->whereHas('bidan', fn ($q) => $q->where('wilayah_kerja_id', $wilayahId))
-                        ->orWhereHas('kader', fn ($q) => $q->where('wilayah_kerja_id', $wilayahId))
-                        ->orWhereHas('ibu', fn ($q) => $q->where('wilayah_kerja_id', $wilayahId));
-                })
-                ->latest()
-                ->take(5)
+            // Jumlah seluruh kegiatan Posyandu pada wilayah Admin.
+            $stats['jadwal'] = KegiatanPosyandu::query()
+                ->diWilayah($wilayahId)
+                ->count();
+
+            // Lima jadwal Posyandu terdekat pada wilayah Admin.
+            $jadwalPosyandu = KegiatanPosyandu::query()
+                ->with('wilayah')
+                ->diWilayah($wilayahId)
+                ->mendatang()
+                ->limit(5)
                 ->get();
         }
 
-        return view('admin.dashboard', compact('stats', 'latestUsers'));
+        return view('admin.dashboard', compact(
+            'stats',
+            'jadwalPosyandu'
+        ));
     }
 }

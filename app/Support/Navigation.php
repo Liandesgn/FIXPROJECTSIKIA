@@ -40,42 +40,60 @@ class Navigation
     /**
      * @return array<int, array{heading: string, items: array<int, array<string, mixed>>}>
      */
-    private static function superAdmin(): array
-    {
-        return [
-            [
-                'heading' => 'Utama',
-                'items' => [
-                    self::link('Dashboard', 'superadmin.dashboard'),
-                ],
+   
+private static function superAdmin(): array
+{
+    return [
+        [
+            'heading' => 'Utama',
+            'items' => [
+                self::link('Dashboard', 'superadmin.dashboard'),
             ],
-            [
-                'heading' => 'Manajemen Admin',
-                'items' => [
-                    self::link('Admin Wilayah', 'superadmin.admins.index', 'superadmin.admins.*'),
-                ],
+        ],
+        [
+            'heading' => 'Manajemen Admin',
+            'items' => [
+                self::link('Kelola Admin', 'superadmin.admins.index', 'superadmin.admins.*'),
             ],
-            [
-                'heading' => 'Master Data',
-                'items' => [
-                    self::link('Wilayah Kerja', 'superadmin.wilayah-kerja.index', 'superadmin.wilayah-kerja.*'),
-                ],
+        ],
+        [
+            'heading' => 'Manajemen User',
+            'items' => [
+                self::link('Kelola Bidan', 'superadmin.bidan.index', 'superadmin.bidan.*'),
+                self::link('Kelola Kader', 'superadmin.kader.index', 'superadmin.kader.*'),
+                self::link('Kelola Ibu', 'superadmin.ibu.index', 'superadmin.ibu.*'),
             ],
-            [
-                'heading' => 'Akses & Hak',
-                'items' => [
-                    self::link('Role', 'superadmin.roles.index', 'superadmin.roles.*'),
-                    self::link('Permission', 'superadmin.permissions.index', 'superadmin.permissions.*'),
-                ],
+        ],
+        [
+            'heading' => 'Master Data',
+            'items' => [
+                self::link('Kelola Wilayah', 'superadmin.wilayah-kerja.index', 'superadmin.wilayah-kerja.*'),
             ],
-            [
-                'heading' => 'Akun',
-                'items' => [
-                    self::link('Profil', 'profile.edit', 'profile.*'),
-                ],
+        ],
+        [
+            'heading' => 'Kelola Edukasi',
+            'items' => [
+                self::link('Kelola Edukasi', 'panel.module', null, [
+                    'module' => 'edukasi',
+                ]),
             ],
-        ];
-    }
+        ],
+        [
+            'heading' => 'Laporan',
+            'items' => [
+                self::link('Laporan', 'superadmin.laporan.index', 'superadmin.laporan.*'),
+            ],
+        ],
+        [
+            'heading' => 'Akses & Hak',
+            'items' => [
+                self::link('Role', 'superadmin.roles.index', 'superadmin.roles.*'),
+                self::link('Permission', 'superadmin.permissions.index', 'superadmin.permissions.*'),
+            ],
+        ],
+                ];
+}
+
 
     /**
      * @return array<int, array{heading: string, items: array<int, array<string, mixed>>}>
@@ -108,7 +126,7 @@ class Navigation
             [
                 'heading' => 'Laporan',
                 'items' => [
-                    self::link('Laporan', 'admin.laporan.index', 'admin.laporan.*'),
+                    self::link('Laporan dan Rekapitulasi', 'admin.laporan.index', 'admin.laporan.*'),
                 ],
             ],
             [
@@ -133,17 +151,16 @@ class Navigation
                 ],
             ],
             [
-                'heading' => 'Data',
+                'heading' => 'Menu',
                 'items' => [
                     self::link('Data Ibu', 'bidan.data-ibu.index', 'bidan.data-ibu.*'),
                     self::link('Data Anak', 'bidan.data-anak.index', 'bidan.data-anak.*'),
-                    self::link('Data Posyandu', 'bidan.data-posyandu.index', 'bidan.data-posyandu.*'),
-                ],
-            ],
-            [
-                'heading' => 'Laporan',
-                'items' => [
-                    self::link('Laporan', 'bidan.laporan.index', 'bidan.laporan.*'),
+                    self::soon('Pemeriksaan Pasien', 'pemeriksaan-pasien'),
+                    self::soon('Posyandu', 'posyandu'),
+                    self::soon('Riwayat Pemeriksaan', 'riwayat-pemeriksaan'),
+                    self::soon('Konsultasi', 'konsultasi'),
+                    self::soon('Jadwal', 'jadwal'),
+                    self::link('Laporan Wilayah', 'bidan.laporan.index', 'bidan.laporan.*'),
                 ],
             ],
             [
@@ -172,7 +189,8 @@ class Navigation
                 'items' => [
                     self::link('Data Ibu', 'kader.data-ibu.index', 'kader.data-ibu.*'),
                     self::link('Data Anak', 'kader.data-anak.index', 'kader.data-anak.*'),
-                    self::link('Data Posyandu', 'kader.data-posyandu.index', 'kader.data-posyandu.*'),
+                    self::soon('Jadwal Posyandu', 'jadwal-posyandu'),
+                    self::soon('Pendataan Posyandu', 'pendataan-posyandu'),
                 ],
             ],
             [
@@ -204,6 +222,7 @@ class Navigation
                     self::soon('Jadwal Pemeriksaan', 'jadwal-pemeriksaan'),
                     self::soon('Konsultasi Bidan', 'konsultasi'),
                     self::soon('Edukasi Kesehatan', 'edukasi'),
+                    self::soon('Jadwal', 'jadwal')
                 ],
             ],
             [
@@ -218,15 +237,19 @@ class Navigation
     /**
      * @return array<string, mixed>
      */
-    private static function link(string $label, string $route, ?string $match = null): array
-    {
-        return [
-            'label' => $label,
-            'route' => $route,
-            'params' => [],
-            'match' => $match ?? $route,
-        ];
-    }
+   private static function link(
+    string $label,
+    string $route,
+    ?string $match = null,
+    array $params = []
+): array {
+    return [
+        'label' => $label,
+        'route' => $route,
+        'params' => $params,
+        'match' => $match ?? $route,
+    ];
+}
 
     /**
      * @return array<string, mixed>

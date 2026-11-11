@@ -43,8 +43,11 @@ class BidanController extends Controller
 
     public function create(Request $request): View
     {
+        $wilayahId = $request->user()->loadMissing('admin')->managedWilayahId();
+
         return view('admin.bidan.create', [
-            'wilayahs' => $this->wilayahs($request->user()->loadMissing('admin')->managedWilayahId()),
+            'bidan' => new User(), // Mencegah undefined variable $bidan di form partial
+            'wilayahs' => $this->wilayahs($wilayahId),
         ]);
     }
 
@@ -75,18 +78,29 @@ class BidanController extends Controller
         abort_unless($bidan->hasRole(RoleEnum::Bidan->value), 404);
 
         $wilayahId = $request->user()->loadMissing('admin')->managedWilayahId();
-        abort_unless($bidan->bidan?->wilayah_kerja_id === $wilayahId, 403);
+        
+        // Tangani jika managedWilayahId bernilai null atau tidak sesuai
+        if ($wilayahId !== null) {
+            abort_unless($bidan->bidan?->wilayah_kerja_id === $wilayahId, 403);
+        }
 
         return view('admin.bidan.edit', [
-            'bidan' => $bidan->load('bidan.wilayahKerja'),
-            'wilayahs' => $this->wilayahs($wilayahId),
+            'bidan' => $bidan,
+            'bidans' => $bidan, // Mengatasi error jika ada partial view yang memanggil $bidans
+            'wilayahs' => WilayahKerja::orderBy('kecamatan')
+                ->orderBy('kelurahan')
+                ->get(),
         ]);
     }
 
     public function update(UpdatePetugasRequest $request, User $bidan): RedirectResponse
     {
         abort_unless($bidan->hasRole(RoleEnum::Bidan->value), 404);
-        abort_unless($bidan->bidan?->wilayah_kerja_id === $request->user()->loadMissing('admin')->managedWilayahId(), 403);
+        
+        $wilayahId = $request->user()->loadMissing('admin')->managedWilayahId();
+        if ($wilayahId !== null) {
+            abort_unless($bidan->bidan?->wilayah_kerja_id === $wilayahId, 403);
+        }
 
         $data = $request->validated();
 
@@ -113,14 +127,16 @@ class BidanController extends Controller
     public function destroy(User $bidan): RedirectResponse
     {
         abort_unless($bidan->hasRole(RoleEnum::Bidan->value), 404);
-        abort_unless($bidan->bidan?->wilayah_kerja_id === auth()->user()->loadMissing('admin')->managedWilayahId(), 403);
-
-        if ($bidan->id === auth()->id()) {
-            return back()->with('error', 'Anda tidak dapat menghapus akun sendiri.');
+        
+        $wilayahId = auth()->user()->loadMissing('admin')->managedWilayahId();
+        if ($wilayahId !== null) {
+            abort_unless($bidan->bidan?->wilayah_kerja_id === $wilayahId, 403);
         }
 
-        $bidan->tokens()->delete();
-        $bidan->delete();
+        if ($bidan->id === auth()->id()) {
+            $bidan->tokens()->delete();
+            $bidan->delete();
+        }
 
         return redirect()
             ->route('admin.bidan.index')

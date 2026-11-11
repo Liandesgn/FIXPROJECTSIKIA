@@ -20,7 +20,7 @@
                 htmlContainer: 'text-sm leading-6 text-gray-500',
                 actions: 'mt-5 gap-3',
                 confirmButton: 'rounded-xl bg-[#C9517E] px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#C9517E]/25 transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40',
-                cancelButton: 'rounded-xl border border-[#E99AB7] bg-white px-6 py-2.5 text-sm font-semibold text-[#C9517E] transition hover:bg-[#FCE7F0] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/30'
+                cancelButton: 'rounded-xl border-2 border-[#E99AB7] bg-white px-6 py-2.5 text-sm font-semibold text-[#C9517E] transition hover:bg-[#FCE7F0] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/30'
             }
         });
 
@@ -45,7 +45,7 @@
                     htmlContainer: 'text-sm leading-6 text-gray-500',
                     actions: 'mt-5 gap-3',
                     confirmButton: 'rounded-xl bg-red-600 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-red-600/25 transition hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-200',
-                    cancelButton: 'rounded-xl border border-[#E99AB7] bg-white px-6 py-2.5 text-sm font-semibold text-[#C9517E] transition hover:bg-[#FCE7F0] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/30'
+                    cancelButton: 'rounded-xl border-2 border-[#E99AB7] bg-white px-6 py-2.5 text-sm font-semibold text-[#C9517E] transition hover:bg-[#FCE7F0] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/30'
                 };
             }
 
@@ -61,7 +61,7 @@
 
     $user      = auth()->user();
     $role      = $user->primaryRole();
-    $roleKey   = $role ? Str::before($role->dashboard(), '.') : null;   // admin | bidan | kader | orang-tua
+    $roleKey   = $role ? Str::before($role->dashboard(), '.') : null;   // superadmin | admin | bidan | kader | orang-tua
     $roleLabel = $roleKey === 'orang-tua' ? 'Ibu' : $role?->label();    // tampilan: "Orang Tua" diganti "Ibu"
     $initial   = Str::upper(Str::substr($user->name, 0, 1));
 
@@ -116,6 +116,9 @@
         $heading = trim($section['heading'] ?? '');
         if (preg_match('/akun|profil/i', $heading)) continue;
 
+        // Menu "Akses & Hak" tidak ditampilkan untuk Admin
+        if ($roleKey === 'admin' && preg_match('/akses|hak/i', $heading)) continue;
+
         $items = [];
         foreach ($section['items'] as $item) {
             $label = trim($item['label']);
@@ -137,6 +140,102 @@
         } else {
             $menu[] = ['label' => $heading, 'icon' => $iconFor($heading), 'items' => $items];
         }
+    }
+
+    // ===== PENYUSUNAN ULANG SIDEBAR PER ROLE =====
+    // Mengambil (dan menghapus) menu yang labelnya cocok dari semua grup / daftar menu.
+    // Grup yang menjadi kosong otomatis dibuang.
+    $extract = function (array &$daftar, string $pola): array {
+        $ditemukan = [];
+        $sisa      = [];
+
+        foreach ($daftar as $entry) {
+            if (isset($entry['items'])) {
+                $tinggal = [];
+                foreach ($entry['items'] as $item) {
+                    if (preg_match($pola, $item['label'])) {
+                        $ditemukan[] = $item;
+                    } else {
+                        $tinggal[] = $item;
+                    }
+                }
+                if ($tinggal) {
+                    $entry['items'] = $tinggal;
+                    $sisa[] = $entry;
+                }
+            } elseif (preg_match($pola, $entry['label'])) {
+                $ditemukan[] = $entry;
+            } else {
+                $sisa[] = $entry;
+            }
+        }
+
+        $daftar = $sisa;
+        return $ditemukan;
+    };
+
+    $roleKeyNorm = str_replace(['-', '_'], '', (string) $roleKey);
+
+        if ($roleKeyNorm === 'superadmin') {
+        // Urutan Super Admin: Dashboard → Manajemen User (dropdown) → Kelola Wilayah → Kelola Edukasi → Laporan → Akses & Hak (dropdown)
+        $urutan = ['admin' => 1, 'ibu' => 2, 'kader' => 3, 'bidan' => 4];
+        $kunci  = fn ($m) => $urutan[Str::lower(Str::afterLast(trim($m['label']), ' '))] ?? 9;
+
+        $userItems = $extract($menu, '/^kelola\s+(admin|bidan|kader|ibu)\b/i');
+        usort($userItems, fn ($a, $b) => $kunci($a) <=> $kunci($b));
+
+        $aksesItems   = $extract($menu, '/^kelola\s+(role|permission)\b/i');
+        $dashItems    = $extract($menu, '/^dashboard$/i');
+        $laporanItems = $extract($menu, '/laporan/i');
+        $wilayahItems = $extract($menu, '/^kelola\s+wilayah/i');
+        $edukasiItems = $extract($menu, '/edukasi/i');
+
+        $menu = array_merge(
+            $dashItems,
+            $userItems  ? [['label' => 'Manajemen User', 'icon' => 'users',  'items' => $userItems]]  : [],
+            $wilayahItems,
+            $edukasiItems,
+            $laporanItems,
+            $menu,   // menu lain yang belum diatur (jika ada) ditaruh sebelum Akses & Hak
+            $aksesItems ? [['label' => 'Akses & Hak',    'icon' => 'shield', 'items' => $aksesItems]] : []
+        );
+    } elseif ($roleKey === 'admin') {
+        // Admin: grup "Data" menjadi "Data Master"; "Laporan dan Rekapitulasi" tampil langsung (tanpa dropdown)
+        $menu = collect($menu)->flatMap(function ($entry) {
+            if (! isset($entry['items'])) return [$entry];
+
+            if (preg_match('/^data(\s+master)?$/i', $entry['label'])) {
+                $entry['label'] = 'Data Master';
+                $entry['icon']  = 'building';
+                return [$entry];
+            }
+
+            if (preg_match('/laporan|rekap/i', $entry['label'])) {
+                if (count($entry['items']) === 1) {
+                    return $entry['items'];
+                }
+
+                return [[
+                    'label'  => $entry['label'],
+                    'icon'   => $entry['icon'],
+                    'href'   => $entry['items'][0]['href'],
+                    'active' => collect($entry['items'])->contains(fn ($i) => ! empty($i['active'])),
+                ]];
+            }
+
+            return [$entry];
+        })->values()->all();
+    } elseif (in_array($roleKey, ['ibu', 'orang-tua'], true)) {
+        // Ibu: "Jadwal Pemeriksaan" dihapus (nanti digabung ke satu menu "Jadwal")
+        $extract($menu, '/^jadwal\s+pemeriksaan$/i');
+    }
+
+    // Bidan, Kader, dan Ibu menunya langsung tampil tanpa judul grup (dropdown hanya untuk Super Admin dan Admin)
+    if (in_array($roleKey, ['bidan', 'kader', 'ibu', 'orang-tua'], true)) {
+        $menu = collect($menu)
+            ->flatMap(fn ($entry) => isset($entry['items']) ? $entry['items'] : [$entry])
+            ->values()
+            ->all();
     }
 
     $isActive = function (array $item) {
@@ -211,16 +310,21 @@
     {{-- ================= SIDEBAR ================= --}}
     <aside id="sidebar"
            class="fixed bottom-0 left-0 top-16 z-30 w-64 -translate-x-full overflow-y-auto border-r border-[#F1D5E0] bg-[#FCE7F0] p-4 transition-transform duration-200 md:translate-x-0">
-        <nav class="space-y-1.5" aria-label="Menu utama">
+        <nav class="space-y-1" aria-label="Menu utama">
             @foreach ($menu as $entry)
                 @if (isset($entry['items']))
-                    {{-- Judul grup: hanya label, tidak bisa diklik --}}
-                    <div class="pt-3">
-                        <div class="flex items-center gap-3 px-3 py-2 text-sm font-bold text-[#542D3D]" role="presentation">
-                            <svg class="h-5 w-5 text-[#C9517E]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="{{ $icons[$entry['icon']] ?? $icons['report'] }}"/></svg>
-                            {{ $entry['label'] }}
-                        </div>
-                        <div class="ml-5 space-y-1 border-l border-[#E99AB7]/60 pl-3">
+                    @php $groupOpen = collect($entry['items'])->contains(fn ($i) => $isActive($i)); @endphp
+
+                    {{-- Grup menu (dropdown) --}}
+                    <div data-menu-group>
+                        <button type="button" data-menu-toggle aria-expanded="{{ $groupOpen ? 'true' : 'false' }}"
+                                class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-bold text-[#542D3D] transition hover:bg-white/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C9517E]">
+                            <svg class="h-5 w-5 shrink-0 text-[#C9517E]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="{{ $icons[$entry['icon']] ?? $icons['report'] }}"/></svg>
+                            <span class="flex-1">{{ $entry['label'] }}</span>
+                            <svg data-menu-chevron class="h-4 w-4 shrink-0 text-[#C9517E] transition-transform duration-200 {{ $groupOpen ? 'rotate-180' : '' }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6"/></svg>
+                        </button>
+
+                        <div data-menu-panel class="{{ $groupOpen ? '' : 'hidden' }} ml-5 mt-1 space-y-1 border-l border-[#E99AB7]/60 pl-3">
                             @foreach ($entry['items'] as $item)
                                 @php $active = $isActive($item); @endphp
                                 <a href="{{ $item['href'] }}" @if($active) aria-current="page" @endif
@@ -255,7 +359,19 @@
                     $routeName  = request()->route()?->getName() ?? '';
                     $segments   = explode('.', $routeName);
                     $pageAction = end($segments);
-                    $entity     = ['bidan' => 'Bidan', 'kader' => 'Kader', 'ibu' => 'Ibu', 'orang-tua' => 'Ibu'][$segments[1] ?? ''] ?? null;
+
+                    // Nama yang tampil di judul popup gagal, mis. "Tambah Akun Bidan Gagal" / "Edit Wilayah Gagal"
+                    $entities = [
+                        'bidan'         => 'Akun Bidan',
+                        'kader'         => 'Akun Kader',
+                        'ibu'           => 'Akun Ibu',
+                        'orang-tua'     => 'Akun Ibu',
+                        'admins'        => 'Akun Admin',
+                        'wilayah-kerja' => 'Wilayah',
+                        'roles'         => 'Role',
+                        'permissions'   => 'Permission',
+                    ];
+                    $entity     = $entities[$segments[1] ?? ''] ?? null;
                     $failVerb   = ['create' => 'Tambah', 'edit' => 'Edit'][$pageAction] ?? null;
 
                     $popupSuccess = session('success') ?? session('status') ?? session('message');
@@ -264,7 +380,7 @@
                     $popupType    = ($popupError || $popupInvalid) ? 'error' : ($popupSuccess ? 'success' : null);
 
                     $popupTitle = $popupType === 'error'
-                        ? (($failVerb && $entity) ? "{$failVerb} Akun {$entity} Gagal" : 'Proses Gagal')
+                        ? (($failVerb && $entity) ? "{$failVerb} {$entity} Gagal" : 'Proses Gagal')
                         : $popupSuccess;
                     $popupText = $popupType === 'error'
                         ? ($popupError ?: 'Periksa kembali data yang Anda masukkan.')
@@ -299,7 +415,7 @@
             <h2 id="logoutTitle" class="text-lg font-bold text-[#542D3D]">Apakah Anda yakin ingin keluar dari akun?</h2>
             <div class="mt-6 flex gap-3">
                 <button type="button" data-close-logout
-                        class="flex-1 rounded-xl border border-[#E99AB7] bg-white px-4 py-2.5 text-sm font-semibold text-[#C9517E] transition hover:bg-[#FCE7F0]">
+                        class="flex-1 rounded-xl border-2 border-[#E99AB7] bg-white px-4 py-2.5 text-sm font-semibold text-[#C9517E] transition hover:bg-[#FCE7F0]">
                     Batal
                 </button>
                 <form method="POST" action="{{ route('logout') }}" class="flex-1">
@@ -355,6 +471,36 @@
     </script>
 
     <script>
+        // Dropdown grup menu sidebar (hanya muncul untuk Super Admin dan Admin)
+        document.querySelectorAll('[data-menu-toggle]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const group   = btn.closest('[data-menu-group]');
+                const panel   = group.querySelector('[data-menu-panel]');
+                const chevron = group.querySelector('[data-menu-chevron]');
+                const open    = panel.classList.toggle('hidden') === false;
+                btn.setAttribute('aria-expanded', String(open));
+                chevron.classList.toggle('rotate-180', open);
+            });
+        });
+    </script>
+
+    {{-- Sapaan sesuai jam pengguna. Pakai: <span data-greeting>Selamat datang</span> --}}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const h = new Date().getHours();
+            const sapaan = h < 4  ? 'Selamat malam'
+                         : h < 11 ? 'Selamat pagi'
+                         : h < 15 ? 'Selamat siang'
+                         : h < 18 ? 'Selamat sore'
+                         :          'Selamat malam';
+
+            document.querySelectorAll('[data-greeting]').forEach(function (el) {
+                el.textContent = sapaan;
+            });
+        });
+    </script>
+
+    <script>
         // Konfirmasi hapus: <form data-confirm-delete data-name="Nama">
         // Konfirmasi aktif/nonaktif: <form data-confirm-toggle data-active="1|0" data-name="Nama">
         document.addEventListener('submit', function (e) {
@@ -363,7 +509,7 @@
 
             if (form.hasAttribute('data-confirm-delete')) {
                 e.preventDefault();
-                                SikiaConfirm({
+                SikiaConfirm({
                     danger: true,
                     title: form.dataset.title || ('Apakah akan menghapus akun ' + (form.dataset.name || '') + '?'),
                     text: form.dataset.text || 'Data akun akan dihapus secara permanen dan tidak dapat dipulihkan. Lanjutkan?',
@@ -378,6 +524,28 @@
                     confirmText: active ? 'Ya, Nonaktifkan' : 'Ya, Aktifkan'
                 }, function () { form.dataset.confirmed = '1'; form.submit(); });
             }
+        });
+    </script>
+        <script>
+        // Kolom pencarian: bila dikosongkan, halaman kembali ke tampilan awal (tanpa pencarian)
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('input[type="search"][name="search"]').forEach(function (input) {
+                const url = new URL(window.location.href);
+                const sedangMencari = (url.searchParams.get('search') || '').trim() !== '';
+                if (!sedangMencari) return;
+
+                let sudahPindah = false;
+                const kembali = function () {
+                    if (sudahPindah || input.value.trim() !== '') return;
+                    sudahPindah = true;
+                    url.searchParams.delete('search');
+                    url.searchParams.delete('page');
+                    window.location.href = url.toString();
+                };
+
+                input.addEventListener('input', kembali);
+                input.addEventListener('search', kembali); // tombol "x" di kolom pencarian
+            });
         });
     </script>
     @stack('scripts')

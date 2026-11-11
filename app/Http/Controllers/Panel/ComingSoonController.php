@@ -35,6 +35,7 @@ public const MODULES = [
         'edukasi' => ['Edukasi Kesehatan', 'Artikel dan materi edukasi kesehatan ibu dan anak.'],
         'pemeriksaan-pasien' => ['Pemeriksaan Pasien', 'Catat hasil pemeriksaan ibu hamil dan anak.'],
         'posyandu' => ['Posyandu', 'Data dan kegiatan Posyandu di wilayah Anda.'],
+        'jadwal' => ['Jadwal', 'Lihat jadwal kegiatan posyandu dan pemeriksaan.']
     ];
 
     public function show(string $module): View

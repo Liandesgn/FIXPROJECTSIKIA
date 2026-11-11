@@ -49,6 +49,14 @@ class User extends Authenticatable
         return $this->belongsTo(WilayahKerja::class);
     }
 
+
+        public function superAdmin(): HasOne
+    {
+        return $this->hasOne(SuperAdmin::class, 'user_id');
+    }
+
+
+
         public function admin(): HasOne
     {
         return $this->hasOne(Admin::class);

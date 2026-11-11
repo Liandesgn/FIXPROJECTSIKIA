@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\OrangTua;
 
-use App\Enums\RoleEnum;
 use App\Http\Controllers\Controller;
-use App\Models\WilayahKerja;
+use App\Models\PemeriksaanIbu;
+use App\Models\PemeriksaanPosyandu;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -12,36 +12,64 @@ class DashboardController extends Controller
 {
     public function index(Request $request): View
     {
-        $user = $request->user()->load('ibu.wilayahKerja');
+        $user = $request->user()->load([
+            'ibu.wilayahKerja',
+            'ibu.anak',
+            'wilayahKerja',
+        ]);
 
-        $wilayahId = $user->ibu?->wilayah_kerja_id
-            ?? $user->wilayah_kerja_id;
+        $profil = $user->ibu;
 
-        $bidanWilayah = null;
-        $kaderWilayah = null;
+        $wilayah = $profil?->wilayahKerja
+            ?? $user->wilayahKerja;
 
-        if ($wilayahId) {
-            $wilayah = WilayahKerja::find($wilayahId);
+        $bidanWilayah = $wilayah?->bidan;
+        $kaderWilayah = $wilayah?->kaders()->first();
 
-            if ($wilayah) {
-                $bidanWilayah = $wilayah->users()
-                    ->whereHas('roles', function ($query) {
-                        $query->where('name', RoleEnum::Bidan->value);
-                    })
-                    ->first();
+        // Data anak milik orang tua.
+        $anakList = $profil?->anak ?? collect();
 
-                $kaderWilayah = $wilayah->users()
-                    ->whereHas('roles', function ($query) {
-                        $query->where('name', RoleEnum::Kader->value);
-                    })
-                    ->first();
-            }
+        // Pemeriksaan ibu terakhir.
+        $pemeriksaanIbuTerakhir = $profil
+            ? PemeriksaanIbu::where('ibu_id', $profil->id)
+                ->orderByDesc('tgl_pemeriksaan')
+                ->orderByDesc('id')
+                ->first()
+            : null;
+
+        // Pemeriksaan Posyandu terakhir untuk setiap anak.
+        $pemeriksaanAnakTerakhir = collect();
+
+        if ($anakList->isNotEmpty()) {
+            $pemeriksaanAnakTerakhir = PemeriksaanPosyandu::with('kegiatan')
+                ->whereIn('anak_id', $anakList->pluck('id'))
+                ->get()
+                ->sortByDesc(function ($pemeriksaan) {
+                    $tanggal = $pemeriksaan->kegiatan?->tanggal;
+
+                    return ($tanggal?->format('Y-m-d') ?? '')
+                        . '-'
+                        . str_pad((string) $pemeriksaan->id, 12, '0', STR_PAD_LEFT);
+                })
+                ->groupBy('anak_id')
+                ->map(fn ($riwayat) => $riwayat->first());
         }
+
+        // Jadwal Posyandu di wilayah orang tua.
+        $jadwalPosyandu = $wilayah
+            ? $wilayah->kegiatanPosyandu()
+                ->mendatang()
+                ->get()
+            : collect();
 
         return view('orang-tua.dashboard', [
             'user' => $user,
             'bidanWilayah' => $bidanWilayah,
             'kaderWilayah' => $kaderWilayah,
+            'anakList' => $anakList,
+            'jadwalPosyandu' => $jadwalPosyandu,
+            'pemeriksaanIbuTerakhir' => $pemeriksaanIbuTerakhir,
+            'pemeriksaanAnakTerakhir' => $pemeriksaanAnakTerakhir,
         ]);
     }
 }

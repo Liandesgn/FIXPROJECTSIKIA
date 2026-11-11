@@ -1,50 +1,133 @@
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <title>{{ $judul }}</title>
     <style>
-        body { font-family: DejaVu Sans, sans-serif; font-size: 10px; }
-        h2 { text-align: center; margin-bottom: 5px; }
-        p { text-align: center; margin: 4px 0 18px; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { border: 1px solid #555; padding: 7px; }
-        th { background: #e5e7eb; text-align: center; }
-        td.center { text-align: center; }
+        body {
+            font-family: DejaVu Sans, sans-serif;
+            font-size: 10px;
+            color: #333;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 5px;
+            color: #C9517E;
+            letter-spacing: 1px;
+        }
+
+        h3 {
+            margin: 18px 0 6px;
+            color: #542D3D;
+            font-size: 11px;
+        }
+
+        p {
+            text-align: center;
+            margin: 4px 0 18px;
+            color: #542D3D;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border: 1px solid #E99AB7;
+            padding: 7px;
+        }
+
+        th {
+            background: #FCE7F0;
+            color: #542D3D;
+            text-align: center;
+        }
+
+        tbody tr:nth-child(even) td {
+            background: #FFF8FA;
+        }
+
+        td.center {
+            text-align: center;
+        }
     </style>
 </head>
 <body>
     <h2>LAPORAN {{ strtoupper($judul) }}</h2>
     <p>Periode: {{ $periode }} | Wilayah: {{ $namaWilayah }}</p>
 
-    <table>
-        @if ($tab === 'rekap-kesehatan')
+    {{-- 1. REKAP KESEHATAN: ringkasan + status Ibu / Anak --}}
+    @if ($tab === 'rekap-kesehatan')
+        @php
+            $baris = collect($data);
+
+            // Bila controller tidak mengirim $ringkasan, hitung dari baris data wilayah
+            $ringkasan = $ringkasan ?? [
+                'ibu_hamil'       => $baris->sum('ibu_hamil'),
+                'anak'            => $baris->sum('anak'),
+                'perlu_perhatian' => $baris->sum(fn ($r) => $r->risiko ?? $r->perlu_perhatian ?? 0),
+            ];
+        @endphp
+
+        <table>
             <thead>
                 <tr>
-                    <th>Wilayah</th><th>Ibu Hamil</th><th>Anak</th>
-                    <th>Diperiksa</th><th>Perlu Perhatian</th><th>Persentase</th>
+                    <th>Ibu Hamil</th>
+                    <th>Anak Terdaftar</th>
+                    <th>Perlu Perhatian</th>
                 </tr>
             </thead>
             <tbody>
-                @forelse ($data as $item)
-                    <tr>
-                        <td>{{ $item->wilayah }}</td>
-                        <td class="center">{{ $item->ibu_hamil }}</td>
-                        <td class="center">{{ $item->anak }}</td>
-                        <td class="center">{{ $item->diperiksa }}</td>
-                        <td class="center">{{ $item->risiko }}</td>
-                        <td class="center">{{ $item->persentase }}%</td>
-                    </tr>
-                @empty
-                    <tr><td colspan="6">Belum ada data.</td></tr>
-                @endforelse
+                <tr>
+                    <td class="center">{{ $ringkasan['ibu_hamil'] }}</td>
+                    <td class="center">{{ $ringkasan['anak'] }}</td>
+                    <td class="center">{{ $ringkasan['perlu_perhatian'] }}</td>
+                </tr>
             </tbody>
+        </table>
 
-        @elseif ($tab === 'kegiatan-posyandu')
+        @isset($grafikStatus)
+            @php
+                $status = [
+                    ['Ibu Hamil', (int) ($grafikStatus['ibu_normal'] ?? 0), (int) ($grafikStatus['ibu_perhatian'] ?? 0)],
+                    ['Anak',      (int) ($grafikStatus['anak_normal'] ?? 0), (int) ($grafikStatus['anak_perhatian'] ?? 0)],
+                ];
+            @endphp
+
+            <h3>Status Pemeriksaan</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Kelompok</th>
+                        <th>Normal</th>
+                        <th>Perlu Perhatian</th>
+                        <th>Total</th>
+                        <th>Normal (%)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($status as [$kelompok, $normal, $perhatian])
+                        @php $total = $normal + $perhatian; @endphp
+                        <tr>
+                            <td>{{ $kelompok }}</td>
+                            <td class="center">{{ $normal }}</td>
+                            <td class="center">{{ $perhatian }}</td>
+                            <td class="center">{{ $total }}</td>
+                            <td class="center">{{ $total > 0 ? round(($normal / $total) * 100, 1) : 0 }}%</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        @endisset
+
+    {{-- 2. KEGIATAN POSYANDU --}}
+    @elseif ($tab === 'kegiatan-posyandu')
+        <table>
             <thead>
                 <tr>
-                    <th>No</th><th>Tanggal</th><th>Wilayah</th>
+                    <th>No</th><th>Tanggal</th><th>Jenis Kegiatan</th>
                     <th>Lokasi</th><th>Anak Diperiksa</th>
                 </tr>
             </thead>
@@ -52,42 +135,55 @@
                 @forelse ($data as $item)
                     <tr>
                         <td class="center">{{ $loop->iteration }}</td>
-                        <td>{{ $item->tanggal->format('d-m-Y') }}</td>
-                        <td>{{ $item->wilayah?->nama_wilayah ?? '-' }}</td>
+                        <td>{{ $item->tanggal?->format('d/m/Y') ?? '-' }}</td>
+                        <td>{{ $item->jenis_kegiatan ?? '-' }}</td>
                         <td>{{ $item->lokasi ?? '-' }}</td>
-                        <td class="center">{{ $item->pemeriksaan_count }}</td>
+                        <td class="center">{{ $item->pemeriksaan_count ?? $item->anak_diperiksa ?? 0 }}</td>
                     </tr>
                 @empty
-                    <tr><td colspan="5">Belum ada data.</td></tr>
+                    <tr><td colspan="5" class="center">Belum ada data.</td></tr>
                 @endforelse
             </tbody>
+        </table>
 
-        @elseif ($tab === 'data-risiko')
+    {{-- 3. DATA RISIKO --}}
+    @elseif ($tab === 'data-risiko')
+        <table>
             <thead>
                 <tr>
-                    <th>No</th><th>Nama</th><th>Jenis</th>
-                    <th>Wilayah</th><th>Tanggal Pemeriksaan</th><th>Indikator</th>
+                    <th>No</th><th>Nama</th><th>Jenis</th><th>Wilayah</th>
+                    <th>Pemeriksaan Terakhir</th><th>Indikator</th><th>Penanda</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse ($data as $item)
+                    @php
+                        $penanda = $item->penanda ?? null;
+                        $penanda = $penanda instanceof \Illuminate\Support\Collection
+                            ? $penanda->all()
+                            : \Illuminate\Support\Arr::wrap($penanda);
+                    @endphp
                     <tr>
                         <td class="center">{{ $loop->iteration }}</td>
                         <td>{{ $item->nama }}</td>
                         <td>{{ $item->jenis }}</td>
                         <td>{{ $item->wilayah }}</td>
-                        <td>{{ $item->tanggal ? \Carbon\Carbon::parse($item->tanggal)->format('d-m-Y') : '-' }}</td>
+                        <td>{{ $item->tanggal ? \Carbon\Carbon::parse($item->tanggal)->format('d/m/Y') : '-' }}</td>
                         <td>{{ $item->indikator }}</td>
+                        <td>{{ implode(', ', array_filter($penanda)) ?: '-' }}</td>
                     </tr>
                 @empty
-                    <tr><td colspan="6">Belum ada data.</td></tr>
+                    <tr><td colspan="7" class="center">Belum ada data.</td></tr>
                 @endforelse
             </tbody>
+        </table>
 
-        @elseif ($tab === 'rekap-pemeriksaan')
+    {{-- 4. REKAP PEMERIKSAAN --}}
+    @elseif ($tab === 'rekap-pemeriksaan')
+        <table>
             <thead>
                 <tr>
-                    <th>Periode</th><th>Pemeriksaan Ibu</th>
+                    <th>Bulan</th><th>Pemeriksaan Ibu Hamil</th>
                     <th>Pemeriksaan Anak</th><th>Kegiatan Posyandu</th>
                     <th>Total Pemeriksaan</th>
                 </tr>
@@ -96,16 +192,16 @@
                 @forelse ($data as $item)
                     <tr>
                         <td>{{ $item->bulan }}</td>
-                        <td class="center">{{ $item->ibu }}</td>
-                        <td class="center">{{ $item->anak }}</td>
-                        <td class="center">{{ $item->kegiatan }}</td>
-                        <td class="center">{{ $item->total }}</td>
+                        <td class="center">{{ $item->ibu ?? $item->pemeriksaan_ibu ?? 0 }}</td>
+                        <td class="center">{{ $item->anak ?? $item->pemeriksaan_anak ?? 0 }}</td>
+                        <td class="center">{{ $item->kegiatan ?? $item->kegiatan_posyandu ?? 0 }}</td>
+                        <td class="center">{{ $item->total ?? 0 }}</td>
                     </tr>
                 @empty
-                    <tr><td colspan="5">Belum ada data.</td></tr>
+                    <tr><td colspan="5" class="center">Belum ada data.</td></tr>
                 @endforelse
             </tbody>
-        @endif
-    </table>
+        </table>
+    @endif
 </body>
 </html>
