@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\SuperAdmin;
+
 use App\Enums\RoleEnum;
 use App\Http\Controllers\Controller;
 use App\Models\User;
@@ -12,17 +13,23 @@ class KaderController extends Controller
 {
     public function index(Request $request): View
     {
+        $search = trim((string) $request->query('search', ''));
+
         $kaders = User::query()
             ->role(RoleEnum::Kader->value)
             ->with('kader.wilayahKerja')
-            ->when($request->filled('search'), function ($query) use ($request) {
-                $search = $request->string('search')->toString();
-
-                $query->where('name', 'like', '%' . $search . '%');
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%");
+                });
             })
             ->when($request->filled('wilayah_kerja_id'), function ($query) use ($request) {
                 $query->whereHas('kader', function ($k) use ($request) {
-                    $k->where('wilayah_kerja_id', $request->integer('wilayah_kerja_id'));
+                    $k->where(
+                        'wilayah_kerja_id',
+                        $request->integer('wilayah_kerja_id')
+                    );
                 });
             })
             ->latest()

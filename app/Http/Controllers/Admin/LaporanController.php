@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Enums\StatusKehamilanEnum;
 use App\Http\Controllers\Controller;
 use App\Models\Anak;
 use App\Models\Ibu;
@@ -51,12 +50,20 @@ class LaporanController extends Controller
             $tanggalAkhir
         ) {
             $jumlahIbuHamil = Ibu::where('wilayah_kerja_id', $wilayahItem->id)
-                ->where('status_kehamilan', StatusKehamilanEnum::Hamil->value)
-                ->count();
+            ->whereBetween('tanggal_pemeriksaan_awal', [
+                $tanggalMulai->toDateString(),
+                $tanggalAkhir->toDateString(),
+            ])
+            ->count();
 
-            $jumlahAnak = Anak::whereHas('ibu', function ($query) use ($wilayahItem) {
+            $jumlahAnak = Anak::whereBetween('created_at', [
+            $tanggalMulai->copy()->startOfDay(),
+            $tanggalAkhir->copy()->endOfDay(),
+        ])
+            ->whereHas('ibu', function ($query) use ($wilayahItem) {
                 $query->where('wilayah_kerja_id', $wilayahItem->id);
-            })->count();
+            })
+            ->count();
 
             // Jumlah orang unik yang diperiksa.
             $ibuDiperiksa = PemeriksaanIbu::whereBetween('tgl_pemeriksaan', [
@@ -194,21 +201,23 @@ class LaporanController extends Controller
         $tahun = $tanggalPeriode->year;
 
         // Laporan kegiatan Posyandu.
-     $kegiatanPosyandu = KegiatanPosyandu::query()
-    ->with('wilayah')
-    ->addSelect([
-        'anak_diperiksa' => PemeriksaanPosyandu::query()
-            ->selectRaw('COUNT(DISTINCT pemeriksaan_posyandu.anak_id)')
-            ->whereColumn(
-                'pemeriksaan_posyandu.kegiatan_posyandu_id',
-                'kegiatan_posyandu.id'
-            ),
-    ])
-    ->whereMonth('tanggal', $bulan)
-    ->whereYear('tanggal', $tahun)
-    ->orderBy('tanggal')
-    ->get();
-
+        $kegiatanPosyandu = KegiatanPosyandu::query()
+            ->with('wilayah')
+            ->addSelect([
+                'anak_diperiksa' => PemeriksaanPosyandu::query()
+                    ->selectRaw('COUNT(DISTINCT pemeriksaan_posyandu.anak_id)')
+                    ->whereColumn(
+                        'pemeriksaan_posyandu.kegiatan_posyandu_id',
+                        'kegiatan_posyandu.id'
+                    ),
+            ])
+            ->where('id_wilayah', $wilayahId)
+            ->whereBetween('tanggal', [
+                $tanggalMulai->toDateString(),
+                $tanggalAkhir->toDateString(),
+            ])
+            ->orderBy('tanggal')
+            ->get();
     
 
         // Data risiko Ibu: pemeriksaan terakhir setiap Ibu.
@@ -305,10 +314,20 @@ class LaporanController extends Controller
             'perlu_perhatian' => $rekapWilayah->sum('perlu_perhatian'),
         ];
 
-        return view('admin.laporan.index', compact(
+
+        $namaWilayah = $wilayah->first()?->nama_wilayah ?? 'Wilayah belum ditetapkan';
+
+        $ringkasanKegiatan = [
+            'jumlah_kegiatan' => $kegiatanPosyandu->count(),
+            'anak_diperiksa' => $kegiatanPosyandu->sum('anak_diperiksa'),
+        ];
+
+       return view('admin.laporan.index', compact(
             'wilayah',
+            'namaWilayah',
             'rekapWilayah',
             'ringkasan',
+            'ringkasanKegiatan',
             'periode',
             'grafikStatus',
             'kegiatanPosyandu',

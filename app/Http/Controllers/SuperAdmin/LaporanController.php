@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\SuperAdmin;
 
-use App\Enums\StatusKehamilanEnum;
 use App\Http\Controllers\Controller;
 use App\Models\Anak;
 use App\Models\Ibu;
@@ -59,14 +58,22 @@ class LaporanController extends Controller
             $tanggalMulai,
             $tanggalAkhir
         ) {
-            $jumlahIbuHamil = Ibu::where('wilayah_kerja_id', $item->id)
-                ->where('status_kehamilan', StatusKehamilanEnum::Hamil->value)
+                $jumlahIbuHamil = Ibu::where('wilayah_kerja_id', $item->id)
+                ->whereBetween('tanggal_pemeriksaan_awal', [
+                    $tanggalMulai->toDateString(),
+                    $tanggalAkhir->toDateString(),
+                ])
                 ->count();
 
-            $jumlahAnak = Anak::whereHas(
-                'ibu',
-                fn ($q) => $q->where('wilayah_kerja_id', $item->id)
-            )->count();
+            $jumlahAnak = Anak::whereBetween('created_at', [
+                $tanggalMulai->copy()->startOfDay(),
+                $tanggalAkhir->copy()->endOfDay(),
+            ])
+                ->whereHas(
+                    'ibu',
+                    fn ($q) => $q->where('wilayah_kerja_id', $item->id)
+                )
+                ->count();
 
             $ibuDiperiksa = PemeriksaanIbu::whereBetween(
                 'tgl_pemeriksaan',
@@ -275,6 +282,28 @@ class LaporanController extends Controller
             ? ($wilayah->firstWhere('id', $wilayahId)?->nama_wilayah ?? '-')
             : 'Semua Wilayah';
 
+        // Pemeriksaan apakah laporan pada tab aktif memiliki data.
+        $kosong = match ($tab) {
+            'rekap-kesehatan' => (
+                $rekapWilayah->sum('ibu_hamil')
+                + $rekapWilayah->sum('anak')
+                + $rekapWilayah->sum('diperiksa')
+                + $rekapWilayah->sum('perlu_perhatian')
+            ) === 0,
+
+            'kegiatan-posyandu' => $kegiatanPosyandu->isEmpty(),
+
+            'data-risiko' => $dataRisiko->isEmpty(),
+
+            'rekap-pemeriksaan' => (
+                $rekapPemeriksaan->sum('pemeriksaan_ibu')
+                + $rekapPemeriksaan->sum('pemeriksaan_anak')
+                + $rekapPemeriksaan->sum('kegiatan_posyandu')
+            ) === 0,
+
+            default => true,
+        };
+
         $judulTab = [
             'rekap-kesehatan' => 'Rekap Kesehatan Wilayah',
             'kegiatan-posyandu' => 'Laporan Kegiatan Posyandu',
@@ -293,7 +322,8 @@ class LaporanController extends Controller
             'kegiatanPosyandu',
             'dataRisiko',
             'rekapPemeriksaan',
-            'ringkasan'
+            'ringkasan',
+            'kosong'
         );
     }
 }

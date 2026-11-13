@@ -1,0 +1,704 @@
+
+========== 0001_01_01_000000_create_users_table.php ==========
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('users', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('email')->unique();
+            $table->timestamp('email_verified_at')->nullable();
+            $table->string('password');
+            $table->rememberToken();
+            $table->timestamps();
+        });
+
+        Schema::create('password_reset_tokens', function (Blueprint $table) {
+            $table->string('email')->primary();
+            $table->string('token');
+            $table->timestamp('created_at')->nullable();
+        });
+
+        Schema::create('sessions', function (Blueprint $table) {
+            $table->string('id')->primary();
+            $table->foreignId('user_id')->nullable()->index();
+            $table->string('ip_address', 45)->nullable();
+            $table->text('user_agent')->nullable();
+            $table->longText('payload');
+            $table->integer('last_activity')->index();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('users');
+        Schema::dropIfExists('password_reset_tokens');
+        Schema::dropIfExists('sessions');
+    }
+};
+
+========== 0001_01_01_000001_create_cache_table.php ==========
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('cache', function (Blueprint $table) {
+            $table->string('key')->primary();
+            $table->mediumText('value');
+            $table->bigInteger('expiration')->index();
+        });
+
+        Schema::create('cache_locks', function (Blueprint $table) {
+            $table->string('key')->primary();
+            $table->string('owner');
+            $table->bigInteger('expiration')->index();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('cache');
+        Schema::dropIfExists('cache_locks');
+    }
+};
+
+========== 0001_01_01_000002_create_jobs_table.php ==========
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('jobs', function (Blueprint $table) {
+            $table->id();
+            $table->string('queue')->index();
+            $table->longText('payload');
+            $table->unsignedTinyInteger('attempts');
+            $table->unsignedInteger('reserved_at')->nullable();
+            $table->unsignedInteger('available_at');
+            $table->unsignedInteger('created_at');
+        });
+
+        Schema::create('job_batches', function (Blueprint $table) {
+            $table->string('id')->primary();
+            $table->string('name');
+            $table->integer('total_jobs');
+            $table->integer('pending_jobs');
+            $table->integer('failed_jobs');
+            $table->longText('failed_job_ids');
+            $table->mediumText('options')->nullable();
+            $table->integer('cancelled_at')->nullable();
+            $table->integer('created_at');
+            $table->integer('finished_at')->nullable();
+        });
+
+        Schema::create('failed_jobs', function (Blueprint $table) {
+            $table->id();
+            $table->string('uuid')->unique();
+            $table->text('connection');
+            $table->text('queue');
+            $table->longText('payload');
+            $table->longText('exception');
+            $table->timestamp('failed_at')->useCurrent();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('jobs');
+        Schema::dropIfExists('job_batches');
+        Schema::dropIfExists('failed_jobs');
+    }
+};
+
+========== 2026_10_09_103252_create_personal_access_tokens_table.php ==========
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('personal_access_tokens', function (Blueprint $table) {
+            $table->id();
+            $table->morphs('tokenable');
+            $table->text('name');
+            $table->string('token', 64)->unique();
+            $table->text('abilities')->nullable();
+            $table->timestamp('last_used_at')->nullable();
+            $table->timestamp('expires_at')->nullable()->index();
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('personal_access_tokens');
+    }
+};
+
+========== 2026_10_09_103346_create_permission_tables.php ==========
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        $teams = config('permission.teams');
+        $tableNames = config('permission.table_names');
+        $columnNames = config('permission.column_names');
+        $pivotRole = $columnNames['role_pivot_key'] ?? 'role_id';
+        $pivotPermission = $columnNames['permission_pivot_key'] ?? 'permission_id';
+
+        throw_if(empty($tableNames), 'Error: config/permission.php not loaded. Run [php artisan config:clear] and try again.');
+        throw_if($teams && empty($columnNames['team_foreign_key'] ?? null), 'Error: team_foreign_key on config/permission.php not loaded. Run [php artisan config:clear] and try again.');
+
+        /**
+         * See `docs/prerequisites.md` for suggested lengths on 'name' and 'guard_name' if "1071 Specified key was too long" errors are encountered.
+         */
+        Schema::create($tableNames['permissions'], static function (Blueprint $table) {
+            $table->id(); // permission id
+            $table->string('name');
+            $table->string('guard_name');
+            $table->timestamps();
+
+            $table->unique(['name', 'guard_name']);
+        });
+
+        /**
+         * See `docs/prerequisites.md` for suggested lengths on 'name' and 'guard_name' if "1071 Specified key was too long" errors are encountered.
+         */
+        Schema::create($tableNames['roles'], static function (Blueprint $table) use ($teams, $columnNames) {
+            $table->id(); // role id
+            if ($teams || config('permission.testing')) { // permission.testing is a fix for sqlite testing
+                $table->unsignedBigInteger($columnNames['team_foreign_key'])->nullable();
+                $table->index($columnNames['team_foreign_key'], 'roles_team_foreign_key_index');
+            }
+            $table->string('name');
+            $table->string('guard_name');
+            $table->timestamps();
+            if ($teams || config('permission.testing')) {
+                $table->unique([$columnNames['team_foreign_key'], 'name', 'guard_name']);
+            } else {
+                $table->unique(['name', 'guard_name']);
+            }
+        });
+
+        Schema::create($tableNames['model_has_permissions'], static function (Blueprint $table) use ($tableNames, $columnNames, $pivotPermission, $teams) {
+            $table->unsignedBigInteger($pivotPermission);
+
+            $table->string('model_type');
+            $table->unsignedBigInteger($columnNames['model_morph_key']);
+            $table->index([$columnNames['model_morph_key'], 'model_type'], 'model_has_permissions_model_id_model_type_index');
+
+            $table->foreign($pivotPermission)
+                ->references('id') // permission id
+                ->on($tableNames['permissions'])
+                ->cascadeOnDelete();
+            if ($teams) {
+                $table->unsignedBigInteger($columnNames['team_foreign_key']);
+                $table->index($columnNames['team_foreign_key'], 'model_has_permissions_team_foreign_key_index');
+
+                $table->primary([$columnNames['team_foreign_key'], $pivotPermission, $columnNames['model_morph_key'], 'model_type'],
+                    'model_has_permissions_permission_model_type_primary');
+            } else {
+                $table->primary([$pivotPermission, $columnNames['model_morph_key'], 'model_type'],
+                    'model_has_permissions_permission_model_type_primary');
+            }
+        });
+
+        Schema::create($tableNames['model_has_roles'], static function (Blueprint $table) use ($tableNames, $columnNames, $pivotRole, $teams) {
+            $table->unsignedBigInteger($pivotRole);
+
+            $table->string('model_type');
+            $table->unsignedBigInteger($columnNames['model_morph_key']);
+            $table->index([$columnNames['model_morph_key'], 'model_type'], 'model_has_roles_model_id_model_type_index');
+
+            $table->foreign($pivotRole)
+                ->references('id') // role id
+                ->on($tableNames['roles'])
+                ->cascadeOnDelete();
+            if ($teams) {
+                $table->unsignedBigInteger($columnNames['team_foreign_key']);
+                $table->index($columnNames['team_foreign_key'], 'model_has_roles_team_foreign_key_index');
+
+                $table->primary([$columnNames['team_foreign_key'], $pivotRole, $columnNames['model_morph_key'], 'model_type'],
+                    'model_has_roles_role_model_type_primary');
+            } else {
+                $table->primary([$pivotRole, $columnNames['model_morph_key'], 'model_type'],
+                    'model_has_roles_role_model_type_primary');
+            }
+        });
+
+        Schema::create($tableNames['role_has_permissions'], static function (Blueprint $table) use ($tableNames, $pivotRole, $pivotPermission) {
+            $table->unsignedBigInteger($pivotPermission);
+            $table->unsignedBigInteger($pivotRole);
+
+            $table->foreign($pivotPermission)
+                ->references('id') // permission id
+                ->on($tableNames['permissions'])
+                ->cascadeOnDelete();
+
+            $table->foreign($pivotRole)
+                ->references('id') // role id
+                ->on($tableNames['roles'])
+                ->cascadeOnDelete();
+
+            $table->primary([$pivotPermission, $pivotRole], 'role_has_permissions_permission_id_role_id_primary');
+        });
+
+        app('cache')
+            ->store(config('permission.cache.store') != 'default' ? config('permission.cache.store') : null)
+            ->forget(config('permission.cache.key'));
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        $tableNames = config('permission.table_names');
+
+        throw_if(empty($tableNames), 'Error: config/permission.php not found and defaults could not be merged. Please publish the package configuration before proceeding, or drop the tables manually.');
+
+        Schema::dropIfExists($tableNames['role_has_permissions']);
+        Schema::dropIfExists($tableNames['model_has_roles']);
+        Schema::dropIfExists($tableNames['model_has_permissions']);
+        Schema::dropIfExists($tableNames['roles']);
+        Schema::dropIfExists($tableNames['permissions']);
+    }
+};
+
+========== 2026_10_09_110000_create_wilayah_kerja_table.php ==========
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('wilayah_kerja', function (Blueprint $table) {
+            $table->id();
+            $table->string('nama');
+            $table->text('deskripsi')->nullable();
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('wilayah_kerja');
+    }
+};
+
+========== 2026_10_09_110001_add_profile_fields_to_users_table.php ==========
+<?php
+
+use App\Enums\UserStatusEnum;
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('users', function (Blueprint $table) {
+            $table->string('phone', 20)->nullable()->after('email');
+            $table->string('status', 20)->default(UserStatusEnum::Active->value)->after('password');
+            $table->foreignId('wilayah_kerja_id')
+                ->nullable()
+                ->after('status')
+                ->constrained('wilayah_kerja')
+                ->nullOnDelete();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropConstrainedForeignId('wilayah_kerja_id');
+            $table->dropColumn(['phone', 'status']);
+        });
+    }
+};
+
+========== 2026_10_15_120000_add_mother_fields_to_users_table.php ==========
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('users', function (Blueprint $table) {
+            $table->string('nik', 16)->nullable()->after('phone');
+            $table->string('nama_ibu')->nullable()->after('nik');
+            $table->string('tempat_lahir')->nullable()->after('nama_ibu');
+            $table->date('tanggal_lahir')->nullable()->after('tempat_lahir');
+            $table->string('status_kehamilan', 20)->nullable()->after('tanggal_lahir');
+            $table->date('hpl')->nullable()->after('status_kehamilan');
+            $table->unsignedTinyInteger('usia_kehamilan')->nullable()->after('hpl');
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropColumn([
+                'nik',
+                'nama_ibu',
+                'tempat_lahir',
+                'tanggal_lahir',
+                'status_kehamilan',
+                'hpl',
+                'usia_kehamilan',
+            ]);
+        });
+    }
+};
+
+========== 2026_10_15_120001_add_region_fields_to_wilayah_kerja_table.php ==========
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('wilayah_kerja', function (Blueprint $table) {
+            $table->string('kabupaten')->nullable()->after('nama');
+            $table->string('kecamatan')->nullable()->after('kabupaten');
+            $table->string('desa')->nullable()->after('kecamatan');
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('wilayah_kerja', function (Blueprint $table) {
+            $table->dropColumn(['kabupaten', 'kecamatan', 'desa']);
+        });
+    }
+};
+
+========== 2026_10_20_183855_add_last_login_at_to_users_table.php ==========
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        if (! Schema::hasColumn('users', 'last_login_at')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->timestamp('last_login_at')->nullable();
+            });
+        }
+    }
+
+    public function down(): void
+    {
+        if (Schema::hasColumn('users', 'last_login_at')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->dropColumn('last_login_at');
+            });
+        }
+    }
+};
+
+========== 2026_10_25_042132_rename_nama_to_nama_wilayah_in_wilayah_kerja_table.php ==========
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('wilayah_kerja', function (Blueprint $table) {
+            $table->renameColumn('nama', 'nama_wilayah');
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('wilayah_kerja', function (Blueprint $table) {
+            $table->renameColumn('nama_wilayah', 'nama');
+        });
+    }
+};
+
+========== 2026_10_25_071621_create_ibu_table.php ==========
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('ibu', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->unique()->constrained('users')->cascadeOnDelete();
+            $table->foreignId('wilayah_kerja_id')->nullable()->constrained('wilayah_kerja')->restrictOnDelete();
+            $table->char('nik', 16)->nullable()->unique();
+            $table->string('tempat_lahir', 100)->nullable();
+            $table->date('tanggal_lahir')->nullable();
+            $table->string('status_kehamilan', 20)->nullable();
+            $table->unsignedTinyInteger('usia_kehamilan')->nullable();
+            $table->date('hpl')->nullable();
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('ibu');
+    }
+};
+
+========== 2026_10_25_071625_create_bidan_and_kader_tables.php ==========
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        foreach (['bidan', 'kader'] as $nama) {
+            Schema::create($nama, function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('user_id')->unique()->constrained('users')->cascadeOnDelete();
+                $table->foreignId('wilayah_kerja_id')->nullable()->constrained('wilayah_kerja')->restrictOnDelete();
+                $table->timestamps();
+            });
+        }
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('kader');
+        Schema::dropIfExists('bidan');
+    }
+};
+
+========== 2026_10_25_071628_copy_profile_data_from_users.php ==========
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Support\Facades\DB;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        foreach (['ibu', 'bidan', 'kader'] as $role) {
+            $roleId = DB::table('roles')->where('name', $role)->value('id');
+            if (! $roleId) {
+                continue;
+            }
+
+            // id semua user yang memegang role ini (data dari Spatie)
+            $userIds = DB::table('model_has_roles')
+                ->where('role_id', $roleId)
+                ->where('model_type', 'App\\Models\\User')
+                ->pluck('model_id');
+
+            foreach (DB::table('users')->whereIn('id', $userIds)->get() as $u) {
+                $data = [
+                    'wilayah_kerja_id' => $u->wilayah_kerja_id ?? null,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+
+                if ($role === 'ibu') {
+                    $data += [
+                        'nik' => ($u->nik ?? null) ?: null,
+                        'tempat_lahir' => $u->tempat_lahir ?? null,
+                        'tanggal_lahir' => $u->tanggal_lahir ?? null,
+                        'status_kehamilan' => $u->status_kehamilan ?? null,
+                        'usia_kehamilan' => $u->usia_kehamilan ?? null,
+                        'hpl' => $u->hpl ?? null,
+                    ];
+                }
+
+                // updateOrInsert: aman dijalankan ulang, tidak membuat data ganda
+                DB::table($role)->updateOrInsert(['user_id' => $u->id], $data);
+            }
+        }
+    }
+
+    public function down(): void
+    {
+        // Sengaja kosong: tabel dihapus oleh migration pembuatnya.
+    }
+};
+
+========== 2026_10_26_200632_create_posyandu_tables.php ==========
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('posyandu', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('wilayah_kerja_id')->constrained('wilayah_kerja')->restrictOnDelete();
+            $table->string('nama_posyandu', 100)->unique();
+            $table->string('alamat', 255);
+            $table->timestamps();
+        });
+
+        Schema::create('kegiatan_posyandu', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('posyandu_id')->constrained('posyandu')->restrictOnDelete();
+            $table->date('tanggal');
+            $table->time('waktu')->nullable();
+            $table->string('lokasi', 255)->nullable();
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('kegiatan_posyandu');
+        Schema::dropIfExists('posyandu');
+    }
+};
+
+========== 2026_10_26_204723_create_anak.phps_table.php ==========
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('anak', function (Blueprint $table) {
+            $table->id();
+
+            $table->foreignId('ibu_id')
+                ->constrained('ibu')
+                ->cascadeOnDelete();
+
+            $table->string('nik_anak', 16)->unique();
+            $table->string('nama_anak', 100);
+            $table->string('tempat_lahir', 100);
+            $table->date('tanggal_lahir');
+            $table->enum('jenis_kelamin', ['L', 'P']);
+            $table->string('nama_ayah', 100);
+
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('anak');
+    }
+};
+
+========== 2026_10_27_023303_add_kader_id_to_posyandu_table.php ==========
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('posyandu', function (Blueprint $table) {
+            $table->foreignId('kader_id')
+                ->nullable()
+                ->after('wilayah_kerja_id')
+                ->constrained('kader')
+                ->nullOnDelete();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('posyandu', function (Blueprint $table) {
+            $table->dropConstrainedForeignId('kader_id');
+        });
+    }
+};

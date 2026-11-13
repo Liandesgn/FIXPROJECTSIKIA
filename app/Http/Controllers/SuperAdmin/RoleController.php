@@ -32,27 +32,39 @@ class RoleController extends Controller
         ]);
     }
 
+   
     // Menyimpan role baru (Super Admin)
     public function store(Request $request): RedirectResponse
     {
-        $data = $request->validate([
-            'name' => [
-                'required',
-                'string',
-                'max:100',
-                'alpha_dash',
-                Rule::unique('roles', 'name')->where('guard_name', 'web'),
+        $data = $request->validate(
+            [
+                'name' => [
+                    'required',
+                    'string',
+                    'max:100',
+                    'alpha_dash',
+                    Rule::unique('roles', 'name')->where('guard_name', 'web'),
+                ],
+                'permissions' => ['nullable', 'array'],
+                'permissions.*' => [
+                    'string',
+                    Rule::exists('permissions', 'name'),
+                ],
             ],
-            'permissions' => ['nullable', 'array'],
-            'permissions.*' => [
-                'string',
-                Rule::exists('permissions', 'name'),
-            ],
-        ]);
+            [
+                'name.required' => 'Nama role wajib diisi.',
+                'name.string' => 'Nama role harus berupa teks.',
+                'name.max' => 'Nama role maksimal 100 karakter.',
+                'name.alpha_dash' => 'Nama role hanya boleh berisi huruf, angka, tanda hubung, dan garis bawah.',
+                'name.unique' => 'Nama role sudah digunakan.',
+                'permissions.array' => 'Format hak akses tidak valid.',
+                'permissions.*.exists' => 'Hak akses yang dipilih tidak ditemukan.',
+            ]
+        );
 
         DB::transaction(function () use ($data) {
             $role = Role::create([
-                'name' => strtolower($data['name']),
+                'name' => trim($data['name']),
                 'guard_name' => 'web',
             ]);
 
@@ -64,6 +76,7 @@ class RoleController extends Controller
             ->with('success', 'Role berhasil ditambahkan.');
     }
 
+
     // Form edit role
     public function edit(Role $role): View
     {
@@ -73,40 +86,79 @@ class RoleController extends Controller
         ]);
     }
 
+
+
+
     // Memperbarui permission role
-    public function update(Request $request, Role $role): RedirectResponse
-    {
-        $data = $request->validate([
-            'permissions' => ['nullable', 'array'],
-            'permissions.*' => [
-                'string',
-                Rule::exists('permissions', 'name'),
-            ],
-        ]);
+public function update(Request $request, Role $role): RedirectResponse
+{
+    $data = $request->validate([
+        'name' => [
+            'required',
+            'string',
+            'max:100',
+            'alpha_dash',
+            Rule::unique('roles', 'name')
+                ->where('guard_name', 'web')
+                ->ignore($role->id),
+        ],
+        'permissions' => ['nullable', 'array'],
+        'permissions.*' => [
+            'string',
+            Rule::exists('permissions', 'name'),
+        ],
+    ], [
+        'name.required' => 'Nama role wajib diisi.',
+        'name.alpha_dash' => 'Nama role hanya boleh berisi huruf, angka, tanda hubung, dan garis bawah.',
+        'name.unique' => 'Nama role sudah digunakan.',
+    ]);
 
-        $names = collect($data['permissions'] ?? []);
+    $systemRoles = [
+        'super_admin',
+        'admin',
+        'bidan',
+        'kader',
+        'ibu',
+    ];
 
-        // Super Admin selalu memiliki seluruh permission.
-        if ($role->name === 'super_admin') {
-            $names = collect(PermissionEnum::values());
-        }
+    $newName = trim($data['name']);
 
-        // Permission dasar Admin tetap dipertahankan.
-        if ($role->name === 'admin') {
-            $names = $names->merge(PermissionEnum::adminValues());
-        }
+    if (in_array($role->name, $systemRoles, true) && $newName !== $role->name) {
+        return back()
+            ->withInput()
+            ->with('error', 'Nama role bawaan sistem tidak boleh diubah.');
+    }
+
+    $names = collect($data['permissions'] ?? []);
+
+    if ($role->name === 'super_admin') {
+        $names = collect(PermissionEnum::values());
+    }
+
+    if ($role->name === 'admin') {
+        $names = $names->merge(PermissionEnum::adminValues());
+    }
+
+    DB::transaction(function () use ($role, $newName, $names) {
+        $role->name = $newName;
+        $role->save();
 
         $role->syncPermissions(
             $names->unique()->values()->all()
         );
+    });
 
-        return redirect()
-            ->route('superadmin.roles.index')
-            ->with(
-                'success',
-                'Hak akses role ' . ucfirst($role->name) . ' berhasil diperbarui.'
-            );
-    }
+    app(\Spatie\Permission\PermissionRegistrar::class)
+        ->forgetCachedPermissions();
+
+    return redirect()
+        ->route('superadmin.roles.index')
+        ->with('success', 'Nama role dan hak akses berhasil diperbarui.');
+}
+
+
+
+
 
     // Menghapus role (Super Admin)
     public function destroy(Role $role): RedirectResponse

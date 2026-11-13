@@ -16,31 +16,42 @@ use Illuminate\View\View;
 
 class KaderController extends Controller
 {
-    public function index(Request $request): View
-    {
-        $wilayahId = $request->user()->loadMissing('admin')->managedWilayahId();
+   
+public function index(Request $request): View
+{
+    $wilayahId = $request->user()
+        ->loadMissing('admin')
+        ->managedWilayahId();
 
-        $kaders = User::query()
-            ->role(RoleEnum::Kader->value)
-            ->with('kader.wilayahKerja')
-            ->when($wilayahId, fn ($query) => $query->whereHas('kader', fn ($k) => $k->where('wilayah_kerja_id', $wilayahId)))
-            ->when(! $wilayahId, fn ($query) => $query->whereRaw('1 = 0'))
-            ->when($request->filled('search'), fn ($query) => $query
-                ->where('name', 'like', '%'.$request->string('search').'%'))
-            ->when($request->filled('wilayah_kerja_id'), fn ($query) => $query
-                ->whereHas('kader', fn ($k) => $k
-                    ->where('wilayah_kerja_id', $request->integer('wilayah_kerja_id'))))
-            ->latest()
-            ->paginate(10)
-            ->withQueryString();
+    $search = trim((string) $request->query('search', ''));
 
-        return view('admin.kader.index', [
+    $kaders = User::query()
+        ->role(RoleEnum::Kader->value)
+        ->with('kader.wilayahKerja')
+        ->when($wilayahId, fn ($query) => $query
+            ->whereHas('kader', fn ($k) => $k
+                ->where('wilayah_kerja_id', $wilayahId)))
+        ->when(! $wilayahId, fn ($query) => $query
+            ->whereRaw('1 = 0'))
+        ->when($search !== '', function ($query) use ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
+            });
+        })
+        ->when($request->filled('wilayah_kerja_id'), fn ($query) => $query
+            ->whereHas('kader', fn ($k) => $k
+                ->where('wilayah_kerja_id', $request->integer('wilayah_kerja_id'))))
+        ->latest()
+        ->paginate(10)
+        ->withQueryString();
+
+    return view('admin.kader.index', [
         'kaders' => $kaders,
-        'wilayahs' => WilayahKerja::orderBy('kecamatan')
-            ->orderBy('kelurahan')
-            ->get(),
+        'wilayahs' => $this->wilayahs($wilayahId),
     ]);
-    }
+}
+
 
     public function create(Request $request): View
     {

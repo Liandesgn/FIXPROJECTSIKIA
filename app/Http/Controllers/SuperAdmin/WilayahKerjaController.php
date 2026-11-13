@@ -11,7 +11,6 @@ use Illuminate\View\View;
 
 class WilayahKerjaController extends Controller
 {
-
     public function index(Request $request): View
     {
         $wilayahs = WilayahKerja::query()
@@ -32,7 +31,6 @@ class WilayahKerjaController extends Controller
         return view('superadmin.wilayah.index', compact('wilayahs'));
     }
 
-    
     public function create(): View
     {
         return view('superadmin.wilayah.create');
@@ -40,9 +38,14 @@ class WilayahKerjaController extends Controller
 
     public function store(WilayahKerjaRequest $request): RedirectResponse
     {
-        WilayahKerja::create(
-            $request->validated() + ['kabupaten' => 'Gresik']
-        );
+        $data = $request->validated();
+
+        $data['kabupaten'] = 'Gresik';
+
+        $data['deskripsi'] = $data['nama_wilayah']
+            . ', Kabupaten Gresik.';
+
+        WilayahKerja::create($data);
 
         return redirect()
             ->route('superadmin.wilayah-kerja.index')
@@ -58,7 +61,16 @@ class WilayahKerjaController extends Controller
         WilayahKerjaRequest $request,
         WilayahKerja $wilayah
     ): RedirectResponse {
-        $wilayah->update($request->validated());
+        $data = $request->validated();
+
+        $data['kabupaten'] = 'Gresik';
+
+        $data['deskripsi'] = 'Wilayah kerja ' . $data['nama_wilayah']
+            . ' yang berada di Kecamatan ' . $data['kecamatan']
+            . ', Kelurahan/Desa ' . $data['kelurahan']
+            . ', Kabupaten Gresik.';
+
+        $wilayah->update($data);
 
         return redirect()
             ->route('superadmin.wilayah-kerja.index')
@@ -69,19 +81,11 @@ class WilayahKerjaController extends Controller
     {
         if (
             $wilayah->users()->exists()
+            || $wilayah->admins()->exists()
             || $wilayah->kegiatanPosyandu()->exists()
-            || \App\Models\Ibu::where(
-                'wilayah_kerja_id',
-                $wilayah->id
-            )->exists()
-            || \App\Models\Bidan::where(
-                'wilayah_kerja_id',
-                $wilayah->id
-            )->exists()
-            || \App\Models\Kader::where(
-                'wilayah_kerja_id',
-                $wilayah->id
-            )->exists()
+            || \App\Models\Ibu::where('wilayah_kerja_id', $wilayah->id)->exists()
+            || \App\Models\Bidan::where('wilayah_kerja_id', $wilayah->id)->exists()
+            || \App\Models\Kader::where('wilayah_kerja_id', $wilayah->id)->exists()
         ) {
             return back()->with(
                 'error',

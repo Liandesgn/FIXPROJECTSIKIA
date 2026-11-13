@@ -1,81 +1,70 @@
-
 @extends('layouts.app')
 
 @section('title', 'Tambah Role')
 
 @section('content')
-<div class="mx-auto w-full max-w-4xl space-y-5">
+@php
+    $fieldClass = 'mt-1.5 w-full rounded-xl border border-[#E99AB7] bg-white px-3.5 py-2.5 text-sm font-medium text-gray-900 outline-none transition placeholder:text-slate-400 focus:border-[#C9517E] focus:ring-4 focus:ring-[#E99AB7]/40';
+    $labelClass = 'text-sm font-semibold text-[#542D3D]';
+    $errorClass = 'mt-1 text-xs font-medium text-red-600';
+@endphp
 
+<div class="mx-auto w-full max-w-3xl space-y-5">
     <div>
-        <h1 class="text-2xl font-bold text-[#542D3D]">Tambah Role</h1>
-        <p class="mt-1 text-sm text-slate-600">Akses &amp; Hak / Kelola Role / Tambah</p>
+        <h1 class="text-2xl font-bold tracking-tight text-[#542D3D] sm:text-3xl">Kelola Role</h1>
+        <p class="mt-1 text-sm font-medium text-slate-700">Akses &amp; Hak / Kelola Role / Tambah</p>
     </div>
 
-    <div class="rounded-2xl border border-[#F1D5E0] bg-white p-6 shadow-sm">
+    <div class="overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm">
+        <div class="border-b border-[#F1D5E0] bg-[#FCE7F0] px-6 py-4">
+            <h2 class="text-lg font-bold text-[#542D3D]">Tambah Role</h2>
+            <p class="mt-0.5 text-sm text-slate-600">Isi nama role dan pilih permission yang dimilikinya.</p>
+        </div>
 
-        <form action="{{ route('superadmin.roles.store') }}" method="POST">
+        <form action="{{ route('superadmin.roles.store') }}" method="POST" class="space-y-5 p-4 sm:p-6">
             @csrf
 
-            <div class="mb-5">
-                <label class="mb-2 block text-sm font-bold text-[#542D3D]">
-                    Nama Role
-                </label>
-
-                <input
-                    type="text"
-                    name="name"
-                    value="{{ old('name') }}"
-                    placeholder="Contoh: bidan"
-                    class="w-full rounded-xl border border-[#E8C9D5] px-4 py-3 text-sm focus:border-[#C9517E] focus:outline-none"
-                    required
-                >
-
+            <div>
+                <label for="name" class="{{ $labelClass }}">Nama Role <span class="text-[#C9517E]">*</span></label>
+                <input id="name" type="text" name="name" value="{{ old('name') }}" placeholder="Contoh: bidan" required
+                       class="{{ $fieldClass }}">
                 @error('name')
-                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    <p class="{{ $errorClass }}">{{ $message }}</p>
                 @enderror
             </div>
 
-            <div class="mb-6">
-                <label class="mb-3 block text-sm font-bold text-[#542D3D]">
-                    Pilih Permission
-                </label>
+            <div>
+                <p class="{{ $labelClass }}">Pilih Permission</p>
 
-                <div class="grid gap-3 sm:grid-cols-2">
+                <div class="mt-2 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                     @foreach ($permissions as $permission)
-                        <label class="flex items-center gap-2 rounded-lg border border-[#F1D5E0] p-3 text-sm text-slate-700">
-                            <input
-                                type="checkbox"
-                                name="permissions[]"
-                                value="{{ $permission->name }}"
-                                @checked(in_array($permission->name, old('permissions', [])))
-                                class="rounded border-[#C9517E] text-[#C9517E] focus:ring-[#C9517E]"
-                            >
-                            {{ $permission->name }}
+                        <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-[#E99AB7] bg-white px-3.5 py-3 text-sm font-semibold text-[#542D3D] transition hover:bg-[#FCE7F0] has-[:checked]:border-[#C9517E] has-[:checked]:bg-[#FCE7F0]">
+                            <input type="checkbox" name="permissions[]" value="{{ $permission->name }}"
+                                   @checked(in_array($permission->name, old('permissions', [])))
+                                   class="h-5 w-5 shrink-0 rounded border-slate-400 text-[#C9517E] focus:ring-[#C9517E]">
+                            <span class="break-all">{{ $permission->name }}</span>
                         </label>
                     @endforeach
                 </div>
 
                 @error('permissions')
-                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    <p class="{{ $errorClass }}">{{ $message }}</p>
+                @enderror
+                @error('permissions.*')
+                    <p class="{{ $errorClass }}">{{ $message }}</p>
                 @enderror
             </div>
 
-            <div class="flex justify-end gap-3">
-                <a
-                    href="{{ route('superadmin.roles.index') }}"
-                    class="rounded-xl border border-slate-300 px-5 py-2.5 text-sm font-bold text-slate-600"
-                >
+            <div class="flex flex-col-reverse gap-3 border-t border-[#F1D5E0] pt-5 sm:flex-row sm:justify-end">
+                <a href="{{ route('superadmin.roles.index') }}"
+                   class="inline-flex w-full justify-center rounded-xl border-2 border-[#E99AB7] bg-white px-6 py-3 text-sm font-semibold text-[#C9517E] transition hover:bg-[#FCE7F0] sm:w-auto">
                     Batal
                 </a>
-
-                <button
-                    type="submit"
-                    class="rounded-xl bg-[#C9517E] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#B7436D]"
-                >
-                    Simpan Role
+                <button type="submit"
+                        class="inline-flex w-full justify-center rounded-xl bg-[#C9517E] px-8 py-3 text-sm font-semibold text-white shadow-md shadow-[#C9517E]/25 transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40 sm:w-auto">
+                    Simpan
                 </button>
             </div>
-
         </form>
     </div>
 </div>

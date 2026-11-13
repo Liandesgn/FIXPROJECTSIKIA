@@ -3,11 +3,13 @@
 @endphp
 
 @if ($status === UserStatusEnum::Active)
-    <span class="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
+    <span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800">
+        <span class="h-1.5 w-1.5 rounded-full bg-emerald-600"></span>
         Aktif
     </span>
 @else
-    <span class="inline-flex items-center rounded-full bg-slate-200 px-2.5 py-0.5 text-xs font-medium text-slate-600">
+    <span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-orange-100 px-3 py-1 text-xs font-bold text-orange-800">
+        <span class="h-1.5 w-1.5 rounded-full bg-orange-500"></span>
         Nonaktif
     </span>
 @endif

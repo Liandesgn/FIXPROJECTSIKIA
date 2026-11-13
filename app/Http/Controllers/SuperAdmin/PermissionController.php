@@ -83,7 +83,7 @@ public function index(Request $request)
         $this->syncRoles($permission, $data['roles'] ?? []);
 
         return redirect()->route('superadmin.permissions.index')
-            ->with('success', 'Hak akses berhasil diperbarui.');
+            ->with('success', 'Permission berhasil diperbarui.');
     }
 
     public function destroy(Permission $permission)

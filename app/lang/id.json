@@ -1,0 +1,13 @@
+
+{
+    "Unauthenticated.": "Silakan login terlebih dahulu.",
+    "This action is unauthorized.": "Kamu tidak memiliki izin untuk melakukan tindakan ini.",
+    "Forbidden": "Akses ditolak.",
+    "Not Found": "Data atau halaman tidak ditemukan.",
+    "Page Not Found": "Halaman tidak ditemukan.",
+    "Server Error": "Terjadi kesalahan pada server.",
+    "Service Unavailable": "Layanan sedang tidak tersedia.",
+    "Too Many Requests": "Terlalu banyak permintaan. Silakan coba lagi nanti.",
+    "These credentials do not match our records.": "Email atau kata sandi yang dimasukkan tidak sesuai.",
+     "The email has already been taken.": "Email tersebut sudah terdaftar. Silakan gunakan email lain."
+}

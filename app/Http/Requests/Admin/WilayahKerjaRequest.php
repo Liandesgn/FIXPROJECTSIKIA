@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -12,28 +13,23 @@ class WilayahKerjaRequest extends FormRequest
         return true;
     }
 
-    /**
-     * @return array<string, array<int, mixed>>
-     */
     public function rules(): array
     {
-        // Saat edit, $this->route('wilayah') berisi wilayah yang sedang diedit.
-        // Dipakai agar nama miliknya sendiri tidak dianggap duplikat.
         $id = $this->route('wilayah')?->id;
 
         return [
             'nama_wilayah' => [
-                'required', 'string', 'max:100',
+                'required',
+                'string',
+                'max:100',
                 Rule::unique('wilayah_kerja', 'nama_wilayah')->ignore($id),
             ],
             'kelurahan' => ['required', 'string', 'max:100'],
             'kecamatan' => ['required', 'string', 'max:100'],
+            'deskripsi' => ['nullable', 'string', 'max:1000'],
         ];
     }
 
-    /**
-     * @return array<string, string>
-     */
     public function messages(): array
     {
         return [
@@ -42,6 +38,7 @@ class WilayahKerjaRequest extends FormRequest
             'nama_wilayah.max' => 'Nama wilayah maksimal 100 karakter.',
             'kelurahan.required' => 'Kelurahan/desa wajib diisi.',
             'kecamatan.required' => 'Kecamatan wajib diisi.',
+            'deskripsi.max' => 'Deskripsi maksimal 1000 karakter.',
         ];
     }
 }

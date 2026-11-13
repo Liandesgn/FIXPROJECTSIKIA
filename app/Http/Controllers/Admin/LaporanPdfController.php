@@ -23,9 +23,14 @@ class LaporanPdfController extends Controller
             'wilayah_id' => ['nullable', 'exists:wilayah_kerja,id'],
         ]);
 
-        $wilayahId = $request->user()->loadMissing('admin')->managedWilayahId();
+        // DITAMBAH: Bidan memakai wilayah dari data bidan; Admin tetap memakai managedWilayahId()
+        $user = $request->user();
 
-        abort_unless($wilayahId, 403, 'Akun Admin belum memiliki wilayah kerja.');
+        $wilayahId = $user->hasRole('bidan')
+            ? $user->loadMissing('bidan')->bidan?->wilayah_kerja_id
+            : $user->loadMissing('admin')->managedWilayahId();
+
+        abort_unless($wilayahId, 403, 'Akun belum memiliki wilayah kerja.');
 
         $request->merge(['wilayah_id' => $wilayahId]);
 
@@ -47,6 +52,7 @@ class LaporanPdfController extends Controller
         };
 
         $data = collect();
+        $grafikStatus = null; // DITAMBAH: hanya diisi untuk tab rekap-kesehatan
 
         if ($tab === 'rekap-kesehatan') {
             $data = WilayahKerja::query()
@@ -105,8 +111,22 @@ class LaporanPdfController extends Controller
                         'risiko' => $risiko,
                         'persentase' => $diperiksa > 0
                             ? round(($risiko / $diperiksa) * 100, 1) : 0,
+
+                        // DITAMBAH: angka rinci untuk tabel status Normal / Perlu Perhatian
+                        'ibu_diperiksa' => $ibuDiperiksa,
+                        'ibu_risiko' => $ibuRisiko,
+                        'anak_diperiksa' => $anakDiperiksa,
+                        'anak_risiko' => $anakRisiko,
                     ];
                 });
+
+            // DITAMBAH: status Normal / Perlu Perhatian untuk Ibu dan Anak
+            $grafikStatus = [
+                'ibu_normal' => max($data->sum('ibu_diperiksa') - $data->sum('ibu_risiko'), 0),
+                'ibu_perhatian' => $data->sum('ibu_risiko'),
+                'anak_normal' => max($data->sum('anak_diperiksa') - $data->sum('anak_risiko'), 0),
+                'anak_perhatian' => $data->sum('anak_risiko'),
+            ];
         }
 
         if ($tab === 'kegiatan-posyandu') {
@@ -140,6 +160,7 @@ class LaporanPdfController extends Controller
                     'wilayah' => $item->ibu?->wilayahKerja?->nama_wilayah ?? '-',
                     'tanggal' => $item->tgl_pemeriksaan,
                     'indikator' => 'Status pemeriksaan: Perlu Perhatian',
+                    'penanda' => ['Perlu Perhatian'], // DITAMBAH
                 ]);
             }
 
@@ -164,6 +185,7 @@ class LaporanPdfController extends Controller
                     'wilayah' => $item->anak?->ibu?->wilayahKerja?->nama_wilayah ?? '-',
                     'tanggal' => $item->kegiatan?->tanggal,
                     'indikator' => 'BB: '.($item->berat_badan ?? '-').' kg, TB: '.($item->tinggi_badan ?? '-').' cm',
+                    'penanda' => ['Perlu Perhatian'], // DITAMBAH
                 ]);
             }
         }
@@ -198,8 +220,45 @@ class LaporanPdfController extends Controller
             ]);
         }
 
+
+        // Periksa apakah laporan pada tab terpilih memiliki data.
+$kosong = match ($tab) {
+    'rekap-kesehatan' => (
+        $data->sum('ibu_hamil')
+        + $data->sum('anak')
+        + $data->sum('diperiksa')
+        + $data->sum('risiko')
+    ) === 0,
+
+    'kegiatan-posyandu' => $data->isEmpty(),
+
+    'data-risiko' => $data->isEmpty(),
+
+    'rekap-pemeriksaan' => (
+        $data->sum('ibu')
+        + $data->sum('anak')
+        + $data->sum('kegiatan')
+    ) === 0,
+
+    default => true,
+};
+
+        if ($kosong) {
+            $routePrefix = $user->hasRole('bidan') ? 'bidan' : 'admin';
+
+            return redirect()
+                ->route($routePrefix . '.laporan.index', [
+                    'tab' => $tab,
+                    'periode' => $periode,
+                ])
+                ->with(
+                    'error',
+                    'Belum ada data untuk laporan ini. Silakan pilih periode lain.'
+                );
+        }
+
         $pdf = Pdf::loadView('admin.laporan.pdf', compact(
-            'data', 'judul', 'periode', 'namaWilayah', 'tab'
+            'data', 'judul', 'periode', 'namaWilayah', 'tab', 'grafikStatus' // DITAMBAH: grafikStatus
         ))->setPaper('a4', 'landscape');
 
         return $pdf->download('laporan-'.$tab.'-'.$periode.'.pdf');

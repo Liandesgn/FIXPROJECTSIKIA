@@ -14,19 +14,26 @@ class UpdatePetugasRequest extends FormRequest
         return true;
     }
 
-    /**
-     * @return array<string, array<int, mixed>>
-     */
     public function rules(): array
     {
         $userId = $this->route('bidan')?->id ?? $this->route('kader')?->id;
 
         $rules = [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($userId)],
-            'password' => ['nullable', 'string', 'min:8'],
-            'phone' => ['nullable', 'regex:/^[0-9]+$/', 'min:10', 'max:13'],
-            'wilayah_kerja_id' => ['required', 'integer', Rule::exists('wilayah_kerja', 'id')],
+            'email' => [
+                'required',
+                'string',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')->ignore($userId),
+            ],
+            'password' => ['nullable', 'string', 'min:8', 'max:8'],
+            'phone' => ['required', 'digits_between:10,13', 'regex:/^[0-9]+$/'],
+            'wilayah_kerja_id' => [
+                'required',
+                'integer',
+                Rule::exists('wilayah_kerja', 'id'),
+            ],
         ];
 
         if ($this->routeIs('admin.bidan.*')) {
@@ -43,14 +50,14 @@ class UpdatePetugasRequest extends FormRequest
         return $rules;
     }
 
-    /**
-     * @return array<int, callable>
-     */
     public function after(): array
     {
         return [
             function (Validator $validator) {
-                if (! $this->routeIs('admin.kader.*') || $validator->errors()->isNotEmpty()) {
+                if (
+                    ! $this->routeIs('admin.kader.*')
+                    || $validator->errors()->isNotEmpty()
+                ) {
                     return;
                 }
 
@@ -74,10 +81,19 @@ class UpdatePetugasRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'email.unique' => 'Email sudah terdaftar.',
+            'name.required' => 'Nama lengkap wajib diisi.',
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
+            'email.unique' => 'Email tersebut sudah terdaftar. Silakan gunakan email lain.',
+            'password.min' => 'Password harus tepat 8 karakter.',
+            'password.max' => 'Password harus tepat 8 karakter.',
+            'phone.required' => 'Nomor HP wajib diisi.',
+            'phone.digits_between' => 'Nomor HP harus terdiri dari 10 sampai 13 digit.',
+            'phone.regex' => 'Nomor HP hanya boleh berisi angka.',
             'wilayah_kerja_id.required' => 'Wilayah kerja wajib dipilih.',
             'wilayah_kerja_id.unique' => 'Wilayah ini sudah memiliki bidan penanggung jawab.',
             'wilayah_kerja_id.in' => 'Admin hanya boleh mengelola petugas pada wilayahnya sendiri.',
+            'wilayah_kerja_id.exists' => 'Wilayah kerja yang dipilih tidak tersedia.',
         ];
     }
 }

@@ -90,7 +90,7 @@ class IbuController extends Controller
 
         return redirect()
             ->route('admin.ibu.index')
-            ->with('success', 'Data ibu berhasil didaftarkan.');
+            ->with('success', 'Registrasi Berhasil.');
     }
 
     public function edit(Request $request, User $ibu): View

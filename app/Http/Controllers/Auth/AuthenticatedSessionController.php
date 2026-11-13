@@ -45,7 +45,7 @@ class AuthenticatedSessionController extends Controller
         }
 
         return redirect()->intended(route($user->primaryRole()->dashboard()))
-            ->with('success', 'Selamat datang, '.$user->name.'!');
+            ->with('success', 'Login Berhasil, '.$user->name.'!');
     }
 
     public function destroy(Request $request): RedirectResponse

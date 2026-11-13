@@ -222,6 +222,7 @@ Route::middleware('auth')->group(function () {
         ->group(function () {
             Route::get('/', [BidanDashboardController::class, 'index'])->name('dashboard');
             Route::get('laporan', [BidanLaporanController::class, 'index'])->name('laporan.index');
+            Route::get('laporan/pdf', [LaporanPdfController::class, 'download'])->name('laporan.pdf');
             Route::get('data-ibu', [DataIbuController::class, 'index'])->name('data-ibu.index');
             Route::get('data-ibu/{ibu}', [DataIbuController::class, 'show'])->name('data-ibu.show');
             Route::get('data-anak', [DataAnakController::class, 'index'])->name('data-anak.index');
