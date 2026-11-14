@@ -8,6 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         // Tema SweetAlert2 SI-KIA (dipakai semua popup di aplikasi)
+        // UBAH: tombol Batal dan tombol konfirmasi dibuat sama tinggi dan sama lebar
         window.SikiaSwal = Swal.mixin({
             buttonsStyling: false,
             reverseButtons: true,
@@ -19,8 +20,8 @@
                 title: 'text-lg font-bold leading-snug text-[#542D3D]',
                 htmlContainer: 'text-sm leading-6 text-gray-500',
                 actions: 'mt-5 gap-3',
-                confirmButton: 'rounded-xl bg-[#C9517E] px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#C9517E]/25 transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40',
-                cancelButton: 'rounded-xl border-2 border-[#E99AB7] bg-white px-6 py-2.5 text-sm font-semibold text-[#C9517E] transition hover:bg-[#FCE7F0] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/30'
+                confirmButton: 'inline-flex h-10 min-w-[9.5rem] items-center justify-center whitespace-nowrap rounded-xl bg-[#C9517E] px-4 text-sm font-semibold text-white shadow-lg shadow-[#C9517E]/25 transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40',
+                cancelButton: 'inline-flex h-10 min-w-[9.5rem] items-center justify-center whitespace-nowrap rounded-xl border-2 border-[#E99AB7] bg-white px-4 text-sm font-semibold text-[#C9517E] transition hover:bg-[#FCE7F0] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/30'
             }
         });
 
@@ -44,8 +45,8 @@
                     title: 'text-lg font-bold leading-snug text-[#542D3D]',
                     htmlContainer: 'text-sm leading-6 text-gray-500',
                     actions: 'mt-5 gap-3',
-                    confirmButton: 'rounded-xl bg-red-600 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-red-600/25 transition hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-200',
-                    cancelButton: 'rounded-xl border-2 border-[#E99AB7] bg-white px-6 py-2.5 text-sm font-semibold text-[#C9517E] transition hover:bg-[#FCE7F0] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/30'
+                    confirmButton: 'inline-flex h-10 min-w-[9.5rem] items-center justify-center whitespace-nowrap rounded-xl bg-red-600 px-4 text-sm font-semibold text-white shadow-lg shadow-red-600/25 transition hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-200',
+                    cancelButton: 'inline-flex h-10 min-w-[9.5rem] items-center justify-center whitespace-nowrap rounded-xl border-2 border-[#E99AB7] bg-white px-4 text-sm font-semibold text-[#C9517E] transition hover:bg-[#FCE7F0] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/30'
                 };
             }
 
@@ -53,6 +54,29 @@
         };
     </script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    {{-- UBAH: pasangan tombol Batal + Simpan di semua form dibuat sama tinggi dan sama lebar --}}
+    <style>
+        /* Baris yang berisi tepat dua elemen: satu tautan (Batal) dan satu tombol submit (Simpan) */
+        div:has(> a):has(> button[type="submit"]):not(:has(> :nth-child(3))) {
+            display: flex;
+            flex-direction: row;
+            justify-content: flex-end;
+            gap: 0.75rem;
+        }
+
+        div:has(> a):has(> button[type="submit"]):not(:has(> :nth-child(3))) > a,
+        div:has(> a):has(> button[type="submit"]):not(:has(> :nth-child(3))) > button[type="submit"] {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: auto;
+            min-width: 8rem;
+            height: 2.5rem;
+            padding: 0 1.25rem;
+            white-space: nowrap;
+        }
+    </style>
 </head>
 
 @php
@@ -176,7 +200,7 @@
 
     $roleKeyNorm = str_replace(['-', '_'], '', (string) $roleKey);
 
-        if ($roleKeyNorm === 'superadmin') {
+    if ($roleKeyNorm === 'superadmin') {
         // Urutan Super Admin: Dashboard → Manajemen User (dropdown) → Kelola Wilayah → Kelola Edukasi → Laporan → Akses & Hak (dropdown)
         $urutan = ['admin' => 1, 'ibu' => 2, 'kader' => 3, 'bidan' => 4];
         $kunci  = fn ($m) => $urutan[Str::lower(Str::afterLast(trim($m['label']), ' '))] ?? 9;
@@ -248,42 +272,6 @@
             : ($current === $href || Str::startsWith($current, rtrim($href, '/') . '/'));
     };
 @endphp
-
-
-
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        document.querySelectorAll('form').forEach(function (form) {
-            form.querySelectorAll('input, select, textarea').forEach(function (field) {
-
-                field.addEventListener('invalid', function () {
-                    if (field.validity.valueMissing) {
-                        field.setCustomValidity('Harap isi kolom ini.');
-                    } else if (field.validity.typeMismatch) {
-                        field.setCustomValidity('Masukkan format yang benar.');
-                    } else if (field.validity.tooShort) {
-                        field.setCustomValidity('Isian terlalu pendek.');
-                    } else if (field.validity.tooLong) {
-                        field.setCustomValidity('Isian terlalu panjang.');
-                    } else if (field.validity.patternMismatch) {
-                        field.setCustomValidity('Format isian tidak sesuai.');
-                    }
-                });
-
-                field.addEventListener('input', function () {
-                    field.setCustomValidity('');
-                });
-
-                field.addEventListener('change', function () {
-                    field.setCustomValidity('');
-                });
-            });
-        });
-    });
-</script>
-</body>
-</html>
-
 
 <body class="h-full bg-white font-sans text-slate-800 antialiased">
 
@@ -442,6 +430,7 @@
     </main>
 
     {{-- ================= MODAL KONFIRMASI LOGOUT ================= --}}
+    {{-- UBAH: tombol Batal dan Keluar sama tinggi (h-10) dan sama lebar (w-32) --}}
     <div id="logoutModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="logoutTitle">
         <div class="absolute inset-0 bg-[#542D3D]/50" data-close-logout></div>
         <div class="relative w-full max-w-sm rounded-3xl bg-white p-6 text-center shadow-2xl sm:p-8">
@@ -449,15 +438,15 @@
                 <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17l5-5-5-5M20 12H9m4 8H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h7"/></svg>
             </div>
             <h2 id="logoutTitle" class="text-lg font-bold text-[#542D3D]">Apakah Anda yakin ingin keluar dari akun?</h2>
-            <div class="mt-6 flex gap-3">
+            <div class="mt-6 flex justify-center gap-3">
                 <button type="button" data-close-logout
-                        class="flex-1 rounded-xl border-2 border-[#E99AB7] bg-white px-4 py-2.5 text-sm font-semibold text-[#C9517E] transition hover:bg-[#FCE7F0]">
+                        class="inline-flex h-10 w-32 items-center justify-center rounded-xl border-2 border-[#E99AB7] bg-white text-sm font-semibold text-[#C9517E] transition hover:bg-[#FCE7F0]">
                     Batal
                 </button>
-                <form method="POST" action="{{ route('logout') }}" class="flex-1">
+                <form method="POST" action="{{ route('logout') }}" class="m-0 w-32">
                     @csrf
                     <button type="submit"
-                            class="w-full rounded-xl bg-[#C9517E] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#B7436D]">
+                            class="inline-flex h-10 w-full items-center justify-center rounded-xl bg-[#C9517E] text-sm font-semibold text-white transition hover:bg-[#B7436D]">
                         Keluar
                     </button>
                 </form>
@@ -562,7 +551,8 @@
             }
         });
     </script>
-        <script>
+
+    <script>
         // Kolom pencarian: bila dikosongkan, halaman kembali ke tampilan awal (tanpa pencarian)
         document.addEventListener('DOMContentLoaded', function () {
             document.querySelectorAll('input[type="search"][name="search"]').forEach(function (input) {
@@ -581,6 +571,39 @@
 
                 input.addEventListener('input', kembali);
                 input.addEventListener('search', kembali); // tombol "x" di kolom pencarian
+            });
+        });
+    </script>
+
+    {{-- UBAH: dipindah dari atas <body> ke sini (sebelumnya ada </body></html> yang salah tempat) --}}
+    <script>
+        // Pesan validasi form dalam bahasa Indonesia
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('form').forEach(function (form) {
+                form.querySelectorAll('input, select, textarea').forEach(function (field) {
+
+                    field.addEventListener('invalid', function () {
+                        if (field.validity.valueMissing) {
+                            field.setCustomValidity('Harap isi kolom ini.');
+                        } else if (field.validity.typeMismatch) {
+                            field.setCustomValidity('Masukkan format yang benar.');
+                        } else if (field.validity.tooShort) {
+                            field.setCustomValidity('Isian terlalu pendek.');
+                        } else if (field.validity.tooLong) {
+                            field.setCustomValidity('Isian terlalu panjang.');
+                        } else if (field.validity.patternMismatch) {
+                            field.setCustomValidity('Format isian tidak sesuai.');
+                        }
+                    });
+
+                    field.addEventListener('input', function () {
+                        field.setCustomValidity('');
+                    });
+
+                    field.addEventListener('change', function () {
+                        field.setCustomValidity('');
+                    });
+                });
             });
         });
     </script>

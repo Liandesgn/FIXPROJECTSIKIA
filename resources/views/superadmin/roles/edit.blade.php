@@ -177,7 +177,7 @@
 
                 <button type="submit"
                         class="inline-flex w-full justify-center rounded-xl bg-[#C9517E] px-8 py-3 text-sm font-semibold text-white shadow-md shadow-[#C9517E]/25 transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40 sm:w-auto">
-                    Simpan Perubahan
+                    Simpan
                 </button>
 
             </div>
