@@ -164,11 +164,24 @@
     @push('scripts')
         <script>
             document.addEventListener('DOMContentLoaded', function () {
+
+                // Nama hanya boleh mengandung huruf dan spasi.
+                const nameInput = document.getElementById('name');
+
+                if (nameInput) {
+                    nameInput.value = nameInput.value.replace(/[^\p{L}\s]/gu, '');
+
+                    nameInput.addEventListener('input', function () {
+                        this.value = this.value.replace(/[^\p{L}\s]/gu, '');
+                    });
+                }
+
                 // Tampilkan / sembunyikan kolom usia kehamilan & HPL
                 const statusSelect = document.querySelector('[data-status-kehamilan]');
                 const hamilFields = document.querySelectorAll('[data-hamil-fields]');
                 const hplInput = document.querySelector('#hpl');
                 const usiaInput = document.querySelector('#usia_kehamilan');
+
 
                 function toggleHamil() {
                     const isHamil = statusSelect?.value === 'hamil';

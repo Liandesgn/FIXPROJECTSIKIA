@@ -19,7 +19,12 @@ class UpdatePetugasRequest extends FormRequest
         $userId = $this->route('bidan')?->id ?? $this->route('kader')?->id;
 
         $rules = [
-            'name' => ['required', 'string', 'max:255'],
+        'name' => [
+        'required',
+        'string',
+        'max:255',
+        'regex:/^[\pL]+(?:[ ]+[\pL]+)*$/u',
+    ],
             'email' => [
                 'required',
                 'string',
@@ -82,6 +87,7 @@ class UpdatePetugasRequest extends FormRequest
     {
         return [
             'name.required' => 'Nama lengkap wajib diisi.',
+            'name.regex' => 'Nama hanya boleh berisi huruf dan spasi. Angka dan simbol tidak diperbolehkan.',
             'email.required' => 'Email wajib diisi.',
             'email.email' => 'Format email tidak valid.',
             'email.unique' => 'Email tersebut sudah terdaftar. Silakan gunakan email lain.',

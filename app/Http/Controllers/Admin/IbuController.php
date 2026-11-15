@@ -40,7 +40,7 @@ class IbuController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-            return view('admin.ibu.index', [
+        return view('admin.ibu.index', [
             'ibus' => $ibus,
             'wilayahs' => WilayahKerja::orderBy('kecamatan')
                 ->orderBy('kelurahan')
@@ -116,7 +116,12 @@ class IbuController extends Controller
         abort_unless($ibu->ibu?->wilayah_kerja_id === $wilayahId, 403);
 
         $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                'regex:/^[\pL]+(?:[ ]+[\pL]+)*$/u',
+            ],
             'email' => [
                 'required',
                 'email',
@@ -133,6 +138,9 @@ class IbuController extends Controller
             ],
             'hpl' => ['nullable', 'date'],
             'usia_kehamilan' => ['nullable', 'integer', 'min:1', 'max:45'],
+        ], [
+            'name.required' => 'Nama ibu wajib diisi.',
+            'name.regex' => 'Nama hanya boleh berisi huruf dan spasi. Angka dan simbol tidak diperbolehkan.',
         ]);
 
         $hamil = $data['status_kehamilan'] === StatusKehamilanEnum::Hamil->value;

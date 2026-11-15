@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\StatusKehamilanEnum;
 use App\Enums\RoleEnum;
 use App\Http\Requests\AnakRequest;
 use App\Models\Anak;
@@ -199,6 +200,10 @@ public function show(Request $request, Anak $anak): View
     {
         return Ibu::query()
             ->visibleTo($user)
+            ->where(
+                'status_kehamilan',
+                StatusKehamilanEnum::Melahirkan->value
+            )
             ->with('user')
             ->get()
             ->sortBy(fn ($i) => $i->user?->name)

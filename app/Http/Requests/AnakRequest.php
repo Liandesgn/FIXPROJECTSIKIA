@@ -22,11 +22,21 @@ class AnakRequest extends FormRequest
         return [
             'ibu_id' => ['required', 'integer', Rule::exists('ibu', 'id')],
             'nik_anak' => ['required', 'string', 'digits:16', Rule::unique('anak', 'nik_anak')->ignore($id)],
-            'nama_anak' => ['required', 'string', 'max:100'],
+            'nama_anak' => [
+            'required',
+            'string',
+            'max:100',
+            'regex:/^[\pL]+(?:[ ]+[\pL]+)*$/u',
+        ],
             'tempat_lahir' => ['required', 'string', 'max:100'],
             'tgl_lahir' => ['required', 'date', 'before_or_equal:today'],
             'jenis_kelamin' => ['required', Rule::in(['L', 'P'])],
-            'nama_ayah' => ['required', 'string', 'max:100'],
+           'nama_ayah' => [
+            'required',
+            'string',
+            'max:100',
+            'regex:/^[\pL]+(?:[ ]+[\pL]+)*$/u',
+        ],
         ];
     }
 
@@ -42,11 +52,13 @@ class AnakRequest extends FormRequest
             'nik_anak.digits' => 'NIK anak harus terdiri dari 16 digit.',
             'nik_anak.unique' => 'NIK anak sudah terdaftar.',
             'nama_anak.required' => 'Nama anak wajib diisi.',
+            'nama_anak.regex' => 'Nama anak hanya boleh berisi huruf dan spasi.',
             'tempat_lahir.required' => 'Tempat lahir wajib diisi.',
             'tgl_lahir.required' => 'Tanggal lahir wajib diisi.',
             'tgl_lahir.before_or_equal' => 'Tanggal lahir tidak boleh setelah hari ini.',
             'jenis_kelamin.required' => 'Jenis kelamin wajib dipilih.',
             'nama_ayah.required' => 'Nama ayah wajib diisi.',
+            'nama_ayah.regex' => 'Nama ayah hanya boleh berisi huruf dan spasi.',
         ];
     }
 }

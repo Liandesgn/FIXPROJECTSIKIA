@@ -21,7 +21,12 @@ class UpdateIbuRequest extends FormRequest
         $ibu = $this->route('ibu'); // model Ibu dari alamat data-ibu/{ibu}
 
         return [
-            'name' => ['required', 'string', 'max:255'],
+           'name' => [
+            'required',
+            'string',
+            'max:255',
+            'regex:/^[\pL]+(?:[ ]+[\pL]+)*$/u',
+        ],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($ibu?->user_id)],
             'phone' => ['nullable', 'regex:/^[0-9]+$/', 'min:10', 'max:13'],
             'nik' => ['required', 'string', 'digits:16', Rule::unique('ibu', 'nik')->ignore($ibu?->id)],
@@ -41,6 +46,7 @@ class UpdateIbuRequest extends FormRequest
     {
         return [
             'name.required' => 'Nama wajib diisi.',
+            'name.regex' => 'Nama hanya boleh berisi huruf dan spasi. Angka dan simbol tidak diperbolehkan.',
             'email.required' => 'Email wajib diisi.',
             'email.unique' => 'Email sudah terdaftar.',
             'phone.regex' => 'No. telp hanya boleh berisi angka.',

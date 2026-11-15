@@ -12,12 +12,30 @@
 
 {{-- Pesan gagal ditampilkan sebagai popup SweetAlert dari layout --}}
 
-<div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
     <div>
-        <label for="name" class="{{ $labelClass }}">Nama <span class="text-[#C9517E]">*</span></label>
-        <input id="name" name="name" type="text" required maxlength="255" placeholder="Nama akun"
-               value="{{ old('name', $admin?->user?->name ?? '') }}" class="{{ $fieldClass }}">
-        @error('name') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
+        <label for="name" class="{{ $labelClass }}">
+            Nama <span class="text-[#C9517E]">*</span>
+        </label>
+
+        <input
+            id="name"
+            name="name"
+            type="text"
+            required
+            maxlength="255"
+            placeholder="Nama akun"
+            value="{{ old('name', $admin?->user?->name ?? '') }}"
+            class="{{ $fieldClass }}"
+        >
+
+        @error('name')
+            <p class="{{ $errorClass }}">{{ $message }}</p>
+        @enderror
+
+        <p class="{{ $hintClass }}">
+            Nama hanya boleh menggunakan huruf dan spasi.
+        </p>
     </div>
 
     <div>
@@ -92,14 +110,16 @@
     </button>
 </div>
 
-@push('scripts')
-<script>
-    document.querySelectorAll('[data-toggle-password]').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            const input = document.getElementById('password');
-            const icon  = btn.querySelector('svg');
-            const eye   = '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>';
-            const hidden = input.type === 'password';
+                @push('scripts')
+                <script>
+                    document.querySelectorAll('[data-toggle-password]').forEach(function (btn) {
+                        btn.addEventListener('click', function () {
+                            const input = document.getElementById('password');
+                            const icon  = btn.querySelector('svg');
+                            const eye   = '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>';
+                            const hidden = input.type === 'password';
+
+                         
 
             input.type = hidden ? 'text' : 'password';
             icon.innerHTML = hidden ? eye + '<path d="m3 3 18 18"/>' : eye;
@@ -107,5 +127,12 @@
             btn.setAttribute('aria-label', hidden ? 'Sembunyikan password' : 'Tampilkan password');
         });
     });
+
+                            // Nama hanya boleh mengandung huruf dan spasi.
+                            const nameInput = document.getElementById('name');
+
+                            nameInput?.addEventListener('input', function () {
+                                this.value = this.value.replace(/[^\p{L}\s]/gu, '');
+                            });
 </script>
 @endpush

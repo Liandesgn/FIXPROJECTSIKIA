@@ -28,10 +28,24 @@
     </div>
 
     <div>
-        <label for="nama_anak" class="{{ $labelClass }}">Nama Anak <span class="text-[#C9517E]">*</span></label>
-        <input id="nama_anak" type="text" name="nama_anak" maxlength="100"
-               value="{{ old('nama_anak', $anak->nama_anak ?? '') }}" placeholder="Nama anak" class="{{ $fieldClass }}">
-        @error('nama_anak') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
+        <label for="nama_anak" class="{{ $labelClass }}">
+            Nama Anak <span class="text-[#C9517E]">*</span>
+        </label>
+
+        <input
+            id="nama_anak"
+            type="text"
+            name="nama_anak"
+            maxlength="100"
+            value="{{ old('nama_anak', $anak->nama_anak ?? '') }}"
+            placeholder="Nama anak"
+            class="{{ $fieldClass }}"
+            oninput="this.value = this.value.replace(/[^\p{L}\s]/gu, '')"
+        >
+
+        @error('nama_anak')
+            <p class="{{ $errorClass }}">{{ $message }}</p>
+        @enderror
     </div>
 
     <div>
@@ -59,11 +73,26 @@
     </div>
 
     <div>
-        <label for="nama_ayah" class="{{ $labelClass }}">Nama Ayah <span class="text-[#C9517E]">*</span></label>
-        <input id="nama_ayah" type="text" name="nama_ayah" maxlength="100"
-               value="{{ old('nama_ayah', $anak->nama_ayah ?? '') }}" placeholder="Nama ayah" class="{{ $fieldClass }}">
-        @error('nama_ayah') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
+        <label for="nama_ayah" class="{{ $labelClass }}">
+            Nama Ayah <span class="text-[#C9517E]">*</span>
+        </label>
+
+        <input
+            id="nama_ayah"
+            type="text"
+            name="nama_ayah"
+            maxlength="100"
+            value="{{ old('nama_ayah', $anak->nama_ayah ?? '') }}"
+            placeholder="Nama ayah"
+            class="{{ $fieldClass }}"
+            oninput="this.value = this.value.replace(/[^\p{L}\s]/gu, '')"
+        >
+
+        @error('nama_ayah')
+            <p class="{{ $errorClass }}">{{ $message }}</p>
+        @enderror
     </div>
+
 </div>
 
 <div class="flex flex-col-reverse gap-3 border-t border-[#F1D5E0] pt-5 sm:flex-row sm:justify-end">

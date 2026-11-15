@@ -16,7 +16,12 @@ class StoreIbuRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255'],
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                'regex:/^[\pL]+(?:[ ]+[\pL]+)*$/u',
+            ],
             'email' => [
                 'required',
                 'string',
@@ -66,23 +71,31 @@ class StoreIbuRequest extends FormRequest
     {
         return [
             'name.required' => 'Nama lengkap wajib diisi.',
+            'name.regex' => 'Nama hanya boleh berisi huruf dan spasi. Angka dan simbol tidak diperbolehkan.',
+
             'email.required' => 'Email wajib diisi.',
             'email.email' => 'Format email tidak valid.',
             'email.unique' => 'Email tersebut sudah terdaftar. Silakan gunakan email lain.',
+
             'password.required' => 'Password wajib diisi.',
             'password.min' => 'Password harus tepat 8 karakter.',
             'password.max' => 'Password harus tepat 8 karakter.',
+
             'nik.required' => 'NIK wajib diisi.',
             'nik.unique' => 'NIK sudah terdaftar.',
             'nik.digits' => 'NIK harus terdiri dari 16 digit.',
+
             'tempat_lahir.required' => 'Tempat lahir wajib diisi.',
             'tgl_lahir.required' => 'Tanggal lahir wajib diisi.',
             'tgl_lahir.before' => 'Tanggal lahir harus sebelum hari ini.',
+
             'phone.required' => 'Nomor HP wajib diisi.',
             'phone.digits_between' => 'Nomor HP harus terdiri dari 10 sampai 13 digit.',
             'phone.regex' => 'Nomor HP hanya boleh berisi angka.',
+
             'wilayah_kerja_id.required' => 'Wilayah (desa) wajib dipilih.',
             'wilayah_kerja_id.exists' => 'Wilayah kerja yang dipilih tidak tersedia.',
+
             'status_kehamilan.required' => 'Status kehamilan wajib dipilih.',
             'hpl.required' => 'HPL wajib diisi untuk status kehamilan Hamil.',
             'usia_kehamilan.required' => 'Usia kehamilan wajib diisi untuk status kehamilan Hamil.',
