@@ -93,19 +93,60 @@
                     @error('status_kehamilan') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
                 </div>
 
-                <div data-hamil>
-                    <label for="usia_kehamilan" class="{{ $labelClass }}">Usia Kehamilan (minggu) <span class="text-[#C9517E]">*</span></label>
-                    <input id="usia_kehamilan" type="number" name="usia_kehamilan" min="1" max="45"
-                           value="{{ old('usia_kehamilan', $ibu->usia_kehamilan) }}" placeholder="Minggu" class="{{ $fieldClass }}">
-                    @error('usia_kehamilan') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
-                </div>
+    
+<div data-hamil>
+    <label for="usia_kehamilan" class="{{ $labelClass }}">
+        Usia Kehamilan (minggu)
+        <span class="text-[#C9517E]">*</span>
+    </label>
 
-                <div data-hamil>
-                    <label for="hpl" class="{{ $labelClass }}">HPL <span class="text-[#C9517E]">*</span></label>
-                    <input id="hpl" type="date" name="hpl" value="{{ old('hpl', $ibu->hpl?->format('Y-m-d')) }}" class="{{ $fieldClass }}">
-                    @error('hpl') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
-                </div>
-            </div>
+    <input
+        id="usia_kehamilan"
+        type="number"
+        name="usia_kehamilan"
+        min="1"
+        max="42"
+        value="{{ old('usia_kehamilan', $ibu->usia_kehamilan) }}"
+        placeholder="Masukkan usia kehamilan (minggu)"
+        class="{{ $fieldClass }}"
+    >
+
+    @error('usia_kehamilan')
+        <p class="{{ $errorClass }}">{{ $message }}</p>
+    @enderror
+</div>
+
+<div data-hamil>
+    <label for="hpl_display" class="{{ $labelClass }}">
+        Hari Perkiraan Lahir (HPL)
+    </label>
+
+    <input
+        id="hpl_display"
+        type="text"
+        value="{{ old('hpl', $ibu->hpl?->format('Y-m-d')) }}"
+        placeholder="Dihitung otomatis"
+        readonly
+        class="{{ str_replace('bg-white', 'cursor-not-allowed bg-slate-100 text-slate-700', $fieldClass) }}"
+    >
+
+    <input
+        type="hidden"
+        id="hpl"
+        name="hpl"
+        value="{{ old('hpl', $ibu->hpl?->format('Y-m-d')) }}"
+    >
+
+    <p class="mt-1 text-xs text-slate-500">
+        HPL dihitung otomatis berdasarkan usia kehamilan dengan target 40 minggu.
+    </p>
+
+    @error('hpl')
+        <p class="{{ $errorClass }}">{{ $message }}</p>
+    @enderror
+</div>
+
+
 
             <div class="flex flex-col-reverse gap-3 border-t border-[#F1D5E0] pt-5 sm:flex-row sm:justify-end">
                 <a href="{{ route('admin.data-ibu.show', $ibu) }}"
@@ -122,21 +163,66 @@
 </div>
 
 <script>
+
 document.addEventListener('DOMContentLoaded', function () {
     const status = document.getElementById('status_kehamilan');
+    const usia = document.getElementById('usia_kehamilan');
+    const hpl = document.getElementById('hpl');
+    const hplDisplay = document.getElementById('hpl_display');
     const blok = document.querySelectorAll('[data-hamil]');
 
-    // Hamil: tampilkan usia & HPL. Melahirkan: sembunyikan dan kosongkan.
+    const TARGET_KEHAMILAN = 40;
+
+    function hitungHPL() {
+        const minggu = Number(usia.value);
+
+        if (!Number.isInteger(minggu) || minggu < 1 || minggu > 42) {
+            hpl.value = '';
+            hplDisplay.value = '';
+            return;
+        }
+
+        const sisaHari = (TARGET_KEHAMILAN - minggu) * 7;
+
+        const tanggal = new Date();
+        tanggal.setHours(12, 0, 0, 0);
+        tanggal.setDate(tanggal.getDate() + sisaHari);
+
+        const tahun = tanggal.getFullYear();
+        const bulan = String(tanggal.getMonth() + 1).padStart(2, '0');
+        const hari = String(tanggal.getDate()).padStart(2, '0');
+
+        // Format untuk database
+        hpl.value = `${tahun}-${bulan}-${hari}`;
+
+        // Format untuk tampilan
+        hplDisplay.value = `${hari}-${bulan}-${tahun}`;
+    }
+
     function atur() {
-        const hamil = status.value === 'hamil';
+        const sedangHamil = status.value === 'hamil';
+
         blok.forEach(function (el) {
-            el.classList.toggle('hidden', !hamil);
-            if (!hamil) el.querySelectorAll('input').forEach(function (i) { i.value = ''; });
+            el.classList.toggle('hidden', !sedangHamil);
         });
+
+        usia.required = sedangHamil;
+
+        if (sedangHamil) {
+            hitungHPL();
+        } else {
+            usia.value = '';
+            hpl.value = '';
+            hplDisplay.value = '';
+        }
     }
 
     status.addEventListener('change', atur);
+    usia.addEventListener('input', hitungHPL);
+    usia.addEventListener('change', hitungHPL);
+
     atur();
 });
+
 </script>
 @endsection

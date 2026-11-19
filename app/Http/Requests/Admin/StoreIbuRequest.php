@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use App\Enums\StatusKehamilanEnum;
+use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -15,54 +16,78 @@ class StoreIbuRequest extends FormRequest
 
     public function rules(): array
     {
+        // Route {ibu} menggunakan model User.
+        $user = $this->route('ibu');
+
+        $userId = $user instanceof User ? $user->getKey() : null;
+        $profilIbuId = $user instanceof User
+            ? $user->ibu?->getKey()
+            : null;
+
         return [
             'name' => [
                 'required',
                 'string',
                 'max:255',
-                'regex:/^[\pL]+(?:[ ]+[\pL]+)*$/u',
+                'regex:/^[\pL]+(?: [\pL]+)*$/u',
             ],
+
             'email' => [
                 'required',
                 'string',
                 'email',
                 'max:255',
-                Rule::unique('users', 'email'),
+                Rule::unique('users', 'email')->ignore($userId, 'id'),
             ],
-            'password' => ['required', 'string', 'min:8', 'max:8'],
+
+            'password' => [
+                'nullable',
+                'string',
+                'min:8',
+                'max:8',
+            ],
+
+            'phone' => [
+                'nullable',
+                'digits_between:10,13',
+            ],
+
             'nik' => [
                 'required',
                 'string',
                 'digits:16',
-                Rule::unique('ibu', 'nik'),
+                Rule::unique('ibu', 'nik')->ignore($profilIbuId, 'id'),
             ],
-            'tempat_lahir' => ['required', 'string', 'max:255'],
-            'tgl_lahir' => ['required', 'date', 'before:today'],
-            'phone' => ['required', 'digits_between:10,13', 'regex:/^[0-9]+$/'],
-            'wilayah_kerja_id' => [
+
+            'tempat_lahir' => [
+                'required',
+                'string',
+                'max:255',
+            ],
+
+            'tgl_lahir' => [
+                'required',
+                'date',
+                'before:today',
+            ],
+
+            'rt_id' => [
                 'required',
                 'integer',
-                Rule::exists('wilayah_kerja', 'id'),
+                Rule::exists('rt', 'id'),
             ],
+
             'status_kehamilan' => [
                 'required',
                 Rule::in(StatusKehamilanEnum::values()),
             ],
-            'hpl' => [
-                'nullable',
-                'date',
-                Rule::requiredIf(
-                    fn () => $this->input('status_kehamilan') === StatusKehamilanEnum::Hamil->value
-                ),
-            ],
+
             'usia_kehamilan' => [
                 'nullable',
+                'required_if:status_kehamilan,hamil',
                 'integer',
                 'min:1',
                 'max:42',
-                Rule::requiredIf(
-                    fn () => $this->input('status_kehamilan') === StatusKehamilanEnum::Hamil->value
-                ),
             ],
         ];
     }
@@ -70,35 +95,24 @@ class StoreIbuRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.required' => 'Nama lengkap wajib diisi.',
-            'name.regex' => 'Nama hanya boleh berisi huruf dan spasi. Angka dan simbol tidak diperbolehkan.',
-
+            'name.required' => 'Nama wajib diisi.',
+            'name.regex' => 'Nama hanya boleh berisi huruf dan spasi.',
             'email.required' => 'Email wajib diisi.',
             'email.email' => 'Format email tidak valid.',
-            'email.unique' => 'Email tersebut sudah terdaftar. Silakan gunakan email lain.',
-
-            'password.required' => 'Password wajib diisi.',
+            'email.unique' => 'Email sudah digunakan akun lain.',
             'password.min' => 'Password harus tepat 8 karakter.',
             'password.max' => 'Password harus tepat 8 karakter.',
-
+            'phone.digits_between' => 'Nomor HP harus terdiri dari 10 sampai 13 digit.',
             'nik.required' => 'NIK wajib diisi.',
-            'nik.unique' => 'NIK sudah terdaftar.',
             'nik.digits' => 'NIK harus terdiri dari 16 digit.',
-
+            'nik.unique' => 'NIK sudah digunakan ibu lain.',
             'tempat_lahir.required' => 'Tempat lahir wajib diisi.',
             'tgl_lahir.required' => 'Tanggal lahir wajib diisi.',
             'tgl_lahir.before' => 'Tanggal lahir harus sebelum hari ini.',
-
-            'phone.required' => 'Nomor HP wajib diisi.',
-            'phone.digits_between' => 'Nomor HP harus terdiri dari 10 sampai 13 digit.',
-            'phone.regex' => 'Nomor HP hanya boleh berisi angka.',
-
-            'wilayah_kerja_id.required' => 'Wilayah (desa) wajib dipilih.',
-            'wilayah_kerja_id.exists' => 'Wilayah kerja yang dipilih tidak tersedia.',
-
+            'rt_id.required' => 'RT wajib dipilih.',
+            'rt_id.exists' => 'RT yang dipilih tidak tersedia.',
             'status_kehamilan.required' => 'Status kehamilan wajib dipilih.',
-            'hpl.required' => 'HPL wajib diisi untuk status kehamilan Hamil.',
-            'usia_kehamilan.required' => 'Usia kehamilan wajib diisi untuk status kehamilan Hamil.',
+            'usia_kehamilan.required_if' => 'Usia kehamilan wajib diisi untuk ibu hamil.',
         ];
     }
 }

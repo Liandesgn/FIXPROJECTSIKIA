@@ -200,20 +200,44 @@ Route::middleware('auth')->group(function () {
             Route::delete('kader/{kader}', [KaderController::class, 'destroy'])
                 ->middleware('can:user.delete')->name('kader.destroy');
 
-            Route::get('ibu', [IbuController::class, 'index'])
-                ->middleware('can:user.view')->name('ibu.index');
-            Route::get('ibu/create', [IbuController::class, 'create'])
-                ->middleware('can:user.create')->name('ibu.create');
-            Route::post('ibu', [IbuController::class, 'store'])
-                ->middleware('can:user.create')->name('ibu.store');
-            Route::get('ibu/{ibu}/edit', [IbuController::class, 'edit'])
-                ->middleware('can:user.update')->name('ibu.edit');
-            Route::put('ibu/{ibu}', [IbuController::class, 'update'])
-                ->middleware('can:user.update')->name('ibu.update');
-            Route::patch('ibu/{ibu}/toggle-status', [IbuController::class, 'toggleStatus'])
-                ->middleware('can:user.activate')->name('ibu.toggle-status');
-        });
+// Kelola Ibu
+Route::get('ibu', [IbuController::class, 'index'])
+    ->middleware('can:user.view')
+    ->name('ibu.index');
 
+Route::get('ibu/create', [IbuController::class, 'create'])
+    ->middleware('can:user.create')
+    ->name('ibu.create');
+
+// Dropdown alamat Ibu
+
+// Dropdown alamat Ibu
+Route::get('ibu/alamat/kelurahan', [IbuController::class, 'getKelurahan'])
+    ->name('ibu.alamat.kelurahan');
+
+Route::get('ibu/alamat/rw', [IbuController::class, 'getRw'])
+    ->name('ibu.alamat.rw');
+
+Route::get('ibu/alamat/rt', [IbuController::class, 'getRt'])
+    ->name('ibu.alamat.rt');
+
+Route::post('ibu', [IbuController::class, 'store'])
+    ->middleware('can:user.create')
+    ->name('ibu.store');
+
+Route::get('ibu/{ibu}/edit', [IbuController::class, 'edit'])
+    ->middleware('can:user.update')
+    ->name('ibu.edit');
+
+Route::put('ibu/{ibu}', [IbuController::class, 'update'])
+    ->middleware('can:user.update')
+    ->name('ibu.update');
+
+Route::patch('ibu/{ibu}/toggle-status', [IbuController::class, 'toggleStatus'])
+    ->middleware('can:user.activate')
+    ->name('ibu.toggle-status');
+
+        });
 
         //bidan
     Route::middleware('role:bidan')

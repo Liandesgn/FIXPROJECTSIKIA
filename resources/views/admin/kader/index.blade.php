@@ -7,7 +7,7 @@
     $pg        = $kaders instanceof \Illuminate\Contracts\Pagination\LengthAwarePaginator ? $kaders : null;
     $total     = $pg ? $pg->total() : $kaders->count();
     $nomorAwal = $pg ? ($pg->firstItem() ?? 1) : 1;
-    $readOnly  = $readOnly ?? false;
+    $readOnly = auth()->user()->isSuperAdmin();
     $listWilayah = collect($wilayahs ?? []);
 @endphp
 
@@ -101,7 +101,16 @@
 
                 <tbody class="divide-y divide-[#F7E6ED]">
                     @forelse ($kaders as $kader)
-                        @php $wilayah = optional($kader->kader?->wilayahKerja)->kelurahan ?? '-'; @endphp
+                        @php
+                        $wilayahKerja = $kader->kader?->wilayahKerja;
+                        $kelurahanDesa = $wilayahKerja?->kelurahanDesa;
+
+                        $namaWilayah = $kelurahanDesa
+                            ? ucfirst($kelurahanDesa->jenis) . ' ' . $kelurahanDesa->nama_kelurahan_desa
+                            : '-';
+
+                        $namaPuskesmas = $wilayahKerja?->puskesmas?->nama_puskesmas ?? '-';
+                    @endphp
                         <tr class="transition hover:bg-[#FCE7F0]/50">
                             <td class="px-3 py-3.5 text-sm font-semibold text-slate-700 sm:px-4">{{ $nomorAwal + $loop->index }}</td>
 
@@ -113,32 +122,49 @@
 
                             <td class="hidden whitespace-nowrap px-4 py-3.5 text-sm text-slate-800 md:table-cell">{{ $kader->email ?? '-' }}</td>
                             <td class="hidden whitespace-nowrap px-4 py-3.5 text-sm text-slate-800 lg:table-cell">{{ $kader->phone ?? '-' }}</td>
-                            <td class="whitespace-nowrap px-3 py-3.5 text-sm text-slate-800 sm:px-4">{{ $wilayah }}</td>
+                            <td class="px-3 py-3.5 text-sm text-slate-800 sm:px-4">
+                            <p class="font-semibold">{{ $namaWilayah }}</p>
+                            <p class="text-xs text-slate-500">{{ $namaPuskesmas }}</p>
+                        </td>
 
-                            @if (!$readOnly)
-                                <td class="whitespace-nowrap px-3 py-3.5 sm:px-4">
-                                    <div class="flex items-center justify-center gap-2">
-                                        @can('user.update')
-                                            <a href="{{ route('admin.kader.edit', $kader->id) }}"
-                                               class="inline-flex h-8 items-center justify-center whitespace-nowrap rounded-lg bg-[#E99AB7] px-3 text-xs font-bold text-[#542D3D] shadow-sm transition hover:bg-[#DD87A8] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40">
-                                                Edit
-                                            </a>
-                                        @endcan
 
-                                        @can('user.delete')
-                                            <form action="{{ route('admin.kader.destroy', $kader->id) }}" method="POST" class="m-0"
-                                                  data-confirm-delete data-name="{{ $kader->name }}">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit"
-                                                        class="inline-flex h-8 items-center justify-center whitespace-nowrap rounded-lg bg-red-600 px-3 text-xs font-bold text-white shadow-sm transition hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-200">
-                                                    Hapus
-                                                </button>
-                                            </form>
-                                        @endcan
-                                    </div>
-                                </td>
-                            @endif
+@if (!$readOnly)
+    <td class="px-3 py-3.5 sm:px-4">
+        <div class="flex items-center justify-center gap-2">
+            @can('user.update')
+                <a href="{{ route('admin.kader.edit', $kader) }}"
+                   class="inline-flex items-center gap-1 rounded-lg border border-blue-300 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 transition hover:bg-blue-100">
+                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="m16 4 4 4M4 20l4-.8L19 8a2.1 2.1 0 0 0-3-3L5 16l-1 4Z"/>
+                    </svg>
+                    Edit
+                </a>
+            @endcan
+
+            @can('user.delete')
+                <form action="{{ route('admin.kader.destroy', $kader) }}"
+                      method="POST"
+                      onsubmit="return confirm('Yakin ingin menghapus kader ini?')">
+                    @csrf
+                    @method('DELETE')
+
+                    <button type="submit"
+                            class="inline-flex items-center gap-1 rounded-lg border border-red-300 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 transition hover:bg-red-100">
+                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                  d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14M10 11v5m4-5v5"/>
+                        </svg>
+                        Hapus
+                    </button>
+                </form>
+            @endcan
+        </div>
+    </td>
+@endif
+
                         </tr>
                     @empty
                         <tr>

@@ -25,7 +25,7 @@
             <div>
                 <label for="nama_wilayah" class="text-sm font-semibold text-[#542D3D]">Nama Wilayah <span class="text-[#C9517E]">*</span></label>
                 <input id="nama_wilayah" type="text" name="nama_wilayah" value="{{ old('nama_wilayah') }}" maxlength="100"
-                       placeholder="Desa. a Kec. a" class="{{ $fieldClass }}" required>
+                       placeholder="" class="{{ $fieldClass }}" required>
                 @error('nama_wilayah')<p class="mt-1 text-xs font-medium text-red-600">{{ $message }}</p>@enderror
             </div>
 
@@ -33,14 +33,14 @@
                 <div>
                     <label for="kelurahan" class="text-sm font-semibold text-[#542D3D]">Kelurahan / Desa <span class="text-[#C9517E]">*</span></label>
                     <input id="kelurahan" type="text" name="kelurahan" value="{{ old('kelurahan') }}" maxlength="100"
-                           placeholder="Nama kelurahan/desa" class="{{ $fieldClass }}" required>
+                           placeholder="" class="{{ $fieldClass }}" required>
                     @error('kelurahan')<p class="mt-1 text-xs font-medium text-red-600">{{ $message }}</p>@enderror
                 </div>
 
                 <div>
                     <label for="kecamatan" class="text-sm font-semibold text-[#542D3D]">Kecamatan <span class="text-[#C9517E]">*</span></label>
                     <input id="kecamatan" type="text" name="kecamatan" value="{{ old('kecamatan') }}" maxlength="100"
-                           placeholder="Nama kecamatan" class="{{ $fieldClass }}" required>
+                           placeholder="" class="{{ $fieldClass }}" required>
                     @error('kecamatan')<p class="mt-1 text-xs font-medium text-red-600">{{ $message }}</p>@enderror
                 </div>
             </div>

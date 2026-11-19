@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use App\Enums\RoleEnum;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
@@ -15,72 +15,86 @@ class WilayahKerja extends Model
     protected $table = 'wilayah_kerja';
 
     protected $fillable = [
-        'nama_wilayah',
-        'kabupaten',
-        'kecamatan',
-        'kelurahan',
-        'deskripsi',
+        'kecamatan_id',
+        'puskesmas_id',
+        'kelurahan_desa_id',
+
+        // Kolom lama sementara
+    'nama_wilayah',
+    'kabupaten',
+    'kecamatan',
+    'kelurahan',
+    'deskripsi',
     ];
 
+    // Relasi master wilayah.
+
+    public function kecamatan(): BelongsTo
+    {
+        return $this->belongsTo(Kecamatan::class);
+    }
+
+    public function puskesmas(): BelongsTo
+    {
+        return $this->belongsTo(Puskesmas::class);
+    }
+
+    public function kelurahanDesa(): BelongsTo
+    {
+        return $this->belongsTo(KelurahanDesa::class);
+    }
+
+    // Relasi pengguna.
     public function users(): HasMany
     {
-        return $this->hasMany(User::class);
+        return $this->hasMany(User::class, 'wilayah_kerja_id');
     }
 
     public function admins(): HasMany
     {
-        return $this->hasMany(Admin::class, 'id_wilayah');
+        return $this->hasMany(Admin::class, 'wilayah_kerja_id');
     }
+
+    public function bidan(): HasOne
+    {
+        return $this->hasOne(Bidan::class, 'wilayah_kerja_id');
+    }
+
+    public function bidans(): HasMany
+    {
+        return $this->hasMany(Bidan::class, 'wilayah_kerja_id');
+    }
+
+    public function kader(): HasOne
+    {
+        return $this->hasOne(Kader::class, 'wilayah_kerja_id');
+    }
+
+    public function kaders(): HasMany
+    {
+        return $this->hasMany(Kader::class, 'wilayah_kerja_id');
+    }
+
+    public function ibus(): HasMany
+    {
+        return $this->hasMany(Ibu::class, 'wilayah_kerja_id');
+    }
+
+    // Relasi Modul 2 tetap dipertahankan.
 
     public function kegiatanPosyandu(): HasMany
     {
         return $this->hasMany(KegiatanPosyandu::class, 'id_wilayah');
     }
 
-    /**
-     * Alias lama untuk tampilan yang belum diperbarui.
-     */
-    public function getDesaAttribute(): ?string
-    {
-        return $this->kelurahan;
-    }
+    // Label wilayah dari relasi master.
 
-    /**
-     * Bidan penanggung jawab wilayah ini (satu per wilayah).
-     */
-    public function bidan(): HasOne
-    {
-        return $this->hasOne(User::class)->role(RoleEnum::Bidan->value);
-    }
-
-    /**
-     * Kader yang bertugas di wilayah ini (satu kader, dipertahankan agar kode lama tidak rusak).
-     */
-    public function kader(): HasOne
-    {
-        return $this->hasOne(User::class)->role(RoleEnum::Kader->value);
-    }
-
-    /**
-     * Semua kader di wilayah ini (banyak per wilayah).
-     */
-    public function kaders(): HasMany
-    {
-        return $this->hasMany(User::class)->role(RoleEnum::Kader->value);
-    }
-
-    public function orangTua(): HasMany
-    {
-        return $this->hasMany(User::class)->role(RoleEnum::Ibu->value);
-    }
-
-    /**
-     * Label lengkap wilayah (kabupaten/kecamatan/desa).
-     */
     public function label(): string
     {
-        $parts = array_filter([$this->kabupaten, $this->kecamatan, $this->kelurahan]);
-
-        return $parts ? implode(' / ', $parts) : (string) $this->nama_wilayah;
+        return implode(' / ', array_filter([
+            $this->kecamatan?->nama_kecamatan,
+            $this->puskesmas?->nama_puskesmas,
+            $this->kelurahanDesa?->nama_kelurahan_desa,
+        ]));
     }
 }

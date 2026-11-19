@@ -6,18 +6,21 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['user_id', 'wilayah_kerja_id'])]
+#[Fillable([
+    'user_id',
+    'wilayah_kerja_id',
+])]
 class Kader extends Model
 {
     protected $table = 'kader';
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function wilayahKerja(): BelongsTo
     {
-        return $this->belongsTo(WilayahKerja::class);
+        return $this->belongsTo(WilayahKerja::class, 'wilayah_kerja_id');
     }
 }

@@ -46,7 +46,7 @@ class User extends Authenticatable
 
     public function wilayahKerja(): BelongsTo
     {
-        return $this->belongsTo(WilayahKerja::class);
+        return $this->belongsTo(WilayahKerja::class, 'wilayah_kerja_id');
     }
 
 
@@ -57,25 +57,25 @@ class User extends Authenticatable
 
 
 
-        public function admin(): HasOne
+    public function admin(): HasOne
     {
-        return $this->hasOne(Admin::class);
+        return $this->hasOne(Admin::class, 'user_id');
     }
 
 
-        public function ibu(): HasOne
+    public function ibu(): HasOne
     {
-        return $this->hasOne(Ibu::class);
+        return $this->hasOne(Ibu::class, 'user_id');
     }
 
     public function bidan(): HasOne
     {
-        return $this->hasOne(Bidan::class);
+        return $this->hasOne(Bidan::class, 'user_id');
     }
 
     public function kader(): HasOne
     {
-        return $this->hasOne(Kader::class);
+        return $this->hasOne(Kader::class, 'user_id');
     }
 
         /**
@@ -85,10 +85,26 @@ class User extends Authenticatable
      */
     public function assignWilayah(int $wilayahId): void
     {
-        $profil = $this->hasRole(RoleEnum::Bidan->value) ? $this->bidan() : $this->kader();
-        $profil->updateOrCreate([], ['wilayah_kerja_id' => $wilayahId]);
+        if ($this->hasRole(RoleEnum::Bidan->value)) {
+            $this->bidan()->updateOrCreate(
+                [],
+                ['wilayah_kerja_id' => $wilayahId]
+            );
+        } elseif ($this->hasRole(RoleEnum::Kader->value)) {
+            $this->kader()->updateOrCreate(
+                [],
+                ['wilayah_kerja_id' => $wilayahId]
+            );
+        } else {
+            throw new \LogicException(
+                'Hanya Bidan dan Kader yang dapat diberikan wilayah kerja.'
+            );
+        }
 
-        $this->forceFill(['wilayah_kerja_id' => $wilayahId])->save();
+        // Kolom jembatan sementara.
+        $this->forceFill([
+            'wilayah_kerja_id' => $wilayahId,
+        ])->save();
     }
 
     /**
@@ -124,7 +140,15 @@ class User extends Authenticatable
      */
     public function managedWilayahId(): ?int
     {
-        return $this->admin?->id_wilayah;
+          return $this->admin?->wilayah_kerja_id;
+    }
+
+     /**
+     * Puskesmas yang dikelola Admin.
+     */
+    public function managedPuskesmasId(): ?int
+    {
+        return $this->admin?->puskesmas_id;
     }
 
     public function isOrangTua(): bool

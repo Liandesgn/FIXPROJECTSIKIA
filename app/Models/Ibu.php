@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'tgl_lahir',
     'status_kehamilan',
     'usia_kehamilan',
+    'rt_id',
     'tanggal_pemeriksaan_awal',
     'hpl',
 ])]
@@ -24,9 +25,6 @@ class Ibu extends Model
 {
     protected $table = 'ibu';
 
-    /**
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
@@ -37,31 +35,28 @@ class Ibu extends Model
         ];
     }
 
-    /**
-     * Tanggal pemeriksaan awal diisi otomatis:
-     * - data baru berstatus Hamil  : hari ini
-     * - usia kehamilan diubah      : hari ini (usia yang diinput menjadi usia awal)
-     * - bukan hamil / usia kosong  : dikosongkan
-     */
     protected static function booted(): void
     {
         static::saving(function (Ibu $ibu) {
-            if ($ibu->status_kehamilan !== StatusKehamilanEnum::Hamil || $ibu->usia_kehamilan === null) {
+            if (
+                $ibu->status_kehamilan !== StatusKehamilanEnum::Hamil ||
+                $ibu->usia_kehamilan === null
+            ) {
                 $ibu->tanggal_pemeriksaan_awal = null;
 
                 return;
             }
 
-            if (! $ibu->exists || $ibu->isDirty('usia_kehamilan') || $ibu->tanggal_pemeriksaan_awal === null) {
+            if (
+                ! $ibu->exists ||
+                $ibu->isDirty('usia_kehamilan') ||
+                $ibu->tanggal_pemeriksaan_awal === null
+            ) {
                 $ibu->tanggal_pemeriksaan_awal = now()->toDateString();
             }
         });
     }
 
-    /**
-     * Usia kehamilan saat ini (minggu): usia saat pemeriksaan awal
-     * ditambah selisih minggu sejak tanggal pemeriksaan awal.
-     */
     public function getUsiaKehamilanSekarangAttribute(): ?int
     {
         if (! $this->sedangHamil() || $this->usia_kehamilan === null) {
@@ -80,17 +75,19 @@ class Ibu extends Model
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function wilayahKerja(): BelongsTo
     {
-        return $this->belongsTo(WilayahKerja::class);
+        return $this->belongsTo(WilayahKerja::class, 'wilayah_kerja_id');
     }
 
-    /**
-     * Satu ibu dapat memiliki banyak anak.
-     */
+    public function rt(): BelongsTo
+    {
+        return $this->belongsTo(Rt::class, 'rt_id');
+    }
+
     public function anak(): HasMany
     {
         return $this->hasMany(Anak::class, 'ibu_id');
@@ -101,21 +98,20 @@ class Ibu extends Model
         return $this->status_kehamilan === StatusKehamilanEnum::Hamil;
     }
 
-    /**
-     * Tempat dan tanggal lahir (TTL).
-     */
     public function ttl(): ?string
     {
         if (! $this->tempat_lahir && ! $this->tgl_lahir) {
             return null;
         }
 
-        return trim(($this->tempat_lahir ?? '').', '.($this->tgl_lahir?->format('d-m-Y') ?? ''), ', ');
+        return trim(
+            ($this->tempat_lahir ?? '') . ', ' .
+            ($this->tgl_lahir?->format('d-m-Y') ?? ''),
+            ', '
+        );
     }
 
-    /**
-     * Batasi data sesuai role: admin semua, bidan/kader wilayahnya, ibu dirinya sendiri.
-     */
+   
     public function scopeVisibleTo(Builder $query, User $user): Builder
     {
         if ($user->isSuperAdmin()) {
@@ -123,10 +119,12 @@ class Ibu extends Model
         }
 
         if ($user->isAdmin()) {
-            $wilayahId = $user->managedWilayahId();
+            $puskesmasId = $user->admin?->puskesmas_id;
 
-            return $wilayahId
-                ? $query->where('wilayah_kerja_id', $wilayahId)
+            return $puskesmasId
+                ? $query->whereHas('wilayahKerja', function ($wilayahQuery) use ($puskesmasId) {
+                    $wilayahQuery->where('puskesmas_id', $puskesmasId);
+                })
                 : $query->whereRaw('1 = 0');
         }
 
@@ -142,4 +140,5 @@ class Ibu extends Model
             ? $query->where('wilayah_kerja_id', $wilayahId)
             : $query->whereRaw('1 = 0');
     }
+
 }

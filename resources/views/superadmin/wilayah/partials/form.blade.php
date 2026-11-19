@@ -8,7 +8,7 @@
     <label for="nama_wilayah" class="{{ $labelClass }}">Nama Wilayah <span class="text-red-600">*</span></label>
     <input id="nama_wilayah" type="text" name="nama_wilayah" maxlength="100"
            value="{{ old('nama_wilayah', $wilayah->nama_wilayah ?? '') }}"
-           placeholder="Desa. a Kec. a" class="{{ $inputClass }}">
+           placeholder="" class="{{ $inputClass }}">
     @error('nama_wilayah') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
 </div>
 
@@ -16,7 +16,7 @@
     <label for="kelurahan" class="{{ $labelClass }}">Kelurahan/Desa <span class="text-red-600">*</span></label>
     <input id="kelurahan" type="text" name="kelurahan" maxlength="100"
            value="{{ old('kelurahan', $wilayah->kelurahan ?? '') }}"
-           placeholder="Nama kelurahan/desa" class="{{ $inputClass }}">
+           placeholder="" class="{{ $inputClass }}">
     @error('kelurahan') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
 </div>
 
@@ -24,7 +24,7 @@
     <label for="kecamatan" class="{{ $labelClass }}">Kecamatan <span class="text-red-600">*</span></label>
     <input id="kecamatan" type="text" name="kecamatan" maxlength="100"
            value="{{ old('kecamatan', $wilayah->kecamatan ?? '') }}"
-           placeholder="Nama kecamatan" class="{{ $inputClass }}">
+           placeholder="" class="{{ $inputClass }}">
     @error('kecamatan') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
 </div>
 

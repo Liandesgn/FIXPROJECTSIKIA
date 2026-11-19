@@ -13,55 +13,92 @@ class UpdateIbuRequest extends FormRequest
         return true;
     }
 
-    /**
-     * @return array<string, array<int, mixed>>
-     */
     public function rules(): array
     {
-        $ibu = $this->route('ibu'); // model Ibu dari alamat data-ibu/{ibu}
+        // Parameter route {ibu} adalah model Ibu, bukan User.
+        $ibu = $this->route('ibu');
 
         return [
-           'name' => [
-            'required',
-            'string',
-            'max:255',
-            'regex:/^[\pL]+(?:[ ]+[\pL]+)*$/u',
-        ],
-            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($ibu?->user_id)],
-            'phone' => ['nullable', 'regex:/^[0-9]+$/', 'min:10', 'max:13'],
-            'nik' => ['required', 'string', 'digits:16', Rule::unique('ibu', 'nik')->ignore($ibu?->id)],
-            'tempat_lahir' => ['required', 'string', 'max:100'],
-            'tgl_lahir' => ['required', 'date', 'before:today'],
-            'status_kehamilan' => ['required', Rule::in(StatusKehamilanEnum::values())],
-            'usia_kehamilan' => ['nullable', 'required_if:status_kehamilan,hamil', 'integer', 'min:1', 'max:45'],
-            'hpl' => ['nullable', 'required_if:status_kehamilan,hamil', 'date'],
-            'wilayah_kerja_id' => ['required', 'integer', Rule::exists('wilayah_kerja', 'id')],
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                'regex:/^[\pL]+(?: [\pL]+)*$/u',
+            ],
+
+            'email' => [
+                'required',
+                'string',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')->ignore($ibu?->user_id),
+            ],
+
+            'phone' => [
+                'nullable',
+                'digits_between:10,13',
+            ],
+
+            'nik' => [
+                'required',
+                'string',
+                'digits:16',
+                Rule::unique('ibu', 'nik')->ignore($ibu?->id),
+            ],
+
+            'tempat_lahir' => [
+                'required',
+                'string',
+                'max:255',
+            ],
+
+            'tgl_lahir' => [
+                'required',
+                'date',
+                'before:today',
+            ],
+
+            'wilayah_kerja_id' => [
+                'required',
+                'integer',
+                Rule::exists('wilayah_kerja', 'id'),
+            ],
+
+            'status_kehamilan' => [
+                'required',
+                Rule::in(StatusKehamilanEnum::values()),
+            ],
+
+            'usia_kehamilan' => [
+                'nullable',
+                'required_if:status_kehamilan,hamil',
+                'integer',
+                'min:1',
+                'max:42',
+            ],
         ];
     }
 
-    /**
-     * @return array<string, string>
-     */
     public function messages(): array
     {
         return [
-            'name.required' => 'Nama wajib diisi.',
-            'name.regex' => 'Nama hanya boleh berisi huruf dan spasi. Angka dan simbol tidak diperbolehkan.',
+            'name.required' => 'Nama ibu wajib diisi.',
+            'name.regex' => 'Nama hanya boleh berisi huruf dan spasi.',
             'email.required' => 'Email wajib diisi.',
-            'email.unique' => 'Email sudah terdaftar.',
-            'phone.regex' => 'No. telp hanya boleh berisi angka.',
-            'phone.min' => 'No. telp minimal 10 digit.',
-            'phone.max' => 'No. telp maksimal 13 digit.',
+            'email.unique' => 'Email sudah digunakan.',
+            'phone.digits_between' => 'Nomor HP harus terdiri dari 10 sampai 13 digit.',
             'nik.required' => 'NIK wajib diisi.',
             'nik.digits' => 'NIK harus terdiri dari 16 digit.',
-            'nik.unique' => 'NIK sudah digunakan ibu lain.',
+            'nik.unique' => 'NIK sudah terdaftar.',
             'tempat_lahir.required' => 'Tempat lahir wajib diisi.',
             'tgl_lahir.required' => 'Tanggal lahir wajib diisi.',
             'tgl_lahir.before' => 'Tanggal lahir harus sebelum hari ini.',
+            'wilayah_kerja_id.required' => 'Wilayah kerja wajib dipilih.',
+            'wilayah_kerja_id.exists' => 'Wilayah kerja yang dipilih tidak ditemukan.',
             'status_kehamilan.required' => 'Status kehamilan wajib dipilih.',
-            'usia_kehamilan.required_if' => 'Usia kehamilan wajib diisi untuk ibu hamil.',
-            'hpl.required_if' => 'HPL wajib diisi untuk ibu hamil.',
-            'wilayah_kerja_id.required' => 'Wilayah wajib dipilih.',
+            'usia_kehamilan.required_if' => 'Usia kehamilan wajib diisi jika status ibu hamil.',
+            'usia_kehamilan.min' => 'Usia kehamilan minimal 1 minggu.',
+            'usia_kehamilan.max' => 'Usia kehamilan maksimal 42 minggu.',
         ];
     }
 }

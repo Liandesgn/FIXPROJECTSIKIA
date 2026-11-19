@@ -15,8 +15,8 @@ class AdminUserSeeder extends Seeder
             ['email' => 'superadmin@sikia'],
             [
                 'name' => 'Super Administrator',
-                'password' => 'password',
-                'phone' => '081000000000',
+                'password' => 'superadmin',
+                'phone' => '088292829222',
                 'status' => UserStatusEnum::Active->value,
             ],
         );

@@ -6,8 +6,9 @@ use App\Enums\RoleEnum;
 use App\Enums\UserStatusEnum;
 use App\Http\Controllers\Controller;
 use App\Models\Admin as AdminProfile;
+use App\Models\Kecamatan;
+use App\Models\Puskesmas;
 use App\Models\User;
-use App\Models\WilayahKerja;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,12 +17,12 @@ use Illuminate\View\View;
 
 class AdminController extends Controller
 {
-  public function index(Request $request): View
+    public function index(Request $request): View
     {
         $search = trim((string) $request->query('search', ''));
 
         $admins = AdminProfile::query()
-            ->with(['user', 'wilayahKerja'])
+            ->with(['user', 'puskesmas.kecamatan'])
             ->when($search !== '', function ($query) use ($search) {
                 $query->whereHas('user', function ($userQuery) use ($search) {
                     $userQuery->where('name', 'like', "%{$search}%")
@@ -38,10 +39,14 @@ class AdminController extends Controller
     public function create(): View
     {
         return view('superadmin.admins.create', [
-            'wilayahs' => $this->wilayahs(),
+            'kecamatans' => Kecamatan::orderBy('nama_kecamatan')->get(),
+            'puskesmas' => Puskesmas::orderBy('nama_puskesmas')->get(),
+            'puskesmasTerpakai' => AdminProfile::whereNotNull('puskesmas_id')
+                ->pluck('puskesmas_id')
+                ->map(fn ($id) => (int) $id)
+                ->all(),
         ]);
     }
-
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
@@ -51,19 +56,30 @@ class AdminController extends Controller
                 'max:255',
                 'regex:/^[\pL]+(?:[ ]+[\pL]+)*$/u',
             ],
-            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')],
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email'),
+            ],
             'password' => ['required', 'string', 'min:8'],
-            'phone' => ['nullable', 'regex:/^[0-9]+$/', 'min:10', 'max:13'],
-            'id_wilayah' => [
+            'phone' => [
+                'nullable',
+                'regex:/^[0-9]+$/',
+                'digits_between:10,13',
+            ],
+            'puskesmas_id' => [
                 'required',
                 'integer',
-                Rule::exists('wilayah_kerja', 'id'),
-                Rule::unique('admin', 'id_wilayah'),
+                Rule::exists('puskesmas', 'id'),
+                Rule::unique('admin', 'puskesmas_id'),
             ],
         ], [
             'name.required' => 'Nama admin wajib diisi.',
-            'name.regex' => 'Nama hanya boleh berisi huruf dan spasi. Angka dan simbol tidak diperbolehkan.',
-            'email.unique' => 'Email tersebut sudah terdaftar. Silakan gunakan email lain.',
+            'name.regex' => 'Nama hanya boleh berisi huruf dan spasi.',
+            'email.unique' => 'Email tersebut sudah terdaftar.',
+            'puskesmas_id.required' => 'Puskesmas wajib dipilih.',
+            'puskesmas_id.unique' => 'Puskesmas tersebut sudah memiliki Admin.',
         ]);
 
         DB::transaction(function () use ($data) {
@@ -76,24 +92,35 @@ class AdminController extends Controller
             ]);
 
             $user->assignRole(RoleEnum::Admin->value);
-            $user->admin()->create(['id_wilayah' => $data['id_wilayah']]);
+
+            $user->admin()->create([
+                'puskesmas_id' => $data['puskesmas_id'],
+            ]);
         });
 
         return redirect()
             ->route('superadmin.admins.index')
-            ->with('success', 'Admin wilayah berhasil ditambahkan.');
+            ->with('success', 'Admin Puskesmas berhasil ditambahkan.');
     }
 
     public function edit(AdminProfile $admin): View
     {
         return view('superadmin.admins.edit', [
-            'admin' => $admin->load(['user', 'wilayahKerja']),
-            'wilayahs' => $this->wilayahs($admin->id_wilayah),
+            'admin' => $admin->load(['user', 'puskesmas.kecamatan']),
+            'kecamatans' => Kecamatan::orderBy('nama_kecamatan')->get(),
+            'puskesmas' => Puskesmas::orderBy('nama_puskesmas')->get(),
+            'puskesmasTerpakai' => AdminProfile::whereNotNull('puskesmas_id')
+                ->where('id', '!=', $admin->id)
+                ->pluck('puskesmas_id')
+                ->map(fn ($id) => (int) $id)
+                ->all(),
         ]);
     }
 
-    public function update(Request $request, AdminProfile $admin): RedirectResponse
-    {
+    public function update(
+        Request $request,
+        AdminProfile $admin
+    ): RedirectResponse {
         $data = $request->validate([
             'name' => [
                 'required',
@@ -101,25 +128,37 @@ class AdminController extends Controller
                 'max:255',
                 'regex:/^[\pL]+(?:[ ]+[\pL]+)*$/u',
             ],
-            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')],
-            'password' => ['required', 'string', 'min:8', 'max:8'],
-            'phone' => ['required', 'regex:/^[0-9]+$/', 'digits_between:10,13'],
-            'id_wilayah' => [
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')->ignore($admin->user_id),
+            ],
+            'password' => [
+                'nullable',
+                'string',
+                'min:8',
+                'max:8',
+            ],
+            'phone' => [
+                'nullable',
+                'regex:/^[0-9]+$/',
+                'digits_between:10,13',
+            ],
+            'puskesmas_id' => [
                 'required',
                 'integer',
-                Rule::exists('wilayah_kerja', 'id'),
-                Rule::unique('admin', 'id_wilayah'),
+                Rule::exists('puskesmas', 'id'),
+                Rule::unique('admin', 'puskesmas_id')->ignore($admin->id),
             ],
         ], [
             'name.required' => 'Nama admin wajib diisi.',
-            'name.regex' => 'Nama hanya boleh berisi huruf dan spasi. Angka dan simbol tidak diperbolehkan.',
-            'email.unique' => 'Email tersebut sudah terdaftar. Silakan gunakan email lain.',
-            'password.required' => 'Password wajib diisi.',
+            'name.regex' => 'Nama hanya boleh berisi huruf dan spasi.',
+            'email.unique' => 'Email tersebut sudah terdaftar.',
             'password.min' => 'Password harus terdiri dari tepat 8 karakter.',
             'password.max' => 'Password harus terdiri dari tepat 8 karakter.',
-            'phone.required' => 'Nomor telepon wajib diisi.',
-            'phone.regex' => 'Nomor telepon hanya boleh berisi angka.',
-            'phone.digits_between' => 'Nomor telepon harus terdiri dari 10 sampai 13 digit.',
+            'puskesmas_id.required' => 'Puskesmas wajib dipilih.',
+            'puskesmas_id.unique' => 'Puskesmas tersebut sudah memiliki Admin.',
         ]);
 
         DB::transaction(function () use ($admin, $data) {
@@ -134,12 +173,15 @@ class AdminController extends Controller
             }
 
             $admin->user->save();
-            $admin->update(['id_wilayah' => $data['id_wilayah']]);
+
+            $admin->update([
+                'puskesmas_id' => $data['puskesmas_id'],
+            ]);
         });
 
         return redirect()
             ->route('superadmin.admins.index')
-            ->with('success', 'Admin wilayah berhasil diperbarui.');
+            ->with('success', 'Admin Puskesmas berhasil diperbarui.');
     }
 
     public function destroy(AdminProfile $admin): RedirectResponse
@@ -151,16 +193,6 @@ class AdminController extends Controller
 
         return redirect()
             ->route('superadmin.admins.index')
-            ->with('success', 'Admin wilayah berhasil dihapus.');
-    }
-
-    private function wilayahs(?int $includeId = null)
-    {
-        return WilayahKerja::query()
-            ->where(fn ($query) => $query
-                ->doesntHave('admins')
-                ->when($includeId, fn ($q) => $q->orWhere('id', $includeId)))
-            ->orderBy('nama_wilayah')
-            ->get();
+            ->with('success', 'Admin Puskesmas berhasil dihapus.');
     }
 }

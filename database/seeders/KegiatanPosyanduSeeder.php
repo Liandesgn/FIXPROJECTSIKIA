@@ -4,25 +4,34 @@ namespace Database\Seeders;
 
 use App\Models\KegiatanPosyandu;
 use App\Models\WilayahKerja;
-use Illuminate\Database\Seeder;
 use Carbon\Carbon;
+use Illuminate\Database\Seeder;
 
 class KegiatanPosyanduSeeder extends Seeder
 {
     public function run(): void
     {
-        $wilayahs = WilayahKerja::whereIn(
-            'nama_wilayah',
-            [
-                'Wilayah A',
-                'Wilayah B',
-                'Wilayah C',
-                'Wilayah D',
-                'Wilayah E',
-            ]
-        )->get();
+        $wilayahs = WilayahKerja::with([
+            'kelurahanDesa',
+            'puskesmas',
+        ])
+            ->whereHas('kelurahanDesa', function ($query) {
+                $query->whereIn('nama_kelurahan_desa', [
+                    'Kroman',
+                    'Prambangan',
+                ]);
+            })
+            ->whereHas('puskesmas', function ($query) {
+                $query->whereIn('nama_puskesmas', [
+                    'Puskesmas Alun-Alun',
+                    'Puskesmas Gending',
+                ]);
+            })
+            ->get();
 
         foreach ($wilayahs as $wilayah) {
+            $namaWilayah = $wilayah->kelurahanDesa->nama_kelurahan_desa;
+
             foreach ([7, 14] as $hari) {
                 $tanggal = Carbon::today()->addDays($hari);
 
@@ -30,7 +39,7 @@ class KegiatanPosyanduSeeder extends Seeder
                     [
                         'id_wilayah' => $wilayah->id,
                         'tanggal' => $tanggal->toDateString(),
-                        'lokasi' => 'Posyandu '.$wilayah->nama_wilayah,
+                        'lokasi' => 'Posyandu ' . $namaWilayah,
                     ],
                     [
                         'jenis_kegiatan' => 'Pemeriksaan Ibu dan Anak',
