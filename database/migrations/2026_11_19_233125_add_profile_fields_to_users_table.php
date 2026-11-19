@@ -1,3 +1,4 @@
+
 <?php
 
 use App\Enums\UserStatusEnum;
@@ -11,7 +12,11 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->string('phone', 20)->nullable()->after('email');
-            $table->string('status', 20)->default(UserStatusEnum::Active->value)->after('password');
+
+            $table->string('status', 20)
+                ->default(UserStatusEnum::Active->value)
+                ->after('password');
+
             $table->foreignId('wilayah_kerja_id')
                 ->nullable()
                 ->after('status')
