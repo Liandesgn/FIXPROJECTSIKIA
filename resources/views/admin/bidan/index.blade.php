@@ -7,8 +7,10 @@
     $pg        = $bidans instanceof \Illuminate\Contracts\Pagination\LengthAwarePaginator ? $bidans : null;
     $total     = $pg ? $pg->total() : $bidans->count();
     $nomorAwal = $pg ? ($pg->firstItem() ?? 1) : 1;
-    $readOnly  = $readOnly ?? false;
+    $readOnly  = $readOnly ?? auth()->user()->isSuperAdmin();
     $listWilayah = collect($wilayahs ?? []);
+
+    if ($pg) { $pg->appends(request()->query()); }
 @endphp
 
 <div class="mx-auto w-full max-w-7xl space-y-5">
@@ -56,37 +58,29 @@
                            placeholder="Cari nama / email"
                            class="w-full rounded-xl border-2 border-[#C9517E]/60 bg-white py-2.5 pl-11 pr-3 text-sm font-medium text-gray-900 outline-none transition placeholder:text-slate-500 focus:border-[#C9517E] focus:ring-4 focus:ring-[#E99AB7]/40">
                 </div>
-        @if ($readOnly)
-            <div class="sm:w-64">
-                <label for="wilayahFilter" class="sr-only">Filter wilayah kerja</label>
 
-                <select
-                    id="wilayahFilter"
-                    name="wilayah_kerja_id"
-                    onchange="this.form.submit()"
-                    class="w-full rounded-xl border-2 border-[#C9517E]/60 bg-white px-3 py-2.5 text-sm font-semibold text-gray-900 outline-none transition focus:border-[#C9517E] focus:ring-4 focus:ring-[#E99AB7]/40"
-                >
-                    <option value="">Semua wilayah kerja</option>
+                @if ($readOnly)
+                    <div class="sm:w-64">
+                        <label for="wilayahFilter" class="sr-only">Filter wilayah kerja</label>
+                        <select id="wilayahFilter" name="wilayah_kerja_id" onchange="this.form.submit()"
+                                class="w-full rounded-xl border-2 border-[#C9517E]/60 bg-white px-3 py-2.5 text-sm font-semibold text-gray-900 outline-none transition focus:border-[#C9517E] focus:ring-4 focus:ring-[#E99AB7]/40">
+                            <option value="">Semua wilayah kerja</option>
 
-                    @foreach ($listWilayah as $wilayah)
-                        @php
-                            $kelurahanDesa = $wilayah->kelurahanDesa;
-                            $namaWilayah = $kelurahanDesa
-                                ? ucfirst($kelurahanDesa->jenis) . ' ' . $kelurahanDesa->nama_kelurahan_desa
-                                : 'Wilayah #' . $wilayah->id;
-                        @endphp
+                            @foreach ($listWilayah as $wilayah)
+                                @php
+                                    $kd = $wilayah->kelurahanDesa;
+                                    $namaOpsi = $kd
+                                        ? ucfirst($kd->jenis) . ' ' . $kd->nama_kelurahan_desa
+                                        : 'Wilayah #' . $wilayah->id;
+                                @endphp
 
-                        <option
-                            value="{{ $wilayah->id }}"
-                            @selected((string) request('wilayah_kerja_id') === (string) $wilayah->id)
-                        >
-                            {{ $namaWilayah }}
-                            — {{ $wilayah->puskesmas?->nama_puskesmas ?? '-' }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-        @endif
+                                <option value="{{ $wilayah->id }}" @selected((string) request('wilayah_kerja_id') === (string) $wilayah->id)>
+                                    {{ $namaOpsi }} — {{ $wilayah->puskesmas?->nama_puskesmas ?? '-' }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endif
 
                 <button type="submit"
                         class="rounded-xl bg-[#C9517E] px-6 py-2.5 text-sm font-semibold text-white shadow-md shadow-[#C9517E]/25 transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40">
@@ -103,7 +97,7 @@
                         <th class="whitespace-nowrap px-3 py-3 sm:px-4">No</th>
                         <th class="whitespace-nowrap px-3 py-3 sm:px-4">Nama</th>
                         <th class="hidden whitespace-nowrap px-4 py-3 md:table-cell">Email</th>
-                        <th class="hidden whitespace-nowrap px-4 py-3 lg:table-cell">No. Telepon</th>
+                        <th class="hidden whitespace-nowrap px-4 py-3 lg:table-cell">Nomor HP</th>
                         <th class="whitespace-nowrap px-3 py-3 sm:px-4">Wilayah Kerja</th>
                         @if (!$readOnly)
                             <th class="whitespace-nowrap px-3 py-3 text-center sm:px-4">Aksi</th>
@@ -114,15 +108,15 @@
                 <tbody class="divide-y divide-[#F7E6ED]">
                     @forelse ($bidans as $bidan)
                         @php
-                        $wilayahKerja = $bidan->bidan?->wilayahKerja;
-                        $kelurahanDesa = $wilayahKerja?->kelurahanDesa;
+                            $wilayahKerja  = $bidan->bidan?->wilayahKerja;
+                            $kelurahanDesa = $wilayahKerja?->kelurahanDesa;
 
-                        $namaWilayah = $kelurahanDesa
-                            ? ucfirst($kelurahanDesa->jenis) . ' ' . $kelurahanDesa->nama_kelurahan_desa
-                            : '-';
+                            $namaWilayah = $kelurahanDesa
+                                ? ucfirst($kelurahanDesa->jenis) . ' ' . $kelurahanDesa->nama_kelurahan_desa
+                                : '-';
 
-                        $namaPuskesmas = $wilayahKerja?->puskesmas?->nama_puskesmas ?? '-';
-                    @endphp
+                            $namaPuskesmas = $wilayahKerja?->puskesmas?->nama_puskesmas ?? '-';
+                        @endphp
 
                         <tr class="transition hover:bg-[#FCE7F0]/50">
                             <td class="px-3 py-3.5 text-sm font-semibold text-slate-700 sm:px-4">{{ $nomorAwal + $loop->index }}</td>
@@ -135,10 +129,11 @@
 
                             <td class="hidden whitespace-nowrap px-4 py-3.5 text-sm text-slate-800 md:table-cell">{{ $bidan->email ?? '-' }}</td>
                             <td class="hidden whitespace-nowrap px-4 py-3.5 text-sm text-slate-800 lg:table-cell">{{ $bidan->phone ?? '-' }}</td>
+
                             <td class="px-3 py-3.5 text-sm text-slate-800 sm:px-4">
-                            <p class="font-semibold">{{ $namaWilayah }}</p>
-                            <p class="text-xs text-slate-500">{{ $namaPuskesmas }}</p>
-                        </td>
+                                <p class="font-semibold">{{ $namaWilayah }}</p>
+                                <p class="text-xs text-slate-500">{{ $namaPuskesmas }}</p>
+                            </td>
 
                             @if (!$readOnly)
                                 <td class="whitespace-nowrap px-3 py-3.5 sm:px-4">
@@ -152,7 +147,9 @@
 
                                         @can('user.delete')
                                             <form action="{{ route('admin.bidan.destroy', $bidan->id) }}" method="POST" class="m-0"
-                                                  data-confirm-delete data-name="{{ $bidan->name }}">
+                                                  data-confirm-delete
+                                                  data-name="{{ $bidan->name }}"
+                                                  data-title="Apakah akan menghapus akun Bidan {{ $bidan->name }}?">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit"
