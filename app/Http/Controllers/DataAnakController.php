@@ -81,31 +81,56 @@ class DataAnakController extends Controller
     ]);
 }
 
-    public function create(Request $request): View
-    {
-        return view('data-anak.create', [
-            'ibus' => $this->ibus($request->user()),
-        ]);
+public function create(Request $request): View
+{
+    $ibus = $this->ibus($request->user());
+
+    $selectedIbuId = $request->query('ibu_id');
+
+    if ($selectedIbuId) {
+        $ibuTerpilih = $ibus->firstWhere('id', (int) $selectedIbuId);
+
+        abort_unless($ibuTerpilih, 403, 'Ibu tidak ditemukan atau akses ditolak.');
     }
 
-    public function store(AnakRequest $request): RedirectResponse
-    {
-        $data = $request->validated();
+    return view('data-anak.create', [
+        'ibus' => $ibus,
+        'selectedIbuId' => $selectedIbuId,
+    ]);
+}
 
-        abort_unless(
-            Ibu::visibleTo($request->user())
-                ->whereKey($data['ibu_id'])
-                ->exists(),
-            403,
-            'Akses ditolak.'
-        );
+public function store(AnakRequest $request): RedirectResponse
+{
+    $data = $request->validated();
 
-        Anak::create($data);
+    abort_unless(
+        Ibu::visibleTo($request->user())
+            ->whereKey($data['ibu_id'])
+            ->exists(),
+        403,
+        'Akses ditolak.'
+    );
 
-        return redirect()
-            ->route($this->base($request).'.data-anak.index')
-            ->with('success', 'Data anak berhasil ditambahkan.');
+    Anak::create($data);
+
+    $kembaliKeIbuId = $request->input('kembali_ke_ibu_id');
+
+    if ($kembaliKeIbuId) {
+        $ibu = Ibu::visibleTo($request->user())
+            ->whereKey($kembaliKeIbuId)
+            ->first();
+
+        if ($ibu && (int) $ibu->id === (int) $data['ibu_id']) {
+            return redirect()
+                ->route('admin.data-ibu.show', $ibu)
+                ->with('success', 'Data anak berhasil ditambahkan.');
+        }
     }
+
+    return redirect()
+        ->route($this->base($request).'.data-anak.index')
+        ->with('success', 'Data anak berhasil ditambahkan.');
+}
 
    
 public function show(Request $request, Anak $anak): View

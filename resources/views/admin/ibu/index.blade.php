@@ -75,7 +75,7 @@
                 @if ($readOnly)
                     <div class="md:col-span-3">
                         <label for="filterWilayah" class="sr-only">Filter wilayah</label>
-                                                <select id="filterWilayah" name="wilayah_kerja_id" onchange="this.form.submit()"
+                            <select id="filterWilayah" name="wilayah_kerja_id" onchange="this.form.submit()"
                                 class="w-full rounded-xl border-2 border-[#C9517E]/60 bg-white px-3 py-2.5 text-sm font-semibold text-gray-900 outline-none transition focus:border-[#C9517E] focus:ring-4 focus:ring-[#E99AB7]/40">
                             <option value="">Semua wilayah</option>
                             @foreach ($listWilayah as $wilayah)

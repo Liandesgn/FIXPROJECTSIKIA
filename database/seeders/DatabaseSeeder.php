@@ -12,19 +12,16 @@ class DatabaseSeeder extends Seeder
             // Seeder hak akses
             RolePermissionSeeder::class,
 
-            // Seeder master wilayah
+            // Seeder master wilayah (referensi dropdown)
             KecamatanSeeder::class,
             PuskesmasSeeder::class,
             KelurahanDesaSeeder::class,
             RwSeeder::class,
             RtSeeder::class,
 
-            // Seeder wilayah kerja
-            WilayahKerjaSeeder::class,
-
             // Seeder pengguna
             AdminUserSeeder::class,
-            
+
             // Seeder Modul 3
             KegiatanPosyanduSeeder::class,
         ]);

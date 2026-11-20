@@ -2,10 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
 use App\Models\Kecamatan;
-
+use Illuminate\Database\Seeder;
 
 class KecamatanSeeder extends Seeder
 {
@@ -14,6 +12,9 @@ class KecamatanSeeder extends Seeder
         $dataKecamatan = [
             'Kecamatan Gresik',
             'Kecamatan Kebomas',
+            'Kecamatan Sidayu',
+            'Kecamatan Menganti',
+            'Kecamatan Cerme',
         ];
 
         foreach ($dataKecamatan as $nama) {

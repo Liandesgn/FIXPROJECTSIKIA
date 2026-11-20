@@ -14,18 +14,16 @@ class WilayahKerja extends Model
 
     protected $table = 'wilayah_kerja';
 
-    protected $fillable = [
-        'kecamatan_id',
-        'puskesmas_id',
-        'kelurahan_desa_id',
-
-        // Kolom lama sementara
+protected $fillable = [
     'nama_wilayah',
     'kabupaten',
-    'kecamatan',
-    'kelurahan',
+    'kecamatan_id',
+    'puskesmas_id',
+    'kelurahan_desa_id',
+    'rw_id',
+    'rt_id',
     'deskripsi',
-    ];
+];
 
     // Relasi master wilayah.
 
@@ -85,6 +83,16 @@ class WilayahKerja extends Model
     public function kegiatanPosyandu(): HasMany
     {
         return $this->hasMany(KegiatanPosyandu::class, 'id_wilayah');
+    }
+
+    public function rw(): BelongsTo
+    {
+        return $this->belongsTo(Rw::class, 'rw_id');
+    }
+
+    public function rt(): BelongsTo
+    {
+        return $this->belongsTo(Rt::class, 'rt_id');
     }
 
     // Label wilayah dari relasi master.

@@ -5,6 +5,12 @@ namespace App\Http\Controllers\SuperAdmin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\WilayahKerjaRequest;
 use App\Models\WilayahKerja;
+use App\Models\Kecamatan;
+use App\Models\Puskesmas;
+use App\Models\KelurahanDesa;
+use App\Models\Rw;
+use App\Models\Rt;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -33,17 +39,29 @@ class WilayahKerjaController extends Controller
 
     public function create(): View
     {
-        return view('superadmin.wilayah.create');
+        $kecamatans = Kecamatan::orderBy('nama_kecamatan')->get();
+
+        return view('superadmin.wilayah.create', compact('kecamatans'));
     }
 
     public function store(WilayahKerjaRequest $request): RedirectResponse
     {
         $data = $request->validated();
 
+        $kelurahan = KelurahanDesa::findOrFail($data['kelurahan_desa_id']);
+        $rw = Rw::findOrFail($data['rw_id']);
+        $rt = Rt::findOrFail($data['rt_id']);
+
+        $data['nama_wilayah'] = $kelurahan->nama_kelurahan_desa
+            . ' RW ' . $rw->nomor_rw
+            . ' RT ' . $rt->nomor_rt;
+
         $data['kabupaten'] = 'Gresik';
 
-        $data['deskripsi'] = $data['nama_wilayah']
-            . ', Kabupaten Gresik.';
+        if (empty($data['deskripsi'])) {
+            $data['deskripsi'] = 'Wilayah kerja ' . $data['nama_wilayah']
+                . ', Kabupaten Gresik.';
+        }
 
         WilayahKerja::create($data);
 
@@ -98,5 +116,65 @@ class WilayahKerjaController extends Controller
         return redirect()
             ->route('superadmin.wilayah-kerja.index')
             ->with('success', 'Data wilayah berhasil dihapus.');
+    }
+
+    // DROPDOWN PUSKESMAS BERDASARKAN KECAMATAN
+    public function getPuskesmas(Request $request): JsonResponse
+    {
+        $request->validate([
+            'kecamatan_id' => ['required', 'integer', 'exists:kecamatan,id'],
+        ]);
+
+        return response()->json(
+            Puskesmas::where('kecamatan_id', $request->kecamatan_id)
+                ->orderBy('nama_puskesmas')
+                ->get(['id', 'nama_puskesmas'])
+        );
+    }
+
+    // DROPDOWN KELURAHAN/DESA BERDASARKAN PUSKESMAS
+    public function getKelurahanDesa(Request $request): JsonResponse
+    {
+        $request->validate([
+            'puskesmas_id' => ['required', 'integer', 'exists:puskesmas,id'],
+        ]);
+
+        return response()->json(
+            KelurahanDesa::where('puskesmas_id', $request->puskesmas_id)
+                ->orderBy('nama_kelurahan_desa')
+                ->get(['id', 'nama_kelurahan_desa'])
+        );
+    }
+
+    // DROPDOWN RW BERDASARKAN KELURAHAN/DESA
+    public function getRw(Request $request): JsonResponse
+    {
+        $request->validate([
+            'kelurahan_desa_id' => [
+                'required',
+                'integer',
+                'exists:kelurahan_desa,id',
+            ],
+        ]);
+
+        return response()->json(
+            Rw::where('kelurahan_desa_id', $request->kelurahan_desa_id)
+                ->orderBy('nomor_rw')
+                ->get(['id', 'nomor_rw'])
+        );
+    }
+
+    // DROPDOWN RT BERDASARKAN RW
+    public function getRt(Request $request): JsonResponse
+    {
+        $request->validate([
+            'rw_id' => ['required', 'integer', 'exists:rw,id'],
+        ]);
+
+        return response()->json(
+            Rt::where('rw_id', $request->rw_id)
+                ->orderBy('nomor_rt')
+                ->get(['id', 'nomor_rt'])
+        );
     }
 }
