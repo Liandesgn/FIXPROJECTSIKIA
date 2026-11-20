@@ -7,7 +7,7 @@
     $pg        = $kaders instanceof \Illuminate\Contracts\Pagination\LengthAwarePaginator ? $kaders : null;
     $total     = $pg ? $pg->total() : $kaders->count();
     $nomorAwal = $pg ? ($pg->firstItem() ?? 1) : 1;
-    $readOnly = auth()->user()->isSuperAdmin();
+    $readOnly  = $readOnly ?? auth()->user()->isSuperAdmin();
     $listWilayah = collect($wilayahs ?? []);
 @endphp
 
@@ -63,14 +63,18 @@
                         <select id="wilayahFilter" name="wilayah_kerja_id" onchange="this.form.submit()"
                                 class="w-full rounded-xl border-2 border-[#C9517E]/60 bg-white px-3 py-2.5 text-sm font-semibold text-gray-900 outline-none transition focus:border-[#C9517E] focus:ring-4 focus:ring-[#E99AB7]/40">
                             <option value="">Semua wilayah kerja</option>
-                            @foreach ($listWilayah->groupBy('kecamatan') as $kecamatan => $desas)
-                                <optgroup label="Kec. {{ $kecamatan ?: '-' }}">
-                                    @foreach ($desas as $wilayah)
-                                        <option value="{{ $wilayah->id }}" @selected((string) request('wilayah_kerja_id') === (string) $wilayah->id)>
-                                            Desa {{ $wilayah->kelurahan }}
-                                        </option>
-                                    @endforeach
-                                </optgroup>
+
+                            @foreach ($listWilayah as $wilayah)
+                                @php
+                                    $kelurahanDesa = $wilayah->kelurahanDesa;
+                                    $namaWilayah = $kelurahanDesa
+                                        ? ucfirst($kelurahanDesa->jenis) . ' ' . $kelurahanDesa->nama_kelurahan_desa
+                                        : 'Wilayah #' . $wilayah->id;
+                                @endphp
+
+                                <option value="{{ $wilayah->id }}" @selected((string) request('wilayah_kerja_id') === (string) $wilayah->id)>
+                                    {{ $namaWilayah }} — {{ $wilayah->puskesmas?->nama_puskesmas ?? '-' }}
+                                </option>
                             @endforeach
                         </select>
                     </div>
@@ -102,15 +106,16 @@
                 <tbody class="divide-y divide-[#F7E6ED]">
                     @forelse ($kaders as $kader)
                         @php
-                        $wilayahKerja = $kader->kader?->wilayahKerja;
-                        $kelurahanDesa = $wilayahKerja?->kelurahanDesa;
+                            $wilayahKerja = $kader->kader?->wilayahKerja;
+                            $kelurahanDesa = $wilayahKerja?->kelurahanDesa;
 
-                        $namaWilayah = $kelurahanDesa
-                            ? ucfirst($kelurahanDesa->jenis) . ' ' . $kelurahanDesa->nama_kelurahan_desa
-                            : '-';
+                            $namaWilayah = $kelurahanDesa
+                                ? ucfirst($kelurahanDesa->jenis) . ' ' . $kelurahanDesa->nama_kelurahan_desa
+                                : '-';
 
-                        $namaPuskesmas = $wilayahKerja?->puskesmas?->nama_puskesmas ?? '-';
-                    @endphp
+                            $namaPuskesmas = $wilayahKerja?->puskesmas?->nama_puskesmas ?? '-';
+                        @endphp
+
                         <tr class="transition hover:bg-[#FCE7F0]/50">
                             <td class="px-3 py-3.5 text-sm font-semibold text-slate-700 sm:px-4">{{ $nomorAwal + $loop->index }}</td>
 
@@ -122,49 +127,36 @@
 
                             <td class="hidden whitespace-nowrap px-4 py-3.5 text-sm text-slate-800 md:table-cell">{{ $kader->email ?? '-' }}</td>
                             <td class="hidden whitespace-nowrap px-4 py-3.5 text-sm text-slate-800 lg:table-cell">{{ $kader->phone ?? '-' }}</td>
+
                             <td class="px-3 py-3.5 text-sm text-slate-800 sm:px-4">
-                            <p class="font-semibold">{{ $namaWilayah }}</p>
-                            <p class="text-xs text-slate-500">{{ $namaPuskesmas }}</p>
-                        </td>
+                                <p class="font-semibold">{{ $namaWilayah }}</p>
+                                <p class="text-xs text-slate-500">{{ $namaPuskesmas }}</p>
+                            </td>
 
+                            @if (!$readOnly)
+                                <td class="whitespace-nowrap px-3 py-3.5 sm:px-4">
+                                    <div class="flex items-center justify-center gap-2">
+                                        @can('user.update')
+                                            <a href="{{ route('admin.kader.edit', $kader->id) }}"
+                                               class="inline-flex h-8 items-center justify-center whitespace-nowrap rounded-lg bg-[#E99AB7] px-3 text-xs font-bold text-[#542D3D] shadow-sm transition hover:bg-[#DD87A8] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40">
+                                                Edit
+                                            </a>
+                                        @endcan
 
-@if (!$readOnly)
-    <td class="px-3 py-3.5 sm:px-4">
-        <div class="flex items-center justify-center gap-2">
-            @can('user.update')
-                <a href="{{ route('admin.kader.edit', $kader) }}"
-                   class="inline-flex items-center gap-1 rounded-lg border border-blue-300 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 transition hover:bg-blue-100">
-                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24"
-                         fill="none" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                              d="m16 4 4 4M4 20l4-.8L19 8a2.1 2.1 0 0 0-3-3L5 16l-1 4Z"/>
-                    </svg>
-                    Edit
-                </a>
-            @endcan
-
-            @can('user.delete')
-                <form action="{{ route('admin.kader.destroy', $kader) }}"
-                      method="POST"
-                      onsubmit="return confirm('Yakin ingin menghapus kader ini?')">
-                    @csrf
-                    @method('DELETE')
-
-                    <button type="submit"
-                            class="inline-flex items-center gap-1 rounded-lg border border-red-300 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 transition hover:bg-red-100">
-                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24"
-                             fill="none" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                  d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14M10 11v5m4-5v5"/>
-                        </svg>
-                        Hapus
-                    </button>
-                </form>
-            @endcan
-        </div>
-    </td>
-@endif
-
+                                        @can('user.delete')
+                                            <form action="{{ route('admin.kader.destroy', $kader->id) }}" method="POST" class="m-0"
+                                                  data-confirm-delete data-name="{{ $kader->name }}">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit"
+                                                        class="inline-flex h-8 items-center justify-center whitespace-nowrap rounded-lg bg-red-600 px-3 text-xs font-bold text-white shadow-sm transition hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-200">
+                                                    Hapus
+                                                </button>
+                                            </form>
+                                        @endcan
+                                    </div>
+                                </td>
+                            @endif
                         </tr>
                     @empty
                         <tr>

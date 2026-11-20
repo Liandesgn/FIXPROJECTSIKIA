@@ -57,7 +57,21 @@ Route::middleware('auth')->group(function () {
         ->prefix('superadmin')
         ->name('superadmin.')
         ->group(function () {
-            Route::get('/', [SuperAdminDashboardController::class, 'index'])->name('dashboard');
+          Route::get('/', [SuperAdminDashboardController::class, 'index'])->name('dashboard');
+
+        // Dropdown Kelola Wilayah Kerja
+Route::get('wilayah-kerja/dropdown/puskesmas', [WilayahKerjaController::class, 'getPuskesmas'])
+    ->name('wilayah-kerja.dropdown.puskesmas');
+
+Route::get('wilayah-kerja/dropdown/kelurahan-desa', [WilayahKerjaController::class, 'getKelurahanDesa'])
+    ->name('wilayah-kerja.dropdown.kelurahan-desa');
+
+Route::get('wilayah-kerja/dropdown/rw', [WilayahKerjaController::class, 'getRw'])
+    ->name('wilayah-kerja.dropdown.rw');
+
+Route::get('wilayah-kerja/dropdown/rt', [WilayahKerjaController::class, 'getRt'])
+    ->name('wilayah-kerja.dropdown.rt');
+
 
            Route::get('laporan', [SuperAdminLaporanController::class, 'index'])
                 ->name('laporan.index');

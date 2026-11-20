@@ -1,4 +1,3 @@
-
 @php
     $profil = $ibu?->ibu;
 
@@ -10,6 +9,13 @@
 
     $selectedStatus = old('status_kehamilan', $profil?->status_kehamilan?->value);
     $isHamilNow = $selectedStatus === \App\Enums\StatusKehamilanEnum::Hamil->value;
+
+    // Dropdown Kecamatan: pakai daftar dari BE bila ada, kalau tidak pakai kecamatan wilayah Admin
+    $kecamatan = $kecamatan ?? null;
+    $listKecamatan = isset($kecamatans)
+        ? collect($kecamatans)
+        : collect([$kecamatan])->filter();
+    $kecamatanTerpilih = old('kecamatan_id', $kecamatan?->id ?? $listKecamatan->first()?->id ?? '');
 @endphp
 
 {{-- A. Data akun --}}
@@ -165,21 +171,26 @@
 </div>
 
 
-{{-- C. Alamat Domisili Ibu --}}
+{{-- C. Alamat Domisili Ibu (satu kolom: Kecamatan → Kelurahan/Desa → RW → RT) --}}
 <div>
     <h3 class="mb-3 border-b border-[#F1D5E0] pb-2 text-sm font-bold uppercase tracking-wide text-[#C9517E]">
         C. Alamat Domisili Ibu
     </h3>
 
-    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+    <div class="grid grid-cols-1 gap-5">
         <div>
-            <label class="{{ $labelClass }}">Kecamatan</label>
-            <input
-                type="text"
-                value="{{ $kecamatan?->nama_kecamatan }}"
-                readonly
-                class="{{ $lockedClass }}"
-            >
+            <label for="kecamatan_id" class="{{ $labelClass }}">Kecamatan {!! $star !!}</label>
+            <select id="kecamatan_id" class="{{ $fieldClass }}">
+                <option value="">-- Pilih Kecamatan --</option>
+                @foreach ($listKecamatan as $item)
+                    <option
+                        value="{{ $item->id }}"
+                        @selected((string) $kecamatanTerpilih === (string) $item->id)
+                    >
+                        {{ $item->nama_kecamatan }}
+                    </option>
+                @endforeach
+            </select>
         </div>
 
         <div>
@@ -195,6 +206,7 @@
                 @foreach ($kelurahans as $kelurahan)
                     <option
                         value="{{ $kelurahan->id }}"
+                        data-kecamatan="{{ $kelurahan->kecamatan_id ?? '' }}"
                         @selected((string) $selectedKelurahanId === (string) $kelurahan->id)
                     >
                         {{ $kelurahan->nama_kelurahan_desa }}
@@ -305,7 +317,9 @@
 
                 // ========================================
                 // DROPDOWN ALAMAT BERTINGKAT
+                // Kecamatan → Kelurahan/Desa → RW → RT
                 // ========================================
+                const kecamatanSelect = document.getElementById('kecamatan_id');
                 const kelurahanSelect = document.getElementById('kelurahan_desa_id');
                 const rwSelect = document.getElementById('rw_id');
                 const rtSelect = document.getElementById('rt_id');
@@ -317,10 +331,43 @@
                 const rwUrl = @json(route('admin.ibu.alamat.rw'));
                 const rtUrl = @json(route('admin.ibu.alamat.rt'));
 
+                // Simpan semua pilihan kelurahan, lalu tampilkan sesuai kecamatan
+                const semuaKelurahan = kelurahanSelect
+                    ? Array.from(kelurahanSelect.options)
+                        .filter(o => o.value)
+                        .map(o => ({
+                            value: o.value,
+                            label: o.textContent.trim(),
+                            kecamatan: o.dataset.kecamatan || ''
+                        }))
+                    : [];
+
+                const adaKecamatan = !!kecamatanSelect && kecamatanSelect.options.length > 1;
+
                 function resetSelect(select, placeholder) {
                     if (!select) return;
                     select.innerHTML = '';
                     select.add(new Option(placeholder, ''));
+                }
+
+                function isiKelurahan(kecamatanId, selectedId = '') {
+                    if (!kelurahanSelect) return;
+
+                    resetSelect(rwSelect, '-- Pilih RW --');
+                    resetSelect(rtSelect, '-- Pilih RT --');
+
+                    if (adaKecamatan && !kecamatanId) {
+                        resetSelect(kelurahanSelect, '-- Pilih Kecamatan terlebih dahulu --');
+                        return;
+                    }
+
+                    resetSelect(kelurahanSelect, '-- Pilih Kelurahan / Desa --');
+
+                    semuaKelurahan
+                        .filter(k => !adaKecamatan || k.kecamatan === '' || k.kecamatan === String(kecamatanId))
+                        .forEach(k => kelurahanSelect.add(new Option(k.label, k.value)));
+
+                    kelurahanSelect.value = selectedId || '';
                 }
 
                 async function loadRt(rwId, selectedId = '') {
@@ -367,6 +414,10 @@
                     }
                 }
 
+                kecamatanSelect?.addEventListener('change', function () {
+                    isiKelurahan(this.value);
+                });
+
                 kelurahanSelect?.addEventListener('change', async function () {
                     try {
                         await loadRw(this.value);
@@ -387,7 +438,9 @@
 
                 (async function initializeAddress() {
                     try {
-                        if (selectedKelurahan) {
+                        isiKelurahan(kecamatanSelect?.value || '', selectedKelurahan);
+
+                        if (selectedKelurahan && kelurahanSelect?.value) {
                             await loadRw(selectedKelurahan, selectedRw);
                         }
                     } catch (error) {

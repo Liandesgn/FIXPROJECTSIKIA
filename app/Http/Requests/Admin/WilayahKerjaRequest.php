@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\Admin;
 
-
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -15,30 +14,47 @@ class WilayahKerjaRequest extends FormRequest
 
     public function rules(): array
     {
-        $id = $this->route('wilayah')?->id;
-
         return [
-            'nama_wilayah' => [
+            'kecamatan_id' => [
                 'required',
-                'string',
-                'max:100',
-                Rule::unique('wilayah_kerja', 'nama_wilayah')->ignore($id),
+                'integer',
+                'exists:kecamatan,id',
             ],
-            'kelurahan' => ['required', 'string', 'max:100'],
-            'kecamatan' => ['required', 'string', 'max:100'],
-            'deskripsi' => ['nullable', 'string', 'max:1000'],
-        ];
-    }
 
-    public function messages(): array
-    {
-        return [
-            'nama_wilayah.required' => 'Nama wilayah wajib diisi.',
-            'nama_wilayah.unique' => 'Nama wilayah sudah digunakan.',
-            'nama_wilayah.max' => 'Nama wilayah maksimal 100 karakter.',
-            'kelurahan.required' => 'Kelurahan/desa wajib diisi.',
-            'kecamatan.required' => 'Kecamatan wajib diisi.',
-            'deskripsi.max' => 'Deskripsi maksimal 1000 karakter.',
+            'puskesmas_id' => [
+                'required',
+                'integer',
+                Rule::exists('puskesmas', 'id')
+                    ->where('kecamatan_id', $this->input('kecamatan_id')),
+            ],
+
+            'kelurahan_desa_id' => [
+                'required',
+                'integer',
+                Rule::exists('kelurahan_desa', 'id')
+                    ->where('kecamatan_id', $this->input('kecamatan_id'))
+                    ->where('puskesmas_id', $this->input('puskesmas_id')),
+            ],
+
+            'rw_id' => [
+                'required',
+                'integer',
+                Rule::exists('rw', 'id')
+                    ->where('kelurahan_desa_id', $this->input('kelurahan_desa_id')),
+            ],
+
+            'rt_id' => [
+                'required',
+                'integer',
+                Rule::exists('rt', 'id')
+                    ->where('rw_id', $this->input('rw_id')),
+            ],
+
+            'deskripsi' => [
+                'nullable',
+                'string',
+                'max:1000',
+            ],
         ];
     }
 }

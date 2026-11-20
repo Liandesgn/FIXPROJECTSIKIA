@@ -142,44 +142,72 @@
         </div>
     </div>
 
-    {{-- Data Anak --}}
-    <div class="overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm">
-        <div class="border-b border-[#F1D5E0] bg-[#FCE7F0] px-5 py-3.5">
-            <h2 class="text-base font-bold text-[#542D3D]">Data Anak</h2>
-        </div>
+   {{-- Data Anak --}}
+<div class="overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm">
+    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-[#F1D5E0] bg-[#FCE7F0] px-5 py-3.5">
+        <h2 class="text-base font-bold text-[#542D3D]">Data Anak</h2>
 
-        @if ($ibu->anak->isNotEmpty())
-            <div class="overflow-x-auto">
-                <table class="w-full min-w-[600px] text-left text-sm">
-                    <thead class="bg-[#FFF5F8] text-xs font-bold uppercase tracking-wide text-[#542D3D]">
-                        <tr>
-                            <th class="px-5 py-3">No</th>
-                            <th class="px-5 py-3">NIK Anak</th>
-                            <th class="px-5 py-3">Nama Anak</th>
-                            <th class="px-5 py-3">Tanggal Lahir</th>
-                            <th class="px-5 py-3">Jenis Kelamin</th>
-                        </tr>
-                    </thead>
-
-                    <tbody class="divide-y divide-[#F7E6ED]">
-                        @foreach ($ibu->anak as $anak)
-                            <tr class="transition hover:bg-[#FCE7F0]/40">
-                                <td class="px-5 py-3 font-semibold text-slate-700">{{ $loop->iteration }}</td>
-                                <td class="px-5 py-3">{{ $anak->nik_anak ?: '-' }}</td>
-                                <td class="px-5 py-3 font-semibold text-[#542D3D]">{{ $anak->nama_anak ?: '-' }}</td>
-                                <td class="px-5 py-3">{{ $formatTanggal($anak->tgl_lahir) }}</td>
-                                <td class="px-5 py-3">
-                                    {{ $anak->jenis_kelamin === 'L' ? 'Laki-laki' : ($anak->jenis_kelamin === 'P' ? 'Perempuan' : '-') }}
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        @else
-            <p class="px-5 py-6 text-sm font-medium text-slate-600">Belum ada data anak</p>
+        @if ($base === 'admin')
+            @can('anak.create')
+                <a href="{{ route('admin.data-anak.create', ['ibu_id' => $ibu->id]) }}"
+                   class="inline-flex items-center gap-2 rounded-xl bg-[#C9517E] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#B7436D]">
+                    <span class="text-lg leading-none">+</span>
+                    Tambah Data Anak
+                </a>
+            @endcan
         @endif
     </div>
+
+    @if ($ibu->anak->isNotEmpty())
+        <div class="overflow-x-auto">
+            <table class="w-full min-w-[600px] text-left text-sm">
+                <thead class="bg-[#FFF5F8] text-xs font-bold uppercase tracking-wide text-[#542D3D]">
+                    <tr>
+                        <th class="px-5 py-3">No</th>
+                        <th class="px-5 py-3">NIK Anak</th>
+                        <th class="px-5 py-3">Nama Anak</th>
+                        <th class="px-5 py-3">Tanggal Lahir</th>
+                        <th class="px-5 py-3">Jenis Kelamin</th>
+                    </tr>
+                </thead>
+
+                <tbody class="divide-y divide-[#F7E6ED]">
+                    @foreach ($ibu->anak as $anak)
+                        <tr class="transition hover:bg-[#FCE7F0]/40">
+                            <td class="px-5 py-3 font-semibold text-slate-700">
+                                {{ $loop->iteration }}
+                            </td>
+                            <td class="px-5 py-3">
+                                {{ $anak->nik_anak ?: '-' }}
+                            </td>
+                            <td class="px-5 py-3 font-semibold text-[#542D3D]">
+                                {{ $anak->nama_anak ?: '-' }}
+                            </td>
+                            <td class="px-5 py-3">
+                                {{ $formatTanggal($anak->tgl_lahir) }}
+                            </td>
+                            <td class="px-5 py-3">
+                                {{ $anak->jenis_kelamin === 'L' ? 'Laki-laki' : ($anak->jenis_kelamin === 'P' ? 'Perempuan' : '-') }}
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    @else
+        <div class="flex flex-col items-center justify-center px-5 py-8 text-center">
+            <p class="text-sm font-medium text-slate-600">
+                Belum ada data anak.
+            </p>
+
+            @if ($base === 'admin' && auth()->user()->can('anak.create'))
+                <p class="mt-1 text-xs text-slate-500">
+                    Klik tombol Tambah Data Anak untuk memasukkan data anak ibu ini.
+                </p>
+            @endif
+        </div>
+    @endif
+</div>
 
     {{-- Grafik Perkembangan Kehamilan (hanya ibu hamil) --}}
     @if ($tampilGrafik)

@@ -21,7 +21,6 @@ class KegiatanPosyandu extends Model
         return [
             'id_wilayah' => 'integer',
             'tanggal' => 'date',
-            'waktu' => 'time',
             'lokasi' => 'string',
             'jenis_kegiatan' => 'string',
         ];

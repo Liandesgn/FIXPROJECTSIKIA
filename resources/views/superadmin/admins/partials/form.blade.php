@@ -1,4 +1,3 @@
-
 @php
     $admin = $admin ?? null;
     $isEdit = (bool) $admin;
@@ -9,17 +8,28 @@
     $errorClass = 'mt-1 text-xs font-medium text-red-600';
     $hintClass = 'mt-1 text-xs text-slate-500';
 
-    $selectedPuskesmas = old(
-        'puskesmas_id',
-        $admin?->puskesmas_id ?? ''
-    );
+    $selectedPuskesmas = old('puskesmas_id', $admin?->puskesmas_id ?? '');
+    $selectedKecamatan = old('kecamatan_id', $admin?->puskesmas?->kecamatan_id ?? '');
 
-    $selectedKecamatan = old(
-        'kecamatan_id',
-        $admin?->puskesmas?->kecamatan_id ?? ''
-    );
+    $puskesmasTerpakai = collect($puskesmasTerpakai ?? []);
 
-    $puskesmasTerpakai = $puskesmasTerpakai ?? [];
+    // Dropdown Wilayah Kerja: Puskesmas dikelompokkan per Kecamatan
+    $listKecamatan = collect($kecamatans ?? []);
+    $listPuskesmas = collect($puskesmas ?? []);
+    $idKecamatan   = $listKecamatan->pluck('id');
+
+    $kelompok = $listKecamatan
+        ->map(fn ($k) => [
+            'label' => 'Kecamatan ' . $k->nama_kecamatan,
+            'items' => $listPuskesmas->where('kecamatan_id', $k->id),
+        ])
+        ->filter(fn ($g) => $g['items']->isNotEmpty())
+        ->values();
+
+    $puskesmasLain = $listPuskesmas->reject(fn ($p) => $idKecamatan->contains($p->kecamatan_id));
+    if ($puskesmasLain->isNotEmpty()) {
+        $kelompok->push(['label' => 'Lainnya', 'items' => $puskesmasLain]);
+    }
 @endphp
 
 <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -72,116 +82,8 @@
         @enderror
     </div>
 
-    {{-- Nomor HP --}}
-    <div>
-        <label for="phone" class="{{ $labelClass }}">
-            Nomor HP <span class="text-[#C9517E]">*</span>
-        </label>
-
-        <input
-            id="phone"
-            name="phone"
-            type="tel"
-            required
-            minlength="10"
-            maxlength="13"
-            inputmode="numeric"
-            pattern="[0-9]{10,13}"
-            placeholder="08xxxxxxxxxx"
-            oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 13)"
-            value="{{ old('phone', $admin?->user?->phone ?? '') }}"
-            class="{{ $fieldClass }}"
-        >
-
-        @error('phone')
-            <p class="{{ $errorClass }}">{{ $message }}</p>
-        @enderror
-
-        <p class="{{ $hintClass }}">
-            Wajib diisi, hanya angka, 10–13 digit.
-        </p>
-    </div>
-
-    {{-- Kecamatan --}}
-    <div>
-        <label for="kecamatan_id" class="{{ $labelClass }}">
-            Kecamatan <span class="text-[#C9517E]">*</span>
-        </label>
-
-        <select
-            id="kecamatan_id"
-            name="kecamatan_id"
-            required
-            class="{{ $fieldClass }}"
-        >
-            <option value="">Pilih Kecamatan</option>
-
-            @foreach ($kecamatans as $kecamatan)
-                <option
-                    value="{{ $kecamatan->id }}"
-                    @selected((string) $selectedKecamatan === (string) $kecamatan->id)
-                >
-                    {{ $kecamatan->nama_kecamatan }}
-                </option>
-            @endforeach
-        </select>
-
-        @error('kecamatan_id')
-            <p class="{{ $errorClass }}">{{ $message }}</p>
-        @enderror
-    </div>
-
-    {{-- Puskesmas --}}
-    <div>
-        <label for="puskesmas_id" class="{{ $labelClass }}">
-            Puskesmas <span class="text-[#C9517E]">*</span>
-        </label>
-
-        <select
-            id="puskesmas_id"
-            name="puskesmas_id"
-            required
-            class="{{ $fieldClass }}"
-            {{ $selectedKecamatan ? '' : 'disabled' }}
-        >
-            <option value="">Pilih Puskesmas</option>
-
-            @foreach ($puskesmas as $item)
-                @php
-                    $sudahMemilikiAdmin = in_array(
-                        $item->id,
-                        $puskesmasTerpakai
-                    );
-
-                    $milikAdminIni = $isEdit
-                        && (int) $admin->puskesmas_id === (int) $item->id;
-                @endphp
-
-                <option
-                    value="{{ $item->id }}"
-                    data-kecamatan="{{ $item->kecamatan_id }}"
-                    @disabled($sudahMemilikiAdmin && ! $milikAdminIni)
-                    @selected((string) $selectedPuskesmas === (string) $item->id)
-                >
-                    {{ $item->nama_puskesmas }}
-                    @if ($sudahMemilikiAdmin && ! $milikAdminIni)
-                        (Sudah memiliki Admin)
-                    @endif
-                </option>
-            @endforeach
-        </select>
-
-        @error('puskesmas_id')
-            <p class="{{ $errorClass }}">{{ $message }}</p>
-        @enderror
-
-        <p class="{{ $hintClass }}">
-            Satu Puskesmas hanya boleh memiliki satu Admin.
-        </p>
-    </div>
-
     {{-- Password --}}
-    <div class="sm:col-span-2">
+    <div>
         <label for="password" class="{{ $labelClass }}">
             Password
             @unless ($isEdit)
@@ -237,6 +139,87 @@
             Password harus tepat 8 karakter.
         </p>
     </div>
+
+    {{-- Nomor HP --}}
+    <div>
+        <label for="phone" class="{{ $labelClass }}">
+            Nomor HP <span class="text-[#C9517E]">*</span>
+        </label>
+
+        <input
+            id="phone"
+            name="phone"
+            type="tel"
+            required
+            minlength="10"
+            maxlength="13"
+            inputmode="numeric"
+            pattern="[0-9]{10,13}"
+            placeholder="08xxxxxxxxxx"
+            oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 13)"
+            value="{{ old('phone', $admin?->user?->phone ?? '') }}"
+            class="{{ $fieldClass }}"
+        >
+
+        @error('phone')
+            <p class="{{ $errorClass }}">{{ $message }}</p>
+        @enderror
+
+        <p class="{{ $hintClass }}">
+            Wajib diisi, hanya angka, 10–13 digit.
+        </p>
+    </div>
+
+    {{-- Wilayah Kerja: Puskesmas per Kecamatan --}}
+    <div class="sm:col-span-2">
+        <label for="puskesmas_id" class="{{ $labelClass }}">
+            Wilayah Kerja <span class="text-[#C9517E]">*</span>
+        </label>
+
+        <select
+            id="puskesmas_id"
+            name="puskesmas_id"
+            required
+            class="{{ $fieldClass }}"
+        >
+            <option value="">Pilih Wilayah Kerja</option>
+
+            @foreach ($kelompok as $grup)
+                <optgroup label="{{ $grup['label'] }}">
+                    @foreach ($grup['items'] as $item)
+                        @php
+                            $sudahMemilikiAdmin = $puskesmasTerpakai->contains($item->id);
+                            $milikAdminIni = $isEdit && (int) $admin->puskesmas_id === (int) $item->id;
+                        @endphp
+
+                        <option
+                            value="{{ $item->id }}"
+                            data-kecamatan="{{ $item->kecamatan_id }}"
+                            @disabled($sudahMemilikiAdmin && ! $milikAdminIni)
+                            @selected((string) $selectedPuskesmas === (string) $item->id)
+                        >
+                            Puskesmas {{ $item->nama_puskesmas }}@if ($sudahMemilikiAdmin && ! $milikAdminIni) (Sudah memiliki Admin)@endif
+                        </option>
+                    @endforeach
+                </optgroup>
+            @endforeach
+        </select>
+
+        {{-- Kecamatan ikut terkirim otomatis sesuai Puskesmas yang dipilih --}}
+        <input type="hidden" id="kecamatan_id" name="kecamatan_id" value="{{ $selectedKecamatan }}">
+
+        @error('puskesmas_id')
+            <p class="{{ $errorClass }}">{{ $message }}</p>
+        @enderror
+
+        @error('kecamatan_id')
+            <p class="{{ $errorClass }}">{{ $message }}</p>
+        @enderror
+
+        <p class="{{ $hintClass }}">
+            Pilih Puskesmas sesuai kecamatannya. Satu Puskesmas hanya boleh memiliki satu Admin.
+        </p>
+    </div>
 </div>
 
 {{-- Tombol --}}
@@ -259,33 +242,17 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    // Dropdown Kecamatan dan Puskesmas
-    const kecamatanSelect = document.getElementById('kecamatan_id');
+    // Kecamatan (tersembunyi) selalu mengikuti Puskesmas yang dipilih
     const puskesmasSelect = document.getElementById('puskesmas_id');
+    const kecamatanHidden = document.getElementById('kecamatan_id');
 
-    function filterPuskesmas() {
-        const kecamatanId = kecamatanSelect.value;
-        const options = puskesmasSelect.querySelectorAll('option');
-
-        puskesmasSelect.value = '';
-
-        options.forEach(function (option) {
-            if (!option.value) {
-                option.hidden = false;
-                return;
-            }
-
-            option.hidden = option.dataset.kecamatan !== kecamatanId;
-        });
-
-        puskesmasSelect.disabled = !kecamatanId;
+    function sinkronKecamatan() {
+        const opsi = puskesmasSelect.selectedOptions[0];
+        kecamatanHidden.value = opsi && opsi.dataset.kecamatan ? opsi.dataset.kecamatan : '';
     }
 
-    kecamatanSelect.addEventListener('change', filterPuskesmas);
-
-    // Pertahankan pilihan saat halaman Edit atau validasi gagal.
-    filterPuskesmas();
-    puskesmasSelect.value = @json((string) $selectedPuskesmas);
+    puskesmasSelect.addEventListener('change', sinkronKecamatan);
+    sinkronKecamatan();
 
     // Tampilkan/sembunyikan password
     document.querySelectorAll('[data-toggle-password]').forEach(function (btn) {

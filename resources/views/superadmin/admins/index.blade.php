@@ -87,7 +87,7 @@
                             </td>
 
                             <td class="hidden whitespace-nowrap px-4 py-3.5 text-sm text-slate-800 md:table-cell">{{ $admin->user?->email ?? '-' }}</td>
-                            <td class="px-3 py-3.5 text-sm text-slate-800 sm:px-4">{{ $admin->wilayahKerja?->nama_wilayah ?? '-' }}</td>
+                             <td class="px-3 py-3.5 text-sm text-slate-800 sm:px-4">{{ $admin->puskesmas?->nama_puskesmas ? 'Puskesmas ' . $admin->puskesmas->nama_puskesmas : ($admin->wilayahKerja?->nama_wilayah ?? '-') }}</td>
                             <td class="hidden whitespace-nowrap px-4 py-3.5 text-sm text-slate-800 lg:table-cell">{{ $admin->user?->phone ?? '-' }}</td>
 
                             <td class="whitespace-nowrap px-3 py-3.5 sm:px-4">
