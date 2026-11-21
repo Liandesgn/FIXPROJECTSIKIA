@@ -1,3 +1,4 @@
+
 @extends('layouts.app')
 
 @section('title', 'Admin Wilayah')
@@ -8,7 +9,7 @@
         $admins->appends(request()->query());
     }
 
-    $pg    = $admins;
+    $pg = $admins;
     $total = $pg->total();
 @endphp
 
@@ -48,7 +49,10 @@
             <form method="GET" action="{{ url()->current() }}" class="flex flex-col gap-3 sm:flex-row">
                 <div class="relative flex-1">
                     <label for="searchInput" class="sr-only">Cari admin</label>
-                    <svg class="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-[#C9517E]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="m20 20-3.5-3.5"/></svg>
+                    <svg class="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-[#C9517E]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <circle cx="11" cy="11" r="7"/>
+                        <path stroke-linecap="round" d="m20 20-3.5-3.5"/>
+                    </svg>
                     <input id="searchInput" type="search" name="search" value="{{ request('search') }}" autocomplete="off"
                            placeholder="Cari nama / email"
                            class="w-full rounded-xl border-2 border-[#C9517E]/60 bg-white py-2.5 pl-11 pr-3 text-sm font-medium text-gray-900 outline-none transition placeholder:text-slate-500 focus:border-[#C9517E] focus:ring-4 focus:ring-[#E99AB7]/40">
@@ -77,18 +81,55 @@
 
                 <tbody class="divide-y divide-[#F7E6ED]">
                     @forelse ($admins as $admin)
-                        <tr class="transition hover:bg-[#FCE7F0]/50">
-                            <td class="px-3 py-3.5 text-sm font-semibold text-slate-700 sm:px-4">{{ $admins->firstItem() + $loop->index }}</td>
+                        @php
+                            $namaPuskesmas = trim(
+                                $admin->puskesmas?->nama_puskesmas ?? ''
+                            );
 
-                            <td class="px-3 py-3.5 sm:px-4">
-                                <p class="break-words text-sm font-bold text-[#542D3D]">{{ $admin->user?->name ?? '-' }}</p>
-                                <p class="break-all text-xs text-slate-700 md:hidden">{{ $admin->user?->email ?? '-' }}</p>
-                                <p class="text-xs text-slate-700 lg:hidden">{{ $admin->user?->phone ?? '-' }}</p>
+                            // Hilangkan awalan Puskesmas yang berulang
+                            $namaPuskesmas = preg_replace(
+                                '/^(Puskesmas\s*)+/i',
+                                '',
+                                $namaPuskesmas
+                            );
+
+                            $namaWilayah = trim(
+                                $admin->wilayahKerja?->nama_wilayah ?? '-'
+                            );
+
+                            $tampilanWilayah = $namaPuskesmas !== ''
+                                ? 'Puskesmas ' . $namaPuskesmas
+                                : $namaWilayah;
+                        @endphp
+
+                        <tr class="transition hover:bg-[#FCE7F0]/50">
+                            <td class="px-3 py-3.5 text-sm font-semibold text-slate-700 sm:px-4">
+                                {{ $admins->firstItem() + $loop->index }}
                             </td>
 
-                            <td class="hidden whitespace-nowrap px-4 py-3.5 text-sm text-slate-800 md:table-cell">{{ $admin->user?->email ?? '-' }}</td>
-                             <td class="px-3 py-3.5 text-sm text-slate-800 sm:px-4">{{ $admin->puskesmas?->nama_puskesmas ? 'Puskesmas ' . $admin->puskesmas->nama_puskesmas : ($admin->wilayahKerja?->nama_wilayah ?? '-') }}</td>
-                            <td class="hidden whitespace-nowrap px-4 py-3.5 text-sm text-slate-800 lg:table-cell">{{ $admin->user?->phone ?? '-' }}</td>
+                            <td class="px-3 py-3.5 sm:px-4">
+                                <p class="break-words text-sm font-bold text-[#542D3D]">
+                                    {{ $admin->user?->name ?? '-' }}
+                                </p>
+                                <p class="break-all text-xs text-slate-700 md:hidden">
+                                    {{ $admin->user?->email ?? '-' }}
+                                </p>
+                                <p class="text-xs text-slate-700 lg:hidden">
+                                    {{ $admin->user?->phone ?? '-' }}
+                                </p>
+                            </td>
+
+                            <td class="hidden whitespace-nowrap px-4 py-3.5 text-sm text-slate-800 md:table-cell">
+                                {{ $admin->user?->email ?? '-' }}
+                            </td>
+
+                            <td class="px-3 py-3.5 text-sm text-slate-800 sm:px-4">
+                                {{ $tampilanWilayah }}
+                            </td>
+
+                            <td class="hidden whitespace-nowrap px-4 py-3.5 text-sm text-slate-800 lg:table-cell">
+                                {{ $admin->user?->phone ?? '-' }}
+                            </td>
 
                             <td class="whitespace-nowrap px-3 py-3.5 sm:px-4">
                                 <div class="flex items-center justify-center gap-2">
@@ -116,7 +157,9 @@
                     @empty
                         <tr>
                             <td colspan="6" class="px-5 py-12 text-center">
-                                <p class="font-bold text-[#542D3D]">{{ request('search') ? 'Data tidak ditemukan.' : 'Belum ada akun admin wilayah.' }}</p>
+                                <p class="font-bold text-[#542D3D]">
+                                    {{ request('search') ? 'Data tidak ditemukan.' : 'Belum ada akun admin wilayah.' }}
+                                </p>
                             </td>
                         </tr>
                     @endforelse
@@ -127,11 +170,14 @@
         {{-- Pagination --}}
         <div class="border-t border-[#F1D5E0] bg-white px-4 py-3">
             @php
-                $awal   = max($pg->currentPage() - 1, 1);
-                $akhir  = min($pg->currentPage() + 1, $pg->lastPage());
-                $btn    = 'inline-flex h-9 min-w-9 items-center justify-center rounded-lg border border-[#F1D5E0] bg-white px-2 text-sm font-semibold text-[#542D3D] transition hover:bg-[#FCE7F0]';
+                $awal = max($pg->currentPage() - 1, 1);
+                $akhir = min($pg->currentPage() + 1, $pg->lastPage());
+
+                $btn = 'inline-flex h-9 min-w-9 items-center justify-center rounded-lg border border-[#F1D5E0] bg-white px-2 text-sm font-semibold text-[#542D3D] transition hover:bg-[#FCE7F0]';
+
                 $btnOff = 'inline-flex h-9 w-9 cursor-not-allowed items-center justify-center rounded-lg border border-[#F1D5E0] bg-white text-lg text-slate-300';
             @endphp
+
             <nav class="flex flex-col items-center justify-between gap-3 sm:flex-row" aria-label="Navigasi halaman">
                 <p class="text-xs font-medium text-slate-600">
                     Menampilkan {{ $pg->firstItem() ?? 0 }}–{{ $pg->lastItem() ?? 0 }} dari {{ $pg->total() }} data
@@ -147,7 +193,9 @@
 
                         @if ($awal > 1)
                             <a href="{{ $pg->url(1) }}" class="{{ $btn }}">1</a>
-                            @if ($awal > 2) <span class="px-1 text-slate-400">…</span> @endif
+                            @if ($awal > 2)
+                                <span class="px-1 text-slate-400">…</span>
+                            @endif
                         @endif
 
                         @for ($i = $awal; $i <= $akhir; $i++)
@@ -159,7 +207,9 @@
                         @endfor
 
                         @if ($akhir < $pg->lastPage())
-                            @if ($akhir < $pg->lastPage() - 1) <span class="px-1 text-slate-400">…</span> @endif
+                            @if ($akhir < $pg->lastPage() - 1)
+                                <span class="px-1 text-slate-400">…</span>
+                            @endif
                             <a href="{{ $pg->url($pg->lastPage()) }}" class="{{ $btn }}">{{ $pg->lastPage() }}</a>
                         @endif
 

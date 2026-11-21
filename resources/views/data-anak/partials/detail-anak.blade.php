@@ -18,6 +18,42 @@
         return null;
     };
 
+    // Susun alamat: Kec. A, Desa B, RT 001/RW 01 (memakai kolom lama bila relasi belum ada)
+    $alamatDari = function ($w) {
+        if (! $w) return '-';
+
+        $relasi = function (string $nama) use ($w) {
+            if ($w->relationLoaded($nama)) return $w->getRelation($nama);
+            return method_exists($w, $nama) ? $w->{$nama}()->first() : null;
+        };
+
+        $kec  = $relasi('kecamatan');
+        $desa = $relasi('kelurahanDesa');
+        $rw   = $relasi('rw');
+        $rt   = $relasi('rt');
+
+        $kolomKec  = $w->getAttribute('kecamatan');
+        $kolomDesa = $w->getAttribute('kelurahan');
+        $namaKec   = $kec?->nama_kecamatan ?? (is_string($kolomKec) && $kolomKec !== '' ? $kolomKec : null);
+
+        $bagian = [];
+        if ($namaKec) $bagian[] = 'Kec. ' . $namaKec;
+
+        if ($desa?->nama_kelurahan_desa) {
+            $bagian[] = (strtolower((string) $desa->jenis) === 'kelurahan' ? 'Kel. ' : 'Desa ') . $desa->nama_kelurahan_desa;
+        } elseif (is_string($kolomDesa) && $kolomDesa !== '') {
+            $bagian[] = 'Desa ' . $kolomDesa;
+        }
+
+        $nomor = array_filter([
+            $rt?->nomor_rt ? 'RT ' . $rt->nomor_rt : null,
+            $rw?->nomor_rw ? 'RW ' . $rw->nomor_rw : null,
+        ]);
+        if ($nomor) $bagian[] = implode('/', $nomor);
+
+        return $bagian ? implode(', ', $bagian) : ($w->getAttribute('nama_wilayah') ?: '-');
+    };
+
     $warnaStatus = fn ($s) => match ($s) {
         'normal'          => '#16a34a',
         'perlu_perhatian' => '#dc2626',
@@ -25,7 +61,7 @@
     };
 
     $labelStatus = fn ($s) => match ($s) {
-        'normal'          => 'Normal',
+        'normal'          => 'Gizi Baik',
         'perlu_perhatian' => 'Perlu Perhatian',
         default           => 'Belum ada status',
     };
@@ -83,6 +119,14 @@
     $batasRiwayat = 4;
     $adaLebih     = $riwayatTerbaru->count() > $batasRiwayat;
 
+    // Dropdown "Semua Periode" hanya di tampilan role Ibu (sesuai wireframe)
+    $filterPeriode = ! empty($tampilanGabungan);
+    $daftarPeriode = $riwayatTerbaru
+        ->map(fn ($item) => $item->kegiatan?->tanggal ? \Carbon\Carbon::parse($item->kegiatan->tanggal)->format('Y-m') : null)
+        ->filter()
+        ->unique()
+        ->values();
+
     $dataAnak = [
         'NIK'           => $anak->nik_anak,
         'Nama'          => $anak->nama_anak,
@@ -90,6 +134,11 @@
         'Tempat Lahir'  => $anak->tempat_lahir,
         'JK'            => $anak->jenis_kelamin === 'L' ? 'Laki-laki' : ($anak->jenis_kelamin === 'P' ? 'Perempuan' : '-'),
     ];
+
+    // Gaya bersama
+    $kartu  = 'overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-[#E99AB7] hover:shadow-md motion-reduce:transform-none motion-reduce:transition-none';
+    $kepala = 'flex flex-wrap items-center justify-between gap-3 border-b border-[#F1D5E0] bg-gradient-to-r from-[#FCE7F0] to-[#FFF7FA] px-5 py-3.5';
+    $ikon   = 'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-[#C9517E] shadow-sm';
 @endphp
 
 <div class="mx-auto w-full max-w-6xl space-y-6">
@@ -104,14 +153,14 @@
 
             <div class="flex gap-2">
                 <a href="{{ route($base.'.data-anak.index') }}"
-                   class="inline-flex justify-center rounded-xl border-2 border-[#E99AB7] bg-white px-5 py-2.5 text-sm font-semibold text-[#C9517E] transition hover:bg-[#FCE7F0]">
+                   class="inline-flex justify-center rounded-xl border-2 border-[#E99AB7] bg-white px-5 py-2.5 text-sm font-semibold text-[#C9517E] transition hover:bg-[#FCE7F0] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/30 active:scale-[0.98]">
                     Kembali
                 </a>
 
                 @if ($base === 'admin')
                     @can('anak.update')
                         <a href="{{ route('admin.data-anak.edit', $anak) }}"
-                           class="inline-flex justify-center rounded-xl bg-[#E99AB7] px-5 py-2.5 text-sm font-semibold text-[#542D3D] shadow-sm transition hover:bg-[#DD87A8]">
+                           class="inline-flex justify-center rounded-xl border-2 border-[#E99AB7] bg-[#E99AB7] px-5 py-2.5 text-sm font-semibold text-[#542D3D] shadow-sm transition hover:border-[#DD87A8] hover:bg-[#DD87A8] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40 active:scale-[0.98]">
                             Edit
                         </a>
                     @endcan
@@ -127,31 +176,37 @@
     {{-- Data Anak (kiri) dan Status Terkini (kanan) --}}
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
 
-        <div class="overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm lg:col-span-2">
-            <div class="border-b border-[#F1D5E0] bg-[#FCE7F0] px-5 py-3.5">
-                <h2 class="text-base font-bold text-[#542D3D]">Data Anak</h2>
+        <div class="{{ $kartu }} lg:col-span-2">
+            <div class="{{ $kepala }}">
+                <div class="flex items-center gap-3">
+                    <span class="{{ $ikon }}"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm-4 14v-6l-2-4h12l-2 4v6"/></svg></span>
+                    <h2 class="text-base font-bold text-[#542D3D]">Data Anak</h2>
+                </div>
             </div>
 
-            <div class="divide-y divide-[#F7E6ED] px-5">
+            <dl class="divide-y divide-[#F7E6ED] px-5">
                 @foreach ($dataAnak as $label => $nilai)
-                    <div class="flex justify-between gap-4 py-3 text-sm">
-                        <span class="font-semibold text-slate-600">{{ $label }}</span>
-                        <span class="text-right font-semibold text-[#542D3D]">{{ $nilai ?: '-' }}</span>
+                    <div class="flex flex-col gap-0.5 py-3 text-sm sm:flex-row sm:justify-between sm:gap-4">
+                        <dt class="font-semibold text-slate-600">{{ $label }}</dt>
+                        <dd class="font-semibold text-[#542D3D] sm:text-right">{{ $nilai ?: '-' }}</dd>
                     </div>
                 @endforeach
-            </div>
+            </dl>
         </div>
 
-        <div class="overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm">
-            <div class="border-b border-[#F1D5E0] bg-[#FCE7F0] px-5 py-3.5">
-                <h2 class="text-base font-bold text-[#542D3D]">Status Terkini</h2>
+        <div class="{{ $kartu }}">
+            <div class="{{ $kepala }}">
+                <div class="flex items-center gap-3">
+                    <span class="{{ $ikon }}"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21s-8-4.5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 6.5-8 11-8 11Z"/></svg></span>
+                    <h2 class="text-base font-bold text-[#542D3D]">Status Terkini</h2>
+                </div>
             </div>
 
             <div class="p-5">
                 @if ($statusTerakhir === 'normal')
-                    <span class="inline-flex rounded-full bg-green-100 px-4 py-1.5 text-sm font-bold text-green-700">Normal</span>
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-4 py-1.5 text-sm font-bold text-green-700"><span class="h-1.5 w-1.5 rounded-full bg-green-500"></span>Gizi Baik</span>
                 @elseif ($statusTerakhir === 'perlu_perhatian')
-                    <span class="inline-flex rounded-full bg-red-100 px-4 py-1.5 text-sm font-bold text-red-700">Perlu Perhatian</span>
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-red-100 px-4 py-1.5 text-sm font-bold text-red-700"><span class="h-1.5 w-1.5 rounded-full bg-red-500"></span>Perlu Perhatian</span>
                 @else
                     <span class="inline-flex rounded-full bg-gray-100 px-4 py-1.5 text-sm font-bold text-gray-600">Belum ada pemeriksaan</span>
                 @endif
@@ -164,9 +219,12 @@
     </div>
 
     {{-- Data Ibu --}}
-    <div class="overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm">
-        <div class="border-b border-[#F1D5E0] bg-[#FCE7F0] px-5 py-3.5">
-            <h2 class="text-base font-bold text-[#542D3D]">Data Ibu</h2>
+    <div class="{{ $kartu }}">
+        <div class="{{ $kepala }}">
+            <div class="flex items-center gap-3">
+                <span class="{{ $ikon }}"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 9a7 7 0 0 1 14 0"/></svg></span>
+                <h2 class="text-base font-bold text-[#542D3D]">Data Ibu</h2>
+            </div>
         </div>
 
         @if ($ibu)
@@ -176,28 +234,30 @@
                     'Nama'          => $ibu->user?->name,
                     'Tanggal Lahir' => $formatTanggal($ibu->tgl_lahir),
                     'Nomor HP'      => $ibu->user?->phone,
-                    'Wilayah'       => $ibu->wilayahKerja?->nama_wilayah,
+                    'Alamat'        => $alamatDari($ibu->wilayahKerja),
                 ];
             @endphp
 
-            <div class="divide-y divide-[#F7E6ED] px-5">
+            <dl class="divide-y divide-[#F7E6ED] px-5">
                 @foreach ($dataIbu as $label => $nilai)
-                    <div class="flex justify-between gap-4 py-3 text-sm">
-                        <span class="font-semibold text-slate-600">{{ $label }}</span>
-                        <span class="text-right font-semibold text-[#542D3D]">{{ $nilai ?: '-' }}</span>
+                    <div class="flex flex-col gap-0.5 py-3 text-sm sm:flex-row sm:justify-between sm:gap-4">
+                        <dt class="font-semibold text-slate-600">{{ $label }}</dt>
+                        <dd class="font-semibold text-[#542D3D] sm:text-right">{{ $nilai ?: '-' }}</dd>
                     </div>
                 @endforeach
-            </div>
+            </dl>
         @else
             <p class="px-5 py-8 text-center text-sm text-slate-500">Data ibu belum terhubung.</p>
         @endif
     </div>
 
     {{-- Grafik Pertumbuhan --}}
-    <div class="overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm">
-        <div class="border-b border-[#F1D5E0] bg-[#FCE7F0] px-5 py-3.5">
-            <h2 class="text-base font-bold text-[#542D3D]">Grafik Pertumbuhan (Berat Badan menurut Umur)</h2>
-            <p class="mt-0.5 text-sm text-slate-600">Hijau berarti normal, merah berarti perlu perhatian.</p>
+    <div class="{{ $kartu }}">
+        <div class="{{ $kepala }}">
+            <div>
+                <h2 class="text-base font-bold text-[#542D3D]">Grafik Pertumbuhan (Berat Badan menurut Umur)</h2>
+                <p class="mt-0.5 text-sm text-slate-600">Hijau berarti gizi baik, merah berarti perlu perhatian.</p>
+            </div>
         </div>
 
         <div class="p-5">
@@ -247,7 +307,7 @@
                 </div>
 
                 <div class="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-semibold text-slate-700">
-                    <span class="inline-flex items-center gap-2"><span class="h-3 w-3 rounded-full bg-green-600"></span> Normal</span>
+                    <span class="inline-flex items-center gap-2"><span class="h-3 w-3 rounded-full bg-green-600"></span> Gizi Baik</span>
                     <span class="inline-flex items-center gap-2"><span class="h-3 w-3 rounded-full bg-red-600"></span> Perlu Perhatian</span>
                 </div>
             @else
@@ -260,21 +320,33 @@
     </div>
 
     {{-- Riwayat Pemeriksaan --}}
-    <div id="riwayat-pemeriksaan" data-riwayat class="overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm">
-        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-[#F1D5E0] bg-[#FCE7F0] px-5 py-3.5">
+    <div id="riwayat-pemeriksaan" data-riwayat class="{{ $kartu }}">
+        <div class="{{ $kepala }}">
             <div>
                 <h2 class="text-base font-bold text-[#542D3D]">Riwayat Pemeriksaan Anak</h2>
                 <p class="mt-0.5 text-sm text-slate-600">Riwayat hasil pemeriksaan berdasarkan kegiatan Posyandu.</p>
             </div>
 
-            @if ($adaLebih)
-                <button type="button" data-riwayat-toggle
-                        data-label-buka="Tampilkan semua"
-                        data-label-tutup="Tampilkan sedikit"
-                        class="rounded-xl border-2 border-[#C9517E] bg-white px-4 py-2 text-sm font-semibold text-[#C9517E] transition hover:bg-[#C9517E] hover:text-white">
-                    Tampilkan semua
-                </button>
-            @endif
+            <div class="flex flex-wrap items-center gap-2">
+                @if ($filterPeriode && $daftarPeriode->isNotEmpty())
+                    <select data-periode-filter aria-label="Filter periode"
+                            class="rounded-xl border-2 border-[#E99AB7] bg-white px-3 py-2 text-sm font-semibold text-[#542D3D] outline-none transition focus:border-[#C9517E] focus:ring-4 focus:ring-[#E99AB7]/40">
+                        <option value="">Semua Periode</option>
+                        @foreach ($daftarPeriode as $periode)
+                            <option value="{{ $periode }}">{{ \Carbon\Carbon::createFromFormat('Y-m-d', $periode.'-01')->translatedFormat('F Y') }}</option>
+                        @endforeach
+                    </select>
+                @endif
+
+                @if ($adaLebih)
+                    <button type="button" data-riwayat-toggle
+                            data-label-buka="Tampilkan semua"
+                            data-label-tutup="Tampilkan sedikit"
+                            class="rounded-xl border-2 border-[#C9517E] bg-white px-4 py-2 text-sm font-semibold text-[#C9517E] transition hover:bg-[#C9517E] hover:text-white focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40 active:scale-[0.98]">
+                        Tampilkan semua
+                    </button>
+                @endif
+            </div>
         </div>
 
         @if ($riwayatTerbaru->isNotEmpty())
@@ -286,22 +358,27 @@
                             <th class="px-5 py-3 text-center font-bold">BB (kg)</th>
                             <th class="px-5 py-3 text-center font-bold">TB (cm)</th>
                             <th class="px-5 py-3 text-center font-bold">LK (cm)</th>
-                            <th class="px-5 py-3 text-center font-bold">Status</th>
+                            <th class="px-5 py-3 text-center font-bold">Status Gizi</th>
                             <th class="px-5 py-3 font-bold">Imunisasi / Vitamin</th>
                         </tr>
                     </thead>
 
                     <tbody class="divide-y divide-[#F7E6ED]">
                         @foreach ($riwayatTerbaru as $item)
-                            @php $lebih = $loop->index >= $batasRiwayat; @endphp
-                            <tr class="transition hover:bg-[#FCE7F0]/40 {{ $lebih ? 'hidden' : '' }}" @if ($lebih) data-extra @endif>
-                                <td class="px-5 py-3">{{ $formatTanggal($item->kegiatan?->tanggal) }}</td>
+                            @php
+                                $lebih  = $loop->index >= $batasRiwayat;
+                                $tglRow = $item->kegiatan?->tanggal;
+                            @endphp
+                            <tr class="transition-colors hover:bg-[#FCE7F0]/40 {{ $lebih ? 'hidden' : '' }}"
+                                data-periode="{{ $tglRow ? \Carbon\Carbon::parse($tglRow)->format('Y-m') : '' }}"
+                                @if ($lebih) data-extra @endif>
+                                <td class="px-5 py-3">{{ $formatTanggal($tglRow) }}</td>
                                 <td class="px-5 py-3 text-center">{{ $angka($item->berat_badan) }}</td>
                                 <td class="px-5 py-3 text-center">{{ $angka($item->tinggi_badan) }}</td>
                                 <td class="px-5 py-3 text-center">{{ $angka($ambil($item, ['lingkar_kepala', 'lk'])) }}</td>
                                 <td class="px-5 py-3 text-center">
                                     @if ($item->status_kesehatan === 'normal')
-                                        <span class="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">Normal</span>
+                                        <span class="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">Gizi Baik</span>
                                     @elseif ($item->status_kesehatan === 'perlu_perhatian')
                                         <span class="rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700">Perlu Perhatian</span>
                                     @else
@@ -327,6 +404,7 @@
 @once
     @push('scripts')
         <script>
+            // Tombol "Tampilkan semua" / "Tampilkan sedikit"
             document.addEventListener('click', function (e) {
                 const btn = e.target.closest('[data-riwayat-toggle]');
                 if (!btn) return;
@@ -337,6 +415,30 @@
 
                 rows.forEach(function (r) { r.classList.toggle('hidden', !buka); });
                 btn.textContent = buka ? btn.dataset.labelTutup : btn.dataset.labelBuka;
+            });
+
+            // Dropdown "Semua Periode": menyaring baris riwayat berdasarkan bulan
+            document.addEventListener('change', function (e) {
+                const sel = e.target.closest('[data-periode-filter]');
+                if (!sel) return;
+
+                const box   = sel.closest('[data-riwayat]');
+                const rows  = box.querySelectorAll('tbody tr[data-periode]');
+                const btn   = box.querySelector('[data-riwayat-toggle]');
+                const nilai = sel.value;
+
+                rows.forEach(function (r) {
+                    if (nilai === '') {
+                        r.classList.toggle('hidden', r.hasAttribute('data-extra'));
+                    } else {
+                        r.classList.toggle('hidden', r.dataset.periode !== nilai);
+                    }
+                });
+
+                if (btn) {
+                    btn.classList.toggle('hidden', nilai !== '');
+                    btn.textContent = btn.dataset.labelBuka;
+                }
             });
         </script>
     @endpush

@@ -20,14 +20,14 @@
 
             <div class="flex gap-2">
                 <a href="{{ route($base.'.data-ibu.index') }}"
-                   class="inline-flex justify-center rounded-xl border-2 border-[#E99AB7] bg-white px-5 py-2.5 text-sm font-semibold text-[#C9517E] transition hover:bg-[#FCE7F0]">
+                   class="inline-flex justify-center rounded-xl border-2 border-[#E99AB7] bg-white px-5 py-2.5 text-sm font-semibold text-[#C9517E] transition hover:bg-[#FCE7F0] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/30 active:scale-[0.98]">
                     Kembali
                 </a>
 
                 @if ($base === 'admin')
                     @can('ibu.update')
                         <a href="{{ route('admin.data-ibu.edit', $ibu) }}"
-                           class="inline-flex justify-center rounded-xl bg-[#E99AB7] px-5 py-2.5 text-sm font-semibold text-[#542D3D] shadow-sm transition hover:bg-[#DD87A8]">
+                           class="inline-flex justify-center rounded-xl border-2 border-[#E99AB7] bg-[#E99AB7] px-5 py-2.5 text-sm font-semibold text-[#542D3D] shadow-sm transition hover:border-[#DD87A8] hover:bg-[#DD87A8] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40 active:scale-[0.98]">
                             Edit
                         </a>
                     @endcan

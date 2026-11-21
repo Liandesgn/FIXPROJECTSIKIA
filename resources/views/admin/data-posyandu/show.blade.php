@@ -11,9 +11,28 @@
     $normal    = $daftar->where('status_kesehatan', 'normal')->count();
     $perhatian = $daftar->filter(fn ($p) => ! empty($p->status_kesehatan) && $p->status_kesehatan !== 'normal')->count();
 
+    // Ambil nilai kolom secara aman: kalau kolom tidak ada, hasilnya null (tampil "-")
+    $ambil = function ($baris, array $kolom) {
+        $atribut = method_exists($baris, 'getAttributes') ? $baris->getAttributes() : (array) $baris;
+        foreach ($kolom as $k) {
+            if (array_key_exists($k, $atribut) && $atribut[$k] !== null && $atribut[$k] !== '') {
+                return $atribut[$k];
+            }
+        }
+        return null;
+    };
+
+    $angka = fn ($v) => ($v === null || $v === '') ? '-' : number_format((float) $v, 1, ',', '.');
+
+    $umurBulan = function ($baris) use ($ambil, $kegiatan) {
+        $lahir = $ambil($baris, ['tgl_lahir', 'tanggal_lahir']);
+        if (! $lahir || ! $kegiatan->tanggal) return '-';
+        return (int) floor(abs(\Carbon\Carbon::parse($lahir)->diffInMonths($kegiatan->tanggal))) . ' bln';
+    };
+
     $kartu = [
         ['Anak Diperiksa', $tersedia ? $jumlah : '-', 'M12 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm-4 14v-6l-2-4h12l-2 4v6', 'bg-[#FCE7F0] text-[#C9517E]', 'text-[#C9517E]'],
-        ['Normal', $tersedia ? $normal : '-', 'm5 12 5 5 9-10', 'bg-green-50 text-green-600', 'text-green-600'],
+        ['Gizi Baik', $tersedia ? $normal : '-', 'm5 12 5 5 9-10', 'bg-green-50 text-green-600', 'text-green-600'],
         ['Perlu Perhatian', $tersedia ? $perhatian : '-', 'M6 9a6 6 0 1 1 12 0c0 5 2 6.5 2 6.5H4S6 14 6 9Zm4 9.5a2 2 0 0 0 4 0', 'bg-red-50 text-red-600', 'text-red-600'],
     ];
 
@@ -23,6 +42,8 @@
         'Lokasi'  => $kegiatan->lokasi,
         'Wilayah' => $kegiatan->wilayah?->nama_wilayah,
     ];
+
+    $kartuCls = 'rounded-2xl border border-[#F1D5E0] bg-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-[#E99AB7] hover:shadow-md motion-reduce:transform-none motion-reduce:transition-none';
 @endphp
 
 <div class="mx-auto w-full max-w-5xl space-y-5">
@@ -35,14 +56,14 @@
         </div>
 
         <a href="{{ route($base . '.data-posyandu.index') }}"
-           class="inline-flex justify-center rounded-xl border-2 border-[#E99AB7] bg-white px-5 py-2.5 text-sm font-semibold text-[#C9517E] transition hover:bg-[#FCE7F0] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/30">
+           class="inline-flex justify-center rounded-xl border-2 border-[#E99AB7] bg-white px-5 py-2.5 text-sm font-semibold text-[#C9517E] transition hover:bg-[#FCE7F0] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/30 active:scale-[0.98]">
             Kembali
         </a>
     </div>
 
     {{-- Informasi kegiatan --}}
-    <div class="overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm">
-        <div class="border-b border-[#F1D5E0] bg-[#FCE7F0] px-5 py-3.5">
+    <div class="overflow-hidden {{ $kartuCls }}">
+        <div class="border-b border-[#F1D5E0] bg-gradient-to-r from-[#FCE7F0] to-[#FFF7FA] px-5 py-3.5">
             <h2 class="text-base font-bold text-[#542D3D]">{{ $kegiatan->jenis_kegiatan ?? 'Kegiatan Posyandu' }}</h2>
         </div>
 
@@ -59,7 +80,7 @@
     {{-- Kartu ringkasan --}}
     <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
         @foreach ($kartu as [$label, $nilai, $ikon, $warnaIkon, $warnaAngka])
-            <div class="flex items-center gap-3 rounded-2xl border border-[#F1D5E0] bg-white p-4 shadow-sm">
+            <div class="flex items-center gap-3 p-4 {{ $kartuCls }}">
                 <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl {{ $warnaIkon }}">
                     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="{{ $ikon }}"/></svg>
                 </div>
@@ -90,15 +111,17 @@
             <p class="px-5 py-10 text-center text-sm font-medium text-slate-500">Data pemeriksaan belum tersedia.</p>
         @else
             <div class="overflow-x-auto">
-                <table class="w-full min-w-[34rem] text-left">
+                <table class="w-full min-w-[46rem] text-left">
                     <thead class="bg-[#FCE7F0] text-xs font-bold uppercase tracking-wide text-[#542D3D]">
                         <tr>
                             <th class="whitespace-nowrap px-4 py-3">No</th>
                             <th class="whitespace-nowrap px-4 py-3">Nama Anak</th>
-                            <th class="whitespace-nowrap px-4 py-3">NIK</th>
-                            <th class="whitespace-nowrap px-4 py-3">Berat Badan</th>
-                            <th class="whitespace-nowrap px-4 py-3">Tinggi Badan</th>
-                            <th class="whitespace-nowrap px-4 py-3">Status</th>
+                            <th class="whitespace-nowrap px-4 py-3">Umur</th>
+                            <th class="whitespace-nowrap px-4 py-3">BB (kg)</th>
+                            <th class="whitespace-nowrap px-4 py-3">TB (cm)</th>
+                            <th class="whitespace-nowrap px-4 py-3">LK (cm)</th>
+                            <th class="whitespace-nowrap px-4 py-3">Status Gizi</th>
+                            <th class="whitespace-nowrap px-4 py-3">Imunisasi / Vitamin</th>
                         </tr>
                     </thead>
 
@@ -106,22 +129,29 @@
                         @forelse ($pemeriksaan as $p)
                             @php
                                 $st    = (string) ($p->status_kesehatan ?? '');
-                                $label = $st === '' ? '-' : ($st === 'normal' ? 'Normal' : ucwords(str_replace('_', ' ', $st)));
+                                $label = $st === '' ? '-' : ($st === 'normal' ? 'Gizi Baik' : 'Perlu Perhatian');
                                 $warna = $st === '' ? 'bg-slate-100 text-slate-600' : ($st === 'normal' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700');
                             @endphp
-                            <tr data-baris-anak data-nama="{{ mb_strtolower((string) $p->nama_anak) }}" class="transition hover:bg-[#FCE7F0]/50">
+                            <tr data-baris-anak data-nama="{{ mb_strtolower((string) $p->nama_anak) }}" class="transition-colors hover:bg-[#FCE7F0]/50">
                                 <td class="px-4 py-3.5 text-sm font-semibold text-slate-700">{{ $loop->iteration }}</td>
-                                <td class="px-4 py-3.5 text-sm font-bold text-[#542D3D]">{{ $p->nama_anak }}</td>
-                                <td class="whitespace-nowrap px-4 py-3.5 text-sm text-slate-800">{{ $p->nik_anak }}</td>
-                                <td class="px-4 py-3.5 text-sm text-slate-800">{{ $p->berat_badan ?? '-' }}</td>
-                                <td class="px-4 py-3.5 text-sm text-slate-800">{{ $p->tinggi_badan ?? '-' }}</td>
+                                <td class="px-4 py-3.5">
+                                    <p class="text-sm font-bold text-[#542D3D]">{{ $p->nama_anak }}</p>
+                                    @if (! empty($p->nik_anak))
+                                        <p class="text-xs text-slate-600">NIK {{ $p->nik_anak }}</p>
+                                    @endif
+                                </td>
+                                <td class="whitespace-nowrap px-4 py-3.5 text-sm text-slate-800">{{ $umurBulan($p) }}</td>
+                                <td class="px-4 py-3.5 text-sm text-slate-800">{{ $angka($p->berat_badan ?? null) }}</td>
+                                <td class="px-4 py-3.5 text-sm text-slate-800">{{ $angka($p->tinggi_badan ?? null) }}</td>
+                                <td class="px-4 py-3.5 text-sm text-slate-800">{{ $angka($ambil($p, ['lingkar_kepala', 'lk'])) }}</td>
                                 <td class="px-4 py-3.5">
                                     <span class="inline-flex whitespace-nowrap rounded-full px-3 py-1 text-xs font-bold {{ $warna }}">{{ $label }}</span>
                                 </td>
+                                <td class="px-4 py-3.5 text-sm text-slate-800">{{ $ambil($p, ['imunisasi', 'vitamin', 'imunisasi_vitamin']) ?? '-' }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-5 py-12 text-center">
+                                <td colspan="8" class="px-5 py-12 text-center">
                                     <p class="font-bold text-[#542D3D]">Belum ada anak yang diperiksa pada kegiatan ini.</p>
                                 </td>
                             </tr>
@@ -129,7 +159,7 @@
 
                         {{-- Muncul saat pencarian nama tidak menemukan hasil --}}
                         <tr id="anakKosong" class="hidden">
-                            <td colspan="6" class="px-5 py-12 text-center">
+                            <td colspan="8" class="px-5 py-12 text-center">
                                 <p class="font-bold text-[#542D3D]">Data tidak ditemukan.</p>
                             </td>
                         </tr>

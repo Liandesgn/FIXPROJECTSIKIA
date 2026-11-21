@@ -6,6 +6,8 @@
 @php
     $pg        = $anaks instanceof \Illuminate\Contracts\Pagination\LengthAwarePaginator ? $anaks : null;
     $nomorAwal = $pg ? ($pg->firstItem() ?? 1) : 1;
+
+    if ($pg) { $pg->appends(request()->query()); }
 @endphp
 
 <div class="mx-auto w-full max-w-7xl space-y-5">
@@ -22,7 +24,7 @@
         @if ($base === 'admin')
             @can('anak.create')
                 <a href="{{ route('admin.data-anak.create') }}"
-                   class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#C9517E] px-5 py-3 text-sm font-semibold text-white shadow-md shadow-[#C9517E]/25 transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40 sm:w-auto">
+                   class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#C9517E] px-5 py-3 text-sm font-semibold text-white shadow-md shadow-[#C9517E]/25 transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40 active:scale-[0.98] sm:w-auto">
                     <span class="text-lg leading-none">+</span> Tambah Data Anak
                 </a>
             @endcan
@@ -38,13 +40,12 @@
                     <label for="searchInput" class="sr-only">Cari anak</label>
                     <svg class="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-[#C9517E]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="m20 20-3.5-3.5"/></svg>
                     <input id="searchInput" type="search" name="search" value="{{ request('search') }}" autocomplete="off"
-                           data-pencarian data-aktif="{{ request()->filled('search') ? '1' : '0' }}"
                            placeholder="Cari nama / NIK anak"
                            class="w-full rounded-xl border-2 border-[#C9517E]/60 bg-white py-2.5 pl-11 pr-3 text-sm font-medium text-gray-900 outline-none transition placeholder:text-slate-500 focus:border-[#C9517E] focus:ring-4 focus:ring-[#E99AB7]/40">
                 </div>
 
                 <button type="submit"
-                        class="rounded-xl bg-[#C9517E] px-6 py-2.5 text-sm font-semibold text-white shadow-md shadow-[#C9517E]/25 transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40">
+                        class="rounded-xl bg-[#C9517E] px-6 py-2.5 text-sm font-semibold text-white shadow-md shadow-[#C9517E]/25 transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40 active:scale-[0.98]">
                     Cari
                 </button>
             </form>
@@ -71,7 +72,7 @@
 
                 <tbody class="divide-y divide-[#F7E6ED]">
                     @forelse ($anaks as $a)
-                        <tr class="transition hover:bg-[#FCE7F0]/50">
+                        <tr class="transition-colors hover:bg-[#FCE7F0]/50">
                             <td class="px-3 py-3.5 text-sm font-semibold text-slate-700 sm:px-4">{{ $nomorAwal + $loop->index }}</td>
                             <td class="hidden whitespace-nowrap px-4 py-3.5 text-sm text-slate-800 md:table-cell">{{ $a->nik_anak }}</td>
 
@@ -90,11 +91,12 @@
                                 <td class="whitespace-nowrap px-3 py-3.5 sm:px-4">
                                     <div class="flex items-center justify-center gap-2">
                                         <a href="{{ route($base.'.data-anak.show', $a) }}"
-                                           class="inline-flex h-8 items-center justify-center whitespace-nowrap rounded-lg bg-[#C9517E] px-3 text-xs font-bold text-white shadow-sm transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40">Detail</a>
+                                           class="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-lg bg-[#C9517E] px-3 text-xs font-bold text-white shadow-sm transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40 active:scale-[0.97] sm:h-8">Detail</a>
+
                                         @if ($base === 'admin')
                                             @can('anak.update')
                                                 <a href="{{ route('admin.data-anak.edit', $a) }}"
-                                                   class="inline-flex h-8 items-center justify-center whitespace-nowrap rounded-lg bg-[#E99AB7] px-3 text-xs font-bold text-[#542D3D] shadow-sm transition hover:bg-[#DD87A8] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40">Edit</a>
+                                                   class="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-lg bg-[#E99AB7] px-3 text-xs font-bold text-[#542D3D] shadow-sm transition hover:bg-[#DD87A8] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40 active:scale-[0.97] sm:h-8">Edit</a>
                                             @endcan
                                         @endif
                                     </div>
@@ -104,7 +106,7 @@
                     @empty
                         <tr>
                             <td colspan="{{ $base === 'kader' ? 7 : 8 }}" class="px-5 py-12 text-center">
-                                <p class="font-bold text-[#542D3D]">Data tidak ditemukan.</p>
+                                <p class="font-bold text-[#542D3D]">{{ request('search') ? 'Data tidak ditemukan.' : 'Belum ada data anak.' }}</p>
                             </td>
                         </tr>
                     @endforelse
@@ -165,23 +167,3 @@
     </div>
 </div>
 @endsection
-
-@push('scripts')
-<script>
-    // Kalau kotak pencarian dikosongkan, otomatis kembali ke daftar semula
-    (function () {
-        const input = document.querySelector('[data-pencarian]');
-        if (!input) return;
-
-        const kembali = function () {
-            if (input.value.trim() === '' && input.dataset.aktif === '1') {
-                input.dataset.aktif = '0';
-                input.form.submit();
-            }
-        };
-
-        input.addEventListener('input', kembali);
-        input.addEventListener('search', kembali);
-    })();
-</script>
-@endpush

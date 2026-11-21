@@ -81,13 +81,37 @@ class WilayahKerjaController extends Controller
     ): RedirectResponse {
         $data = $request->validated();
 
+        // Ambil data kelurahan/desa berdasarkan ID
+        $kelurahan = KelurahanDesa::findOrFail(
+            $data['kelurahan_desa_id']
+        );
+
+        // Ambil data RW berdasarkan ID
+        $rw = Rw::findOrFail($data['rw_id']);
+
+        // Ambil data RT berdasarkan ID
+        $rt = Rt::findOrFail($data['rt_id']);
+
+        // Ambil data kecamatan berdasarkan ID
+        $kecamatan = Kecamatan::findOrFail(
+            $data['kecamatan_id']
+        );
+
+        // Bentuk nama wilayah secara otomatis
+        $data['nama_wilayah'] = $kelurahan->nama_kelurahan_desa
+            . ' RW ' . $rw->nomor_rw
+            . ' RT ' . $rt->nomor_rt;
+
+        // Tetapkan kabupaten
         $data['kabupaten'] = 'Gresik';
 
+        // Bentuk deskripsi secara otomatis
         $data['deskripsi'] = 'Wilayah kerja ' . $data['nama_wilayah']
-            . ' yang berada di Kecamatan ' . $data['kecamatan']
-            . ', Kelurahan/Desa ' . $data['kelurahan']
+            . ' yang berada di Kecamatan ' . $kecamatan->nama_kecamatan
+            . ', Kelurahan/Desa ' . $kelurahan->nama_kelurahan_desa
             . ', Kabupaten Gresik.';
 
+        // Simpan perubahan
         $wilayah->update($data);
 
         return redirect()

@@ -1,16 +1,53 @@
+
 @extends('layouts.app')
 
 @section('title', 'Kelola Bidan')
 
 @section('content')
 @php
-    $pg        = $bidans instanceof \Illuminate\Contracts\Pagination\LengthAwarePaginator ? $bidans : null;
-    $total     = $pg ? $pg->total() : $bidans->count();
+    $pg = $bidans instanceof \Illuminate\Contracts\Pagination\LengthAwarePaginator ? $bidans : null;
+    $total = $pg ? $pg->total() : $bidans->count();
     $nomorAwal = $pg ? ($pg->firstItem() ?? 1) : 1;
-    $readOnly  = $readOnly ?? auth()->user()->isSuperAdmin();
+    $readOnly = $readOnly ?? false;
     $listWilayah = collect($wilayahs ?? []);
 
-    if ($pg) { $pg->appends(request()->query()); }
+    // Normalisasi nama desa/kelurahan
+    $formatNamaWilayah = function ($kelurahanDesa) {
+        if (!$kelurahanDesa) {
+            return '-';
+        }
+
+        $jenis = ucfirst(strtolower($kelurahanDesa->jenis ?? 'Desa'));
+
+        $namaDesa = trim($kelurahanDesa->nama_kelurahan_desa ?? '');
+
+        // Hapus awalan Desa/Kelurahan yang berulang
+        $namaDesa = preg_replace(
+            '/^(?:(?:Desa|Kelurahan)\s*)+/i',
+            '',
+            $namaDesa
+        );
+
+        return $jenis . ' ' . $namaDesa;
+    };
+
+    // Normalisasi nama Puskesmas
+    $formatNamaPuskesmas = function ($nama) {
+        $nama = trim($nama ?? '');
+
+        if ($nama === '') {
+            return '-';
+        }
+
+        // Hapus awalan Puskesmas yang berulang
+        $nama = preg_replace(
+            '/^(?:Puskesmas\s*)+/i',
+            '',
+            $nama
+        );
+
+        return 'Puskesmas ' . $nama;
+    };
 @endphp
 
 <div class="mx-auto w-full max-w-7xl space-y-5">
@@ -53,7 +90,10 @@
             <form method="GET" action="{{ url()->current() }}" class="flex flex-col gap-3 sm:flex-row">
                 <div class="relative flex-1">
                     <label for="searchInput" class="sr-only">Cari bidan</label>
-                    <svg class="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-[#C9517E]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="m20 20-3.5-3.5"/></svg>
+                    <svg class="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-[#C9517E]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <circle cx="11" cy="11" r="7"/>
+                        <path stroke-linecap="round" d="m20 20-3.5-3.5"/>
+                    </svg>
                     <input id="searchInput" type="search" name="search" value="{{ request('search') }}" autocomplete="off"
                            placeholder="Cari nama / email"
                            class="w-full rounded-xl border-2 border-[#C9517E]/60 bg-white py-2.5 pl-11 pr-3 text-sm font-medium text-gray-900 outline-none transition placeholder:text-slate-500 focus:border-[#C9517E] focus:ring-4 focus:ring-[#E99AB7]/40">
@@ -62,20 +102,31 @@
                 @if ($readOnly)
                     <div class="sm:w-64">
                         <label for="wilayahFilter" class="sr-only">Filter wilayah kerja</label>
-                        <select id="wilayahFilter" name="wilayah_kerja_id" onchange="this.form.submit()"
-                                class="w-full rounded-xl border-2 border-[#C9517E]/60 bg-white px-3 py-2.5 text-sm font-semibold text-gray-900 outline-none transition focus:border-[#C9517E] focus:ring-4 focus:ring-[#E99AB7]/40">
+
+                        <select
+                            id="wilayahFilter"
+                            name="wilayah_kerja_id"
+                            onchange="this.form.submit()"
+                            class="w-full rounded-xl border-2 border-[#C9517E]/60 bg-white px-3 py-2.5 text-sm font-semibold text-gray-900 outline-none transition focus:border-[#C9517E] focus:ring-4 focus:ring-[#E99AB7]/40"
+                        >
                             <option value="">Semua wilayah kerja</option>
 
                             @foreach ($listWilayah as $wilayah)
                                 @php
-                                    $kd = $wilayah->kelurahanDesa;
-                                    $namaOpsi = $kd
-                                        ? ucfirst($kd->jenis) . ' ' . $kd->nama_kelurahan_desa
-                                        : 'Wilayah #' . $wilayah->id;
+                                    $namaWilayah = $formatNamaWilayah(
+                                        $wilayah->kelurahanDesa
+                                    );
+
+                                    $namaPuskesmas = $formatNamaPuskesmas(
+                                        $wilayah->puskesmas?->nama_puskesmas
+                                    );
                                 @endphp
 
-                                <option value="{{ $wilayah->id }}" @selected((string) request('wilayah_kerja_id') === (string) $wilayah->id)>
-                                    {{ $namaOpsi }} — {{ $wilayah->puskesmas?->nama_puskesmas ?? '-' }}
+                                <option
+                                    value="{{ $wilayah->id }}"
+                                    @selected((string) request('wilayah_kerja_id') === (string) $wilayah->id)
+                                >
+                                    {{ $namaWilayah }} — {{ $namaPuskesmas }}
                                 </option>
                             @endforeach
                         </select>
@@ -108,27 +159,41 @@
                 <tbody class="divide-y divide-[#F7E6ED]">
                     @forelse ($bidans as $bidan)
                         @php
-                            $wilayahKerja  = $bidan->bidan?->wilayahKerja;
+                            $wilayahKerja = $bidan->bidan?->wilayahKerja;
+
                             $kelurahanDesa = $wilayahKerja?->kelurahanDesa;
 
-                            $namaWilayah = $kelurahanDesa
-                                ? ucfirst($kelurahanDesa->jenis) . ' ' . $kelurahanDesa->nama_kelurahan_desa
-                                : '-';
+                            $namaWilayah = $formatNamaWilayah($kelurahanDesa);
 
-                            $namaPuskesmas = $wilayahKerja?->puskesmas?->nama_puskesmas ?? '-';
+                            $namaPuskesmas = $formatNamaPuskesmas(
+                                $wilayahKerja?->puskesmas?->nama_puskesmas
+                            );
                         @endphp
 
                         <tr class="transition hover:bg-[#FCE7F0]/50">
-                            <td class="px-3 py-3.5 text-sm font-semibold text-slate-700 sm:px-4">{{ $nomorAwal + $loop->index }}</td>
-
-                            <td class="px-3 py-3.5 sm:px-4">
-                                <p class="break-words text-sm font-bold text-[#542D3D]">{{ $bidan->name ?? '-' }}</p>
-                                <p class="break-all text-xs text-slate-700 md:hidden">{{ $bidan->email ?? '-' }}</p>
-                                <p class="text-xs text-slate-700 lg:hidden">{{ $bidan->phone ?? '-' }}</p>
+                            <td class="px-3 py-3.5 text-sm font-semibold text-slate-700 sm:px-4">
+                                {{ $nomorAwal + $loop->index }}
                             </td>
 
-                            <td class="hidden whitespace-nowrap px-4 py-3.5 text-sm text-slate-800 md:table-cell">{{ $bidan->email ?? '-' }}</td>
-                            <td class="hidden whitespace-nowrap px-4 py-3.5 text-sm text-slate-800 lg:table-cell">{{ $bidan->phone ?? '-' }}</td>
+                            <td class="px-3 py-3.5 sm:px-4">
+                                <p class="break-words text-sm font-bold text-[#542D3D]">
+                                    {{ $bidan->name ?? '-' }}
+                                </p>
+                                <p class="break-all text-xs text-slate-700 md:hidden">
+                                    {{ $bidan->email ?? '-' }}
+                                </p>
+                                <p class="text-xs text-slate-700 lg:hidden">
+                                    {{ $bidan->phone ?? '-' }}
+                                </p>
+                            </td>
+
+                            <td class="hidden whitespace-nowrap px-4 py-3.5 text-sm text-slate-800 md:table-cell">
+                                {{ $bidan->email ?? '-' }}
+                            </td>
+
+                            <td class="hidden whitespace-nowrap px-4 py-3.5 text-sm text-slate-800 lg:table-cell">
+                                {{ $bidan->phone ?? '-' }}
+                            </td>
 
                             <td class="px-3 py-3.5 text-sm text-slate-800 sm:px-4">
                                 <p class="font-semibold">{{ $namaWilayah }}</p>
@@ -165,7 +230,9 @@
                     @empty
                         <tr>
                             <td colspan="{{ $readOnly ? 5 : 6 }}" class="px-5 py-12 text-center">
-                                <p class="font-bold text-[#542D3D]">{{ request('search') ? 'Data tidak ditemukan.' : 'Belum ada data bidan.' }}</p>
+                                <p class="font-bold text-[#542D3D]">
+                                    {{ request('search') ? 'Data tidak ditemukan.' : 'Belum ada data bidan.' }}
+                                </p>
                             </td>
                         </tr>
                     @endforelse
@@ -177,11 +244,14 @@
         <div class="border-t border-[#F1D5E0] bg-white px-4 py-3">
             @if ($pg)
                 @php
-                    $awal   = max($pg->currentPage() - 1, 1);
-                    $akhir  = min($pg->currentPage() + 1, $pg->lastPage());
-                    $btn    = 'inline-flex h-9 min-w-9 items-center justify-center rounded-lg border border-[#F1D5E0] bg-white px-2 text-sm font-semibold text-[#542D3D] transition hover:bg-[#FCE7F0]';
+                    $awal = max($pg->currentPage() - 1, 1);
+                    $akhir = min($pg->currentPage() + 1, $pg->lastPage());
+
+                    $btn = 'inline-flex h-9 min-w-9 items-center justify-center rounded-lg border border-[#F1D5E0] bg-white px-2 text-sm font-semibold text-[#542D3D] transition hover:bg-[#FCE7F0]';
+
                     $btnOff = 'inline-flex h-9 w-9 cursor-not-allowed items-center justify-center rounded-lg border border-[#F1D5E0] bg-white text-lg text-slate-300';
                 @endphp
+
                 <nav class="flex flex-col items-center justify-between gap-3 sm:flex-row" aria-label="Navigasi halaman">
                     <p class="text-xs font-medium text-slate-600">
                         Menampilkan {{ $pg->firstItem() ?? 0 }}–{{ $pg->lastItem() ?? 0 }} dari {{ $pg->total() }} data
@@ -197,7 +267,9 @@
 
                             @if ($awal > 1)
                                 <a href="{{ $pg->url(1) }}" class="{{ $btn }}">1</a>
-                                @if ($awal > 2) <span class="px-1 text-slate-400">…</span> @endif
+                                @if ($awal > 2)
+                                    <span class="px-1 text-slate-400">…</span>
+                                @endif
                             @endif
 
                             @for ($i = $awal; $i <= $akhir; $i++)
@@ -209,7 +281,9 @@
                             @endfor
 
                             @if ($akhir < $pg->lastPage())
-                                @if ($akhir < $pg->lastPage() - 1) <span class="px-1 text-slate-400">…</span> @endif
+                                @if ($akhir < $pg->lastPage() - 1)
+                                    <span class="px-1 text-slate-400">…</span>
+                                @endif
                                 <a href="{{ $pg->url($pg->lastPage()) }}" class="{{ $btn }}">{{ $pg->lastPage() }}</a>
                             @endif
 

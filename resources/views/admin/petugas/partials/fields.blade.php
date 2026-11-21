@@ -15,13 +15,55 @@
 
     $listWilayah = collect($wilayahs ?? []);
 
-    // Daftar Puskesmas (dropdown pertama)
+    // Tambahkan kata "Puskesmas" hanya jika namanya belum memuatnya
+    $labelPuskesmas = function ($nama) {
+        $nama = trim((string) $nama);
+
+        return \Illuminate\Support\Str::startsWith(\Illuminate\Support\Str::lower($nama), 'puskesmas')
+            ? $nama
+            : 'Puskesmas ' . $nama;
+    };
+
+    // Tambahkan kata "Desa" / "Kelurahan" hanya jika namanya belum memuatnya
+    $labelKelurahan = function ($kd) {
+        $nama  = trim((string) $kd->nama_kelurahan_desa);
+        $jenis = ucfirst(trim((string) $kd->jenis));
+
+        if ($jenis === '' || \Illuminate\Support\Str::startsWith(\Illuminate\Support\Str::lower($nama), \Illuminate\Support\Str::lower($jenis))) {
+            return $nama;
+        }
+
+        return $jenis . ' ' . $nama;
+    };
+
+    // Tingkat 1: daftar Puskesmas
     $daftarPuskesmas = $listWilayah
         ->map(fn ($w) => $w->puskesmas)
         ->filter()
         ->unique('id')
         ->sortBy('nama_puskesmas')
         ->values();
+
+    $itemsPuskesmas = $daftarPuskesmas
+        ->map(fn ($p) => ['value' => $p->id, 'label' => $labelPuskesmas($p->nama_puskesmas), 'parent' => ''])
+        ->values()
+        ->all();
+
+    // Tingkat 2: Kelurahan/Desa per Puskesmas (nilai yang dikirim = wilayah_kerja_id)
+    $itemsKelurahan = $listWilayah
+        ->filter(fn ($w) => $w->puskesmas)
+        ->map(function ($w) use ($labelKelurahan) {
+            $kd = $w->kelurahanDesa;
+
+            return [
+                'value'  => $w->id,
+                'label'  => $kd ? $labelKelurahan($kd) : 'Wilayah #' . $w->id,
+                'parent' => $w->puskesmas->id,
+            ];
+        })
+        ->sortBy('label')
+        ->values()
+        ->all();
 
     // Puskesmas milik wilayah yang sedang dipilih (untuk Edit atau validasi gagal)
     $wilayahDipilih    = $listWilayah->first(fn ($w) => (string) $w->id === (string) $wilayahTerpilih);
@@ -142,68 +184,22 @@
         @enderror
     </div>
 
-    {{-- Wilayah Kerja: pilih Puskesmas dulu --}}
+    {{-- Wilayah Kerja: Puskesmas lalu Kelurahan/Desa (satu kolom) --}}
     <div class="sm:col-span-2">
-        <label for="puskesmas_pilih" class="{{ $labelClass }}">
-            Wilayah Kerja <span class="text-[#C9517E]">*</span>
-        </label>
-
-        <select
-            id="puskesmas_pilih"
-            required
-            class="{{ $fieldClass }}"
-        >
-            <option value="">-- Pilih Puskesmas --</option>
-
-            @foreach ($daftarPuskesmas as $item)
-                <option
-                    value="{{ $item->id }}"
-                    @selected((string) $puskesmasTerpilih === (string) $item->id)
-                >
-                    Puskesmas {{ $item->nama_puskesmas }}
-                </option>
-            @endforeach
-        </select>
-
-        <p class="mt-1 text-xs font-medium text-slate-600">
-            Pilih Puskesmas terlebih dahulu, lalu pilih Kelurahan/Desa penugasan.
-        </p>
-    </div>
-
-    {{-- Kelurahan/Desa: muncul setelah Puskesmas dipilih --}}
-    <div id="kelurahanWrap" class="sm:col-span-2 {{ $puskesmasTerpilih ? '' : 'hidden' }}">
-        <label for="wilayah_kerja_id" class="{{ $labelClass }}">
-            Kelurahan / Desa <span class="text-[#C9517E]">*</span>
-        </label>
-
-        <select
-            id="wilayah_kerja_id"
-            name="wilayah_kerja_id"
-            class="{{ $fieldClass }}"
-        >
-            <option value="">-- Pilih Kelurahan / Desa --</option>
-
-            @foreach ($listWilayah as $wilayah)
-                @php
-                    $kelurahanDesa = $wilayah->kelurahanDesa;
-                    $labelKelurahan = $kelurahanDesa
-                        ? ucfirst($kelurahanDesa->jenis) . ' ' . $kelurahanDesa->nama_kelurahan_desa
-                        : 'Wilayah #' . $wilayah->id;
-                @endphp
-
-                <option
-                    value="{{ $wilayah->id }}"
-                    data-puskesmas="{{ $wilayah->puskesmas?->id }}"
-                    @selected((string) $wilayahTerpilih === (string) $wilayah->id)
-                >
-                    {{ $labelKelurahan }}
-                </option>
-            @endforeach
-        </select>
-
-        @error('wilayah_kerja_id')
-            <p class="{{ $errorClass }}">{{ $message }}</p>
-        @enderror
+        @include('partials.dropdown-bertingkat', [
+            'ddId'          => 'wilayah_kerja',
+            'ddLabel'       => 'Wilayah Kerja',
+            'ddPlaceholder' => 'Pilih Puskesmas lalu Kelurahan/Desa',
+            'ddHint'        => 'Pilih Puskesmas terlebih dahulu, lalu pilih Kelurahan/Desa penugasan.',
+            'ddLevels'      => [
+                ['title' => 'Pilih Puskesmas', 'items' => $itemsPuskesmas],
+                ['title' => 'Pilih Kelurahan / Desa', 'items' => $itemsKelurahan],
+            ],
+            'ddHidden'      => [
+                ['name' => 'wilayah_kerja_id', 'level' => 1, 'value' => $wilayahTerpilih],
+            ],
+            'ddSelected'    => [$puskesmasTerpilih, $wilayahTerpilih],
+        ])
     </div>
 
 </div>
@@ -212,48 +208,7 @@
     @push('scripts')
         <script>
             document.addEventListener('DOMContentLoaded', function () {
-                // ===== Wilayah Kerja: Puskesmas lalu Kelurahan/Desa =====
-                const puskesmasSelect  = document.getElementById('puskesmas_pilih');
-                const kelurahanSelect  = document.getElementById('wilayah_kerja_id');
-                const kelurahanWrap    = document.getElementById('kelurahanWrap');
-
-                if (puskesmasSelect && kelurahanSelect && kelurahanWrap) {
-                    const semuaKelurahan = Array.from(kelurahanSelect.options)
-                        .filter(function (o) { return o.value; })
-                        .map(function (o) {
-                            return { value: o.value, label: o.textContent.trim(), puskesmas: o.dataset.puskesmas || '' };
-                        });
-
-                    const dipilihAwal = kelurahanSelect.value;
-
-                    function isiKelurahan(puskesmasId, dipilih) {
-                        kelurahanSelect.innerHTML = '';
-                        kelurahanSelect.add(new Option('-- Pilih Kelurahan / Desa --', ''));
-
-                        semuaKelurahan
-                            .filter(function (k) { return k.puskesmas === String(puskesmasId); })
-                            .forEach(function (k) { kelurahanSelect.add(new Option(k.label, k.value)); });
-
-                        kelurahanSelect.value = dipilih || '';
-                    }
-
-                    function tampilkan() {
-                        const ada = puskesmasSelect.value !== '';
-                        kelurahanWrap.classList.toggle('hidden', !ada);
-                        kelurahanSelect.disabled = !ada;
-                        kelurahanSelect.required = ada;
-                    }
-
-                    puskesmasSelect.addEventListener('change', function () {
-                        isiKelurahan(this.value, '');
-                        tampilkan();
-                    });
-
-                    isiKelurahan(puskesmasSelect.value, dipilihAwal);
-                    tampilkan();
-                }
-
-                // ===== Tampilkan/sembunyikan password =====
+                // Tampilkan/sembunyikan password
                 const eye = '<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.5 12s3.5-7 9.5-7 9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
 
                 const eyeOff = '<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m3 3 18 18M10.6 10.6a2 2 0 0 0 2.8 2.8"/><path stroke-linecap="round" stroke-linejoin="round" d="M9.9 5.2A10.8 10.8 0 0 1 12 5c6 0 9.5 7 9.5 7a15 15 0 0 1-3.1 3.9M6.2 6.2C3.8 7.8 2.5 12 2.5 12s3.5 7 9.5 7c1 0 1.9-.2 2.8-.5"/></svg>';

@@ -1,4 +1,3 @@
-
 @extends('layouts.app')
 
 @section('title', 'Profil Saya')
@@ -47,16 +46,20 @@
         'clock'    => 'M12 8v4l3 2m6-2a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
     ];
 
-    // Komponen tampilan field profil
+    // Satu isian: ikon + label di atas, nilai tegas di dalam kotak.
+    // Hover hanya mengubah warna dan bayangan secara lembut (tidak ada gerakan).
     $field = fn (string $label, $value, string $ikonKey, bool $lebar = false) =>
-        '<div class="min-w-0' . ($lebar ? ' sm:col-span-2' : '') . '">'
-        . '<dt class="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-[#C9517E]">'
-        . '<svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">'
-        . '<path stroke-linecap="round" stroke-linejoin="round" d="' . $ikon[$ikonKey] . '"/></svg>'
+        '<div class="group min-w-0' . ($lebar ? ' sm:col-span-2' : '') . '">'
+        . '<dt class="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-[#C9517E]">'
+        . '<span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#FCE7F0] text-[#C9517E] transition-colors duration-200 group-hover:bg-[#C9517E] group-hover:text-white motion-reduce:transition-none">'
+        . '<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">'
+        . '<path stroke-linecap="round" stroke-linejoin="round" d="' . $ikon[$ikonKey] . '"/></svg></span>'
         . e($label) . '</dt>'
-        . '<dd class="mt-1.5 break-words rounded-xl border-2 border-[#E99AB7] bg-[#FFF7FA] px-4 py-3 text-base font-bold text-[#542D3D]">'
+        . '<dd class="mt-2 break-words rounded-xl border-2 border-[#F1D5E0] bg-white px-4 py-3 text-base font-bold text-[#542D3D] shadow-sm transition duration-200 group-hover:border-[#E99AB7] group-hover:bg-[#FFF7FA] group-hover:shadow-md motion-reduce:transition-none">'
         . e(filled($value) ? $value : '-') . '</dd>'
         . '</div>';
+
+    $adaWilayah = $wk || $kecamatan || $puskesmas;
 @endphp
 
 <div class="mx-auto w-full max-w-4xl space-y-5">
@@ -71,20 +74,20 @@
         </p>
     </div>
 
-    {{-- Data Akun --}}
-    <section class="overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm">
-        <div class="border-b border-[#F1D5E0] bg-[#FCE7F0] px-6 py-4">
-            <h2 class="text-lg font-bold text-[#542D3D]">Data Akun</h2>
-        </div>
+    {{-- Kartu profil --}}
+    <section class="overflow-hidden rounded-3xl border border-[#F1D5E0] bg-white shadow-sm">
+        <div class="flex flex-col sm:flex-row">
 
-        <div class="flex flex-col items-center gap-6 p-6 sm:flex-row sm:items-start sm:gap-8">
-
-            {{-- Foto + Role --}}
-            <div class="flex shrink-0 flex-col items-center gap-3">
-                <span class="flex h-28 w-28 items-center justify-center rounded-full bg-[#C9517E] text-5xl font-bold text-white shadow-md ring-4 ring-[#FCE7F0] sm:h-32 sm:w-32"
+            {{-- Panel kiri: foto, nama, role --}}
+            <div class="flex shrink-0 flex-col items-center gap-3 border-b border-[#F1D5E0] bg-gradient-to-b from-[#FCE7F0] via-[#FDF0F5] to-white px-6 py-8 sm:w-64 sm:border-b-0 sm:border-r">
+                <span class="flex h-28 w-28 items-center justify-center rounded-full bg-[#C9517E] text-5xl font-bold text-white shadow-lg ring-4 ring-white sm:h-32 sm:w-32"
                       aria-hidden="true">
                     {{ $initial }}
                 </span>
+
+                <h2 class="break-words text-center text-lg font-bold text-[#542D3D]">
+                    {{ $user->name }}
+                </h2>
 
                 <span class="inline-flex items-center gap-1.5 rounded-full bg-[#C9517E] px-4 py-1.5 text-sm font-bold text-white shadow-sm">
                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -94,31 +97,49 @@
                 </span>
             </div>
 
-            <dl class="grid w-full grid-cols-1 gap-5 sm:grid-cols-2">
-                {!! $field('Nama', $user->name, 'user') !!}
-                {!! $field('Email', $user->email, 'mail') !!}
-                {!! $field('Nomor HP', $user->phone, 'phone') !!}
-                {!! $field('Role', $roleLabel, 'shield') !!}
+            {{-- Panel kanan: isian --}}
+            <div class="min-w-0 flex-1 p-6">
 
-                @if ($wk)
-                    {!! $field('Wilayah Kerja', $wk->label(), 'pin', true) !!}
-                @endif
+                <h3 class="mb-4 flex items-center gap-2 text-sm font-bold text-[#542D3D]">
+                    <span class="h-4 w-1 rounded-full bg-[#C9517E]"></span>
+                    Data Akun
+                </h3>
 
-                @if ($kecamatan)
-                    {!! $field('Kecamatan', $kecamatan->nama_kecamatan, 'pin', true) !!}
-                @endif
+                <dl class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                    {!! $field('Nama', $user->name, 'user') !!}
+                    {!! $field('Email', $user->email, 'mail') !!}
+                    {!! $field('Nomor HP', $user->phone, 'phone') !!}
+                    {!! $field('Role', $roleLabel, 'shield') !!}
+                </dl>
 
-                @if ($puskesmas)
-                    {!! $field('Puskesmas', $puskesmas->nama_puskesmas, 'building', true) !!}
+                @if ($adaWilayah)
+                    <h3 class="mb-4 mt-8 flex items-center gap-2 text-sm font-bold text-[#542D3D]">
+                        <span class="h-4 w-1 rounded-full bg-[#C9517E]"></span>
+                        Wilayah Tugas
+                    </h3>
+
+                    <dl class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                        @if ($wk)
+                            {!! $field('Wilayah Kerja', $wk->label(), 'pin', true) !!}
+                        @endif
+
+                        @if ($kecamatan)
+                            {!! $field('Kecamatan', $kecamatan->nama_kecamatan, 'pin') !!}
+                        @endif
+
+                        @if ($puskesmas)
+                            {!! $field('Puskesmas', $puskesmas->nama_puskesmas, 'building') !!}
+                        @endif
+                    </dl>
                 @endif
-            </dl>
+            </div>
         </div>
     </section>
 
     {{-- Data Ibu (khusus role Ibu) --}}
     @if ($isIbu)
-        <section class="overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm">
-            <div class="border-b border-[#F1D5E0] bg-[#FCE7F0] px-6 py-4">
+        <section class="overflow-hidden rounded-3xl border border-[#F1D5E0] bg-white shadow-sm">
+            <div class="border-b border-[#F1D5E0] bg-gradient-to-r from-[#FCE7F0] to-white px-6 py-4">
                 <h2 class="text-lg font-bold text-[#542D3D]">Data Ibu</h2>
                 <p class="mt-0.5 text-sm text-slate-600">
                     Data registrasi ibu yang tercatat di sistem.

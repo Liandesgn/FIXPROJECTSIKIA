@@ -8,28 +8,50 @@
     $errorClass = 'mt-1 text-xs font-medium text-red-600';
     $hintClass = 'mt-1 text-xs text-slate-500';
 
+    $puskesmasTerpakai = collect($puskesmasTerpakai ?? []);
+    $listKecamatan = collect($kecamatans ?? []);
+    $listPuskesmas = collect($puskesmas ?? []);
+
     $selectedPuskesmas = old('puskesmas_id', $admin?->puskesmas_id ?? '');
     $selectedKecamatan = old('kecamatan_id', $admin?->puskesmas?->kecamatan_id ?? '');
 
-    $puskesmasTerpakai = collect($puskesmasTerpakai ?? []);
-
-    // Dropdown Wilayah Kerja: Puskesmas dikelompokkan per Kecamatan
-    $listKecamatan = collect($kecamatans ?? []);
-    $listPuskesmas = collect($puskesmas ?? []);
-    $idKecamatan   = $listKecamatan->pluck('id');
-
-    $kelompok = $listKecamatan
-        ->map(fn ($k) => [
-            'label' => 'Kecamatan ' . $k->nama_kecamatan,
-            'items' => $listPuskesmas->where('kecamatan_id', $k->id),
-        ])
-        ->filter(fn ($g) => $g['items']->isNotEmpty())
-        ->values();
-
-    $puskesmasLain = $listPuskesmas->reject(fn ($p) => $idKecamatan->contains($p->kecamatan_id));
-    if ($puskesmasLain->isNotEmpty()) {
-        $kelompok->push(['label' => 'Lainnya', 'items' => $puskesmasLain]);
+    // Kalau kecamatan kosong tapi puskesmas ada, ambil kecamatan dari puskesmas itu
+    if ($selectedKecamatan === '' || $selectedKecamatan === null) {
+        $selectedKecamatan = $listPuskesmas
+            ->first(fn ($p) => (string) $p->id === (string) $selectedPuskesmas)?->kecamatan_id ?? '';
     }
+
+    // Tambahkan kata "Puskesmas" hanya jika namanya belum memuatnya
+    $labelPuskesmas = function ($nama) {
+        $nama = trim((string) $nama);
+
+        return \Illuminate\Support\Str::startsWith(\Illuminate\Support\Str::lower($nama), 'puskesmas')
+            ? $nama
+            : 'Puskesmas ' . $nama;
+    };
+
+    // Data dropdown bertingkat
+    $itemsKecamatan = $listKecamatan
+        ->sortBy('nama_kecamatan')
+        ->map(fn ($k) => ['value' => $k->id, 'label' => $k->nama_kecamatan, 'parent' => ''])
+        ->values()
+        ->all();
+
+    $itemsPuskesmas = $listPuskesmas
+        ->sortBy('nama_puskesmas')
+        ->map(function ($p) use ($puskesmasTerpakai, $isEdit, $admin, $labelPuskesmas) {
+            $terpakai = $puskesmasTerpakai->contains($p->id)
+                && ! ($isEdit && (int) $admin->puskesmas_id === (int) $p->id);
+
+            return [
+                'value'    => $p->id,
+                'label'    => $labelPuskesmas($p->nama_puskesmas) . ($terpakai ? ' (Sudah memiliki Admin)' : ''),
+                'parent'   => $p->kecamatan_id,
+                'disabled' => $terpakai,
+            ];
+        })
+        ->values()
+        ->all();
 @endphp
 
 <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -170,55 +192,23 @@
         </p>
     </div>
 
-    {{-- Wilayah Kerja: Puskesmas per Kecamatan --}}
+    {{-- Wilayah Kerja: Kecamatan lalu Puskesmas (satu kolom) --}}
     <div class="sm:col-span-2">
-        <label for="puskesmas_id" class="{{ $labelClass }}">
-            Wilayah Kerja <span class="text-[#C9517E]">*</span>
-        </label>
-
-        <select
-            id="puskesmas_id"
-            name="puskesmas_id"
-            required
-            class="{{ $fieldClass }}"
-        >
-            <option value="">Pilih Wilayah Kerja</option>
-
-            @foreach ($kelompok as $grup)
-                <optgroup label="{{ $grup['label'] }}">
-                    @foreach ($grup['items'] as $item)
-                        @php
-                            $sudahMemilikiAdmin = $puskesmasTerpakai->contains($item->id);
-                            $milikAdminIni = $isEdit && (int) $admin->puskesmas_id === (int) $item->id;
-                        @endphp
-
-                        <option
-                            value="{{ $item->id }}"
-                            data-kecamatan="{{ $item->kecamatan_id }}"
-                            @disabled($sudahMemilikiAdmin && ! $milikAdminIni)
-                            @selected((string) $selectedPuskesmas === (string) $item->id)
-                        >
-                            Puskesmas {{ $item->nama_puskesmas }}@if ($sudahMemilikiAdmin && ! $milikAdminIni) (Sudah memiliki Admin)@endif
-                        </option>
-                    @endforeach
-                </optgroup>
-            @endforeach
-        </select>
-
-        {{-- Kecamatan ikut terkirim otomatis sesuai Puskesmas yang dipilih --}}
-        <input type="hidden" id="kecamatan_id" name="kecamatan_id" value="{{ $selectedKecamatan }}">
-
-        @error('puskesmas_id')
-            <p class="{{ $errorClass }}">{{ $message }}</p>
-        @enderror
-
-        @error('kecamatan_id')
-            <p class="{{ $errorClass }}">{{ $message }}</p>
-        @enderror
-
-        <p class="{{ $hintClass }}">
-            Pilih Puskesmas sesuai kecamatannya. Satu Puskesmas hanya boleh memiliki satu Admin.
-        </p>
+        @include('partials.dropdown-bertingkat', [
+            'ddId'          => 'wilayah_kerja',
+            'ddLabel'       => 'Wilayah Kerja',
+            'ddPlaceholder' => 'Pilih Kecamatan lalu Puskesmas',
+            'ddHint'        => 'Satu Puskesmas hanya boleh memiliki satu Admin.',
+            'ddLevels'      => [
+                ['title' => 'Pilih Kecamatan', 'items' => $itemsKecamatan],
+                ['title' => 'Pilih Puskesmas', 'items' => $itemsPuskesmas],
+            ],
+            'ddHidden'      => [
+                ['name' => 'kecamatan_id', 'level' => 0, 'value' => $selectedKecamatan],
+                ['name' => 'puskesmas_id', 'level' => 1, 'value' => $selectedPuskesmas],
+            ],
+            'ddSelected'    => [$selectedKecamatan, $selectedPuskesmas],
+        ])
     </div>
 </div>
 
@@ -242,18 +232,6 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    // Kecamatan (tersembunyi) selalu mengikuti Puskesmas yang dipilih
-    const puskesmasSelect = document.getElementById('puskesmas_id');
-    const kecamatanHidden = document.getElementById('kecamatan_id');
-
-    function sinkronKecamatan() {
-        const opsi = puskesmasSelect.selectedOptions[0];
-        kecamatanHidden.value = opsi && opsi.dataset.kecamatan ? opsi.dataset.kecamatan : '';
-    }
-
-    puskesmasSelect.addEventListener('change', sinkronKecamatan);
-    sinkronKecamatan();
-
     // Tampilkan/sembunyikan password
     document.querySelectorAll('[data-toggle-password]').forEach(function (btn) {
         btn.addEventListener('click', function () {

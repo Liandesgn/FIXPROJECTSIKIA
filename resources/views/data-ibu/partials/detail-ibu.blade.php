@@ -16,6 +16,42 @@
         return null;
     };
 
+    // Susun alamat: Kec. A, Desa B, RT 001/RW 01 (memakai kolom lama bila relasi belum ada)
+    $alamatDari = function ($w) {
+        if (! $w) return '-';
+
+        $relasi = function (string $nama) use ($w) {
+            if ($w->relationLoaded($nama)) return $w->getRelation($nama);
+            return method_exists($w, $nama) ? $w->{$nama}()->first() : null;
+        };
+
+        $kec  = $relasi('kecamatan');
+        $desa = $relasi('kelurahanDesa');
+        $rw   = $relasi('rw');
+        $rt   = $relasi('rt');
+
+        $kolomKec  = $w->getAttribute('kecamatan');
+        $kolomDesa = $w->getAttribute('kelurahan');
+        $namaKec   = $kec?->nama_kecamatan ?? (is_string($kolomKec) && $kolomKec !== '' ? $kolomKec : null);
+
+        $bagian = [];
+        if ($namaKec) $bagian[] = 'Kec. ' . $namaKec;
+
+        if ($desa?->nama_kelurahan_desa) {
+            $bagian[] = (strtolower((string) $desa->jenis) === 'kelurahan' ? 'Kel. ' : 'Desa ') . $desa->nama_kelurahan_desa;
+        } elseif (is_string($kolomDesa) && $kolomDesa !== '') {
+            $bagian[] = 'Desa ' . $kolomDesa;
+        }
+
+        $nomor = array_filter([
+            $rt?->nomor_rt ? 'RT ' . $rt->nomor_rt : null,
+            $rw?->nomor_rw ? 'RW ' . $rw->nomor_rw : null,
+        ]);
+        if ($nomor) $bagian[] = implode('/', $nomor);
+
+        return $bagian ? implode(', ', $bagian) : ($w->getAttribute('nama_wilayah') ?: '-');
+    };
+
     $warnaStatus = fn ($s) => $s === 'normal' ? '#16a34a' : '#dc2626';
     $labelStatus = fn ($s) => $s === 'normal' ? 'Normal' : 'Perlu Perhatian';
 
@@ -24,7 +60,7 @@
         'Nama'          => $ibu->user?->name,
         'Tanggal Lahir' => $formatTanggal($ibu->tgl_lahir),
         'Nomor HP'      => $ibu->user?->phone,
-        'Wilayah'       => $ibu->wilayahKerja?->nama_wilayah,
+        'Alamat'        => $alamatDari($ibu->wilayahKerja),
     ];
 
     // Riwayat pemeriksaan (terbaru di atas)
@@ -93,6 +129,11 @@
             'status'  => $r['status'],
         ];
     }
+
+    // Gaya bersama
+    $kartu  = 'overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-[#E99AB7] hover:shadow-md motion-reduce:transform-none motion-reduce:transition-none';
+    $kepala = 'flex flex-wrap items-center justify-between gap-3 border-b border-[#F1D5E0] bg-gradient-to-r from-[#FCE7F0] to-[#FFF7FA] px-5 py-3.5';
+    $ikon   = 'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-[#C9517E] shadow-sm';
 @endphp
 
 <div class="space-y-6">
@@ -100,24 +141,30 @@
     {{-- Data Ibu (kiri) dan Status Kehamilan (kanan) --}}
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
 
-        <div class="overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm lg:col-span-2">
-            <div class="border-b border-[#F1D5E0] bg-[#FCE7F0] px-5 py-3.5">
-                <h2 class="text-base font-bold text-[#542D3D]">Data Ibu</h2>
+        <div class="{{ $kartu }} lg:col-span-2">
+            <div class="{{ $kepala }}">
+                <div class="flex items-center gap-3">
+                    <span class="{{ $ikon }}"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 9a7 7 0 0 1 14 0"/></svg></span>
+                    <h2 class="text-base font-bold text-[#542D3D]">Data Ibu</h2>
+                </div>
             </div>
 
-            <div class="divide-y divide-[#F7E6ED] px-5">
+            <dl class="divide-y divide-[#F7E6ED] px-5">
                 @foreach ($dataIbu as $label => $nilai)
-                    <div class="flex justify-between gap-4 py-3 text-sm">
-                        <span class="font-semibold text-slate-600">{{ $label }}</span>
-                        <span class="text-right font-semibold text-[#542D3D]">{{ $nilai ?: '-' }}</span>
+                    <div class="flex flex-col gap-0.5 py-3 text-sm sm:flex-row sm:justify-between sm:gap-4">
+                        <dt class="font-semibold text-slate-600">{{ $label }}</dt>
+                        <dd class="font-semibold text-[#542D3D] sm:text-right">{{ $nilai ?: '-' }}</dd>
                     </div>
                 @endforeach
-            </div>
+            </dl>
         </div>
 
-        <div class="overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm">
-            <div class="border-b border-[#F1D5E0] bg-[#FCE7F0] px-5 py-3.5">
-                <h2 class="text-base font-bold text-[#542D3D]">Status Kehamilan</h2>
+        <div class="{{ $kartu }}">
+            <div class="{{ $kepala }}">
+                <div class="flex items-center gap-3">
+                    <span class="{{ $ikon }}"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21s-8-4.5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 6.5-8 11-8 11Z"/></svg></span>
+                    <h2 class="text-base font-bold text-[#542D3D]">Status Kehamilan</h2>
+                </div>
             </div>
 
             <div class="p-5">
@@ -142,81 +189,72 @@
         </div>
     </div>
 
-   {{-- Data Anak --}}
-<div class="overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm">
-    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-[#F1D5E0] bg-[#FCE7F0] px-5 py-3.5">
-        <h2 class="text-base font-bold text-[#542D3D]">Data Anak</h2>
+    {{-- Data Anak --}}
+    <div class="{{ $kartu }}">
+        <div class="{{ $kepala }}">
+            <div class="flex items-center gap-3">
+                <span class="{{ $ikon }}"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm-4 14v-6l-2-4h12l-2 4v6"/></svg></span>
+                <h2 class="text-base font-bold text-[#542D3D]">Data Anak</h2>
+            </div>
 
-        @if ($base === 'admin')
-            @can('anak.create')
-                <a href="{{ route('admin.data-anak.create', ['ibu_id' => $ibu->id]) }}"
-                   class="inline-flex items-center gap-2 rounded-xl bg-[#C9517E] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#B7436D]">
-                    <span class="text-lg leading-none">+</span>
-                    Tambah Data Anak
-                </a>
-            @endcan
+            @if ($base === 'admin')
+                @can('anak.create')
+                    <a href="{{ route('admin.data-anak.create', ['ibu_id' => $ibu->id]) }}"
+                       class="inline-flex items-center gap-2 rounded-xl bg-[#C9517E] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40 active:scale-[0.98]">
+                        <span class="text-lg leading-none">+</span>
+                        Tambah Data Anak
+                    </a>
+                @endcan
+            @endif
+        </div>
+
+        @if ($ibu->anak->isNotEmpty())
+            <div class="overflow-x-auto">
+                <table class="w-full min-w-[600px] text-left text-sm">
+                    <thead class="bg-[#FFF5F8] text-xs font-bold uppercase tracking-wide text-[#542D3D]">
+                        <tr>
+                            <th class="px-5 py-3">No</th>
+                            <th class="px-5 py-3">NIK Anak</th>
+                            <th class="px-5 py-3">Nama Anak</th>
+                            <th class="px-5 py-3">Tanggal Lahir</th>
+                            <th class="px-5 py-3">Jenis Kelamin</th>
+                        </tr>
+                    </thead>
+
+                    <tbody class="divide-y divide-[#F7E6ED]">
+                        @foreach ($ibu->anak as $anak)
+                            <tr class="transition-colors hover:bg-[#FCE7F0]/40">
+                                <td class="px-5 py-3 font-semibold text-slate-700">{{ $loop->iteration }}</td>
+                                <td class="px-5 py-3">{{ $anak->nik_anak ?: '-' }}</td>
+                                <td class="px-5 py-3 font-semibold text-[#542D3D]">{{ $anak->nama_anak ?: '-' }}</td>
+                                <td class="px-5 py-3">{{ $formatTanggal($anak->tgl_lahir) }}</td>
+                                <td class="px-5 py-3">{{ $anak->jenis_kelamin === 'L' ? 'Laki-laki' : ($anak->jenis_kelamin === 'P' ? 'Perempuan' : '-') }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @else
+            <div class="flex flex-col items-center justify-center px-5 py-8 text-center">
+                <p class="text-sm font-medium text-slate-600">Belum ada data anak.</p>
+
+                @if ($base === 'admin' && auth()->user()->can('anak.create'))
+                    <p class="mt-1 text-xs text-slate-500">Klik tombol Tambah Data Anak untuk memasukkan data anak ibu ini.</p>
+                @endif
+            </div>
         @endif
     </div>
 
-    @if ($ibu->anak->isNotEmpty())
-        <div class="overflow-x-auto">
-            <table class="w-full min-w-[600px] text-left text-sm">
-                <thead class="bg-[#FFF5F8] text-xs font-bold uppercase tracking-wide text-[#542D3D]">
-                    <tr>
-                        <th class="px-5 py-3">No</th>
-                        <th class="px-5 py-3">NIK Anak</th>
-                        <th class="px-5 py-3">Nama Anak</th>
-                        <th class="px-5 py-3">Tanggal Lahir</th>
-                        <th class="px-5 py-3">Jenis Kelamin</th>
-                    </tr>
-                </thead>
-
-                <tbody class="divide-y divide-[#F7E6ED]">
-                    @foreach ($ibu->anak as $anak)
-                        <tr class="transition hover:bg-[#FCE7F0]/40">
-                            <td class="px-5 py-3 font-semibold text-slate-700">
-                                {{ $loop->iteration }}
-                            </td>
-                            <td class="px-5 py-3">
-                                {{ $anak->nik_anak ?: '-' }}
-                            </td>
-                            <td class="px-5 py-3 font-semibold text-[#542D3D]">
-                                {{ $anak->nama_anak ?: '-' }}
-                            </td>
-                            <td class="px-5 py-3">
-                                {{ $formatTanggal($anak->tgl_lahir) }}
-                            </td>
-                            <td class="px-5 py-3">
-                                {{ $anak->jenis_kelamin === 'L' ? 'Laki-laki' : ($anak->jenis_kelamin === 'P' ? 'Perempuan' : '-') }}
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    @else
-        <div class="flex flex-col items-center justify-center px-5 py-8 text-center">
-            <p class="text-sm font-medium text-slate-600">
-                Belum ada data anak.
-            </p>
-
-            @if ($base === 'admin' && auth()->user()->can('anak.create'))
-                <p class="mt-1 text-xs text-slate-500">
-                    Klik tombol Tambah Data Anak untuk memasukkan data anak ibu ini.
-                </p>
-            @endif
-        </div>
-    @endif
-</div>
-
     {{-- Grafik Perkembangan Kehamilan (hanya ibu hamil) --}}
     @if ($tampilGrafik)
-        <div class="overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm">
-            <div class="border-b border-[#F1D5E0] bg-[#FCE7F0] px-5 py-3.5">
-                <h2 class="text-base font-bold text-[#542D3D]">
-                    Grafik Perkembangan Kehamilan ({{ $adaBB ? 'Berat Badan' : 'Status Pemeriksaan' }})
-                </h2>
-                <p class="mt-0.5 text-sm text-slate-600">Hijau berarti normal, merah berarti perlu perhatian.</p>
+        <div class="{{ $kartu }}">
+            <div class="{{ $kepala }}">
+                <div>
+                    <h2 class="text-base font-bold text-[#542D3D]">
+                        Grafik Perkembangan Kehamilan ({{ $adaBB ? 'Berat Badan' : 'Status Pemeriksaan' }})
+                    </h2>
+                    <p class="mt-0.5 text-sm text-slate-600">Hijau berarti normal, merah berarti perlu perhatian.</p>
+                </div>
             </div>
 
             <div class="p-5">
@@ -288,15 +326,15 @@
     @endif
 
     {{-- Riwayat Pemeriksaan Kehamilan --}}
-    <div data-riwayat class="overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm">
-        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-[#F1D5E0] bg-[#FCE7F0] px-5 py-3.5">
+    <div data-riwayat class="{{ $kartu }}">
+        <div class="{{ $kepala }}">
             <div>
                 <h2 class="text-base font-bold text-[#542D3D]">Riwayat Pemeriksaan Kehamilan</h2>
                 <p class="mt-0.5 text-sm text-slate-600">Riwayat pemeriksaan ibu berdasarkan data pemeriksaan yang tersimpan.</p>
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
-                {{-- Dropdown periode (hanya halaman Ibu, sesuai wireframe) --}}
+                {{-- Dropdown periode (halaman role Ibu, sesuai wireframe) --}}
                 @if ($filterPeriode && $daftarPeriode->isNotEmpty())
                     <select data-periode-filter aria-label="Filter periode"
                             class="rounded-xl border-2 border-[#E99AB7] bg-white px-3 py-2 text-sm font-semibold text-[#542D3D] outline-none transition focus:border-[#C9517E] focus:ring-4 focus:ring-[#E99AB7]/40">
@@ -311,7 +349,7 @@
                     <button type="button" data-riwayat-toggle
                             data-label-buka="Tampilkan semua"
                             data-label-tutup="Tampilkan sedikit"
-                            class="rounded-xl border-2 border-[#C9517E] bg-white px-4 py-2 text-sm font-semibold text-[#C9517E] transition hover:bg-[#C9517E] hover:text-white">
+                            class="rounded-xl border-2 border-[#C9517E] bg-white px-4 py-2 text-sm font-semibold text-[#C9517E] transition hover:bg-[#C9517E] hover:text-white focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40 active:scale-[0.98]">
                         Tampilkan semua
                     </button>
                 @endif
@@ -334,7 +372,7 @@
                     <tbody class="divide-y divide-[#F7E6ED]">
                         @foreach ($riwayat as $r)
                             @php $lebih = $loop->index >= $batasRiwayat; @endphp
-                            <tr class="transition hover:bg-[#FCE7F0]/40 {{ $lebih ? 'hidden' : '' }}"
+                            <tr class="transition-colors hover:bg-[#FCE7F0]/40 {{ $lebih ? 'hidden' : '' }}"
                                 data-periode="{{ $r['tanggal'] ? \Carbon\Carbon::parse($r['tanggal'])->format('Y-m') : '' }}"
                                 @if ($lebih) data-extra @endif>
                                 <td class="px-5 py-3">{{ $formatTanggal($r['tanggal']) }}</td>

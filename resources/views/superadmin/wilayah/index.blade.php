@@ -1,3 +1,4 @@
+
 @extends('layouts.app')
 
 @section('title', 'Kelola Wilayah Kerja')
@@ -7,6 +8,18 @@
     $pg        = $wilayahs instanceof \Illuminate\Contracts\Pagination\LengthAwarePaginator ? $wilayahs : null;
     $total     = $pg ? $pg->total() : $wilayahs->count();
     $nomorAwal = $pg ? ($pg->firstItem() ?? 1) : 1;
+
+    if ($pg) { $pg->appends(request()->query()); }
+
+    // Filter Puskesmas hanya tampil bila controller mengirim daftar puskesmas
+    $daftarPuskesmas = collect($puskesmasList ?? $puskesmas ?? []);
+    $sedangMencari   = request()->hasAny(['search', 'puskesmas_id']);
+
+    // Relasi aman (bila belum dimuat, diambil satu kali)
+    $relasi = function ($model, string $nama) {
+        if ($model->relationLoaded($nama)) return $model->getRelation($nama);
+        return method_exists($model, $nama) ? $model->{$nama}()->first() : null;
+    };
 @endphp
 
 <div class="mx-auto w-full max-w-7xl space-y-5">
@@ -18,7 +31,7 @@
 
     {{-- Ringkasan + tombol Tambah --}}
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div class="inline-flex items-center gap-3 rounded-xl border border-[#F1D5E0] bg-white px-4 py-2.5 shadow-sm">
+        <div class="inline-flex items-center gap-3 rounded-xl border border-[#F1D5E0] bg-white px-4 py-2.5 shadow-sm transition duration-200 hover:border-[#E99AB7] hover:shadow-md">
             <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-[#FCE7F0] text-[#C9517E]">
                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 21s-7-6.2-7-11a7 7 0 1 1 14 0c0 4.8-7 11-7 11Zm0-8.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"/>
@@ -31,7 +44,7 @@
         </div>
 
         <a href="{{ route('superadmin.wilayah-kerja.create') }}"
-           class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#C9517E] px-5 py-3 text-sm font-semibold text-white shadow-md shadow-[#C9517E]/25 transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40 sm:w-auto">
+           class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#C9517E] px-5 py-3 text-sm font-semibold text-white shadow-md shadow-[#C9517E]/25 transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40 active:scale-[0.98] sm:w-auto">
             <span class="text-lg leading-none">+</span> Tambah Wilayah
         </a>
     </div>
@@ -39,7 +52,7 @@
     {{-- Daftar --}}
     <div class="overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm">
 
-        {{-- Pencarian --}}
+        {{-- Pencarian (+ filter puskesmas) --}}
         <div class="border-b border-[#E99AB7] bg-[#FCE7F0] p-3 sm:p-4">
             <form method="GET" action="{{ url()->current() }}" class="flex flex-col gap-3 sm:flex-row">
                 <div class="relative flex-1">
@@ -50,8 +63,21 @@
                            class="w-full rounded-xl border-2 border-[#C9517E]/60 bg-white py-2.5 pl-11 pr-3 text-sm font-medium text-gray-900 outline-none transition placeholder:text-slate-500 focus:border-[#C9517E] focus:ring-4 focus:ring-[#E99AB7]/40">
                 </div>
 
+                @if ($daftarPuskesmas->isNotEmpty())
+                    <div class="sm:w-60">
+                        <label for="filterPuskesmas" class="sr-only">Filter puskesmas</label>
+                        <select id="filterPuskesmas" name="puskesmas_id" onchange="this.form.submit()"
+                                class="w-full rounded-xl border-2 border-[#C9517E]/60 bg-white px-3 py-2.5 text-sm font-semibold text-gray-900 outline-none transition focus:border-[#C9517E] focus:ring-4 focus:ring-[#E99AB7]/40">
+                            <option value="">Puskesmas</option>
+                            @foreach ($daftarPuskesmas as $p)
+                                <option value="{{ $p->id }}" @selected((string) request('puskesmas_id') === (string) $p->id)>{{ $p->nama_puskesmas }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endif
+
                 <button type="submit"
-                        class="rounded-xl bg-[#C9517E] px-6 py-2.5 text-sm font-semibold text-white shadow-md shadow-[#C9517E]/25 transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40">
+                        class="rounded-xl bg-[#C9517E] px-6 py-2.5 text-sm font-semibold text-white shadow-md shadow-[#C9517E]/25 transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40 active:scale-[0.98]">
                     Cari
                 </button>
             </form>
@@ -63,44 +89,68 @@
                 <thead class="bg-[#FCE7F0] text-xs font-bold uppercase tracking-wide text-[#542D3D]">
                     <tr>
                         <th class="whitespace-nowrap px-3 py-3 sm:px-4">No</th>
-                        <th class="whitespace-nowrap px-3 py-3 sm:px-4">Nama Wilayah</th>
+                        <th class="whitespace-nowrap px-3 py-3 sm:px-4">Kecamatan</th>
+                        <th class="hidden whitespace-nowrap px-4 py-3 md:table-cell">Puskesmas</th>
                         <th class="hidden whitespace-nowrap px-4 py-3 md:table-cell">Kelurahan / Desa</th>
-                        <th class="hidden whitespace-nowrap px-4 py-3 md:table-cell">Kecamatan</th>
+                        <th class="hidden whitespace-nowrap px-4 py-3 lg:table-cell">RW</th>
+                        <th class="hidden whitespace-nowrap px-4 py-3 lg:table-cell">RT</th>
                         <th class="whitespace-nowrap px-3 py-3 text-center sm:px-4">Aksi</th>
                     </tr>
                 </thead>
 
                 <tbody class="divide-y divide-[#F7E6ED]">
                     @forelse ($wilayahs as $wilayah)
-                        <tr class="transition hover:bg-[#FCE7F0]/50">
+                        @php
+                            $kec  = $relasi($wilayah, 'kecamatan');
+                            $pus  = $relasi($wilayah, 'puskesmas');
+                            $desa = $relasi($wilayah, 'kelurahanDesa');
+                            $rw   = $relasi($wilayah, 'rw');
+                            $rt   = $relasi($wilayah, 'rt');
+
+                            $kolomKec  = $wilayah->getAttribute('kecamatan');
+                            $kolomDesa = $wilayah->getAttribute('kelurahan');
+
+                            $namaKec  = $kec?->nama_kecamatan ?? (is_string($kolomKec) && $kolomKec !== '' ? $kolomKec : '-');
+                            $namaPus  = $pus?->nama_puskesmas ?? '-';
+                            $namaDesa = $desa?->nama_kelurahan_desa ?? (is_string($kolomDesa) && $kolomDesa !== '' ? $kolomDesa : '-');
+                            $namaRw   = $rw?->nomor_rw ? 'RW ' . $rw->nomor_rw : '-';
+                            $namaRt   = $rt?->nomor_rt ? 'RT ' . $rt->nomor_rt : '-';
+
+                            $labelHapus = trim($namaDesa . ' ' . ($rt?->nomor_rt ? 'RT ' . $rt->nomor_rt : '') . ($rw?->nomor_rw ? '/RW ' . $rw->nomor_rw : ''));
+                        @endphp
+
+                        <tr class="transition-colors hover:bg-[#FCE7F0]/50">
                             <td class="px-3 py-3.5 text-sm font-semibold text-slate-700 sm:px-4">{{ $nomorAwal + $loop->index }}</td>
 
                             <td class="px-3 py-3.5 sm:px-4">
-                                <p class="break-words text-sm font-bold text-[#542D3D]">{{ $wilayah->nama_wilayah }}</p>
-                                <p class="text-xs text-slate-700 md:hidden">{{ $wilayah->kelurahan }}</p>
-                                <p class="text-xs text-slate-700 md:hidden">Kec. {{ $wilayah->kecamatan }}</p>
+                                <p class="break-words text-sm font-bold text-[#542D3D]">{{ $namaKec }}</p>
+                                <p class="text-xs text-slate-700 md:hidden">{{ $namaPus }}</p>
+                                <p class="text-xs text-slate-700 md:hidden">{{ $namaDesa }}</p>
+                                <p class="text-xs font-semibold text-slate-700 lg:hidden">{{ $namaRt }} / {{ $namaRw }}</p>
                             </td>
 
-                            <td class="hidden whitespace-nowrap px-4 py-3.5 text-sm text-slate-800 md:table-cell">{{ $wilayah->kelurahan }}</td>
-                            <td class="hidden whitespace-nowrap px-4 py-3.5 text-sm text-slate-800 md:table-cell">{{ $wilayah->kecamatan }}</td>
+                            <td class="hidden whitespace-nowrap px-4 py-3.5 text-sm text-slate-800 md:table-cell">{{ $namaPus }}</td>
+                            <td class="hidden whitespace-nowrap px-4 py-3.5 text-sm text-slate-800 md:table-cell">{{ $namaDesa }}</td>
+                            <td class="hidden whitespace-nowrap px-4 py-3.5 text-sm text-slate-800 lg:table-cell">{{ $namaRw }}</td>
+                            <td class="hidden whitespace-nowrap px-4 py-3.5 text-sm text-slate-800 lg:table-cell">{{ $namaRt }}</td>
 
                             <td class="whitespace-nowrap px-3 py-3.5 sm:px-4">
                                 <div class="flex items-center justify-center gap-2">
                                     <a href="{{ route('superadmin.wilayah-kerja.edit', $wilayah) }}"
-                                       class="inline-flex h-8 items-center justify-center whitespace-nowrap rounded-lg bg-[#E99AB7] px-3 text-xs font-bold text-[#542D3D] shadow-sm transition hover:bg-[#DD87A8] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40">
+                                       class="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-lg bg-[#E99AB7] px-3 text-xs font-bold text-[#542D3D] shadow-sm transition hover:bg-[#DD87A8] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40 active:scale-[0.97] sm:h-8">
                                         Edit
                                     </a>
 
                                     <form action="{{ route('superadmin.wilayah-kerja.destroy', $wilayah) }}" method="POST" class="m-0"
                                           data-confirm-delete
-                                          data-name="{{ $wilayah->nama_wilayah }}"
-                                          data-title="Hapus wilayah {{ $wilayah->nama_wilayah }}?"
-                                          data-text="Wilayah akan dihapus permanen. Lanjutkan?"
-                                          data-confirm-text="Ya, Hapus">
+                                          data-name="{{ $labelHapus }}"
+                                          data-title="Apakah akan menghapus wilayah {{ $labelHapus }}?"
+                                          data-text="Data Wilayah akan dihapus secara permanen dan tidak dapat dipulihkan. Lanjutkan?"
+                                          data-confirm-text="Hapus">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit"
-                                                class="inline-flex h-8 items-center justify-center whitespace-nowrap rounded-lg bg-red-600 px-3 text-xs font-bold text-white shadow-sm transition hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-200">
+                                                class="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-lg bg-red-600 px-3 text-xs font-bold text-white shadow-sm transition hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-200 active:scale-[0.97] sm:h-8">
                                             Hapus
                                         </button>
                                     </form>
@@ -109,8 +159,8 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-5 py-12 text-center">
-                                <p class="font-bold text-[#542D3D]">{{ request('search') ? 'Data tidak ditemukan.' : 'Belum ada data wilayah.' }}</p>
+                            <td colspan="7" class="px-5 py-12 text-center">
+                                <p class="font-bold text-[#542D3D]">{{ $sedangMencari ? 'Data tidak ditemukan.' : 'Belum ada data wilayah.' }}</p>
                             </td>
                         </tr>
                     @endforelse

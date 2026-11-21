@@ -7,35 +7,33 @@
 
 <input type="hidden" name="kembali_ke_ibu_id" value="{{ $selectedIbuId ?? '' }}">
 
-<div class="sm:col-span-2">
-    <label for="ibu_id" class="{{ $labelClass }}">
-        Ibu <span class="text-[#C9517E]">*</span>
-    </label>
+<div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
 
-    <select
-        id="ibu_id"
-        name="ibu_id"
-        class="{{ $fieldClass }}"
-    >
-        <option value="">Pilih Ibu</option>
+    <div class="sm:col-span-2">
+        <label for="ibu_id" class="{{ $labelClass }}">
+            Ibu <span class="text-[#C9517E]">*</span>
+        </label>
 
-        @foreach ($ibus as $i)
-            <option
-                value="{{ $i->id }}"
-                @selected(
-                    (string) old('ibu_id', $selectedIbuId ?? ($anak->ibu_id ?? ''))
-                    === (string) $i->id
-                )
-            >
-                {{ $i->user?->name }} ({{ $i->nik ?? 'tanpa NIK' }})
-            </option>
-        @endforeach
-    </select>
+        <select id="ibu_id" name="ibu_id" class="{{ $fieldClass }}">
+            <option value="">Pilih Ibu</option>
 
-    @error('ibu_id')
-        <p class="{{ $errorClass }}">{{ $message }}</p>
-    @enderror
-</div>
+            @foreach ($ibus as $i)
+                <option
+                    value="{{ $i->id }}"
+                    @selected(
+                        (string) old('ibu_id', $selectedIbuId ?? ($anak->ibu_id ?? ''))
+                        === (string) $i->id
+                    )
+                >
+                    {{ $i->user?->name }} ({{ $i->nik ?? 'tanpa NIK' }})
+                </option>
+            @endforeach
+        </select>
+
+        @error('ibu_id')
+            <p class="{{ $errorClass }}">{{ $message }}</p>
+        @enderror
+    </div>
 
     <div>
         <label for="nik_anak" class="{{ $labelClass }}">NIK Anak <span class="text-[#C9517E]">*</span></label>
@@ -56,7 +54,7 @@
             name="nama_anak"
             maxlength="100"
             value="{{ old('nama_anak', $anak->nama_anak ?? '') }}"
-            placeholder="Nama anak"
+            placeholder="Nama lengkap"
             class="{{ $fieldClass }}"
             oninput="this.value = this.value.replace(/[^\p{L}\s]/gu, '')"
         >
@@ -114,14 +112,15 @@
 </div>
 
 <div class="flex flex-col-reverse gap-3 border-t border-[#F1D5E0] pt-5 sm:flex-row sm:justify-end">
-<a href="{{ !empty($selectedIbuId)
-        ? route('admin.data-ibu.show', $selectedIbuId)
-        : route('admin.data-anak.index') }}"
-   class="inline-flex w-full justify-center rounded-xl border-2 border-[#E99AB7] bg-white px-6 py-3 text-sm font-semibold text-[#C9517E] transition hover:bg-[#FCE7F0] sm:w-auto">
-    Batal
-</a>
+    <a href="{{ !empty($selectedIbuId)
+            ? route('admin.data-ibu.show', $selectedIbuId)
+            : route('admin.data-anak.index') }}"
+       class="inline-flex w-full justify-center rounded-xl border-2 border-[#E99AB7] bg-white px-6 py-3 text-sm font-semibold text-[#C9517E] transition hover:bg-[#FCE7F0] active:scale-[0.98] sm:w-auto">
+        Batal
+    </a>
+
     <button type="submit"
-            class="inline-flex w-full justify-center rounded-xl bg-[#C9517E] px-8 py-3 text-sm font-semibold text-white shadow-md shadow-[#C9517E]/25 transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40 sm:w-auto">
+            class="inline-flex w-full justify-center rounded-xl bg-[#C9517E] px-8 py-3 text-sm font-semibold text-white shadow-md shadow-[#C9517E]/25 transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40 active:scale-[0.98] sm:w-auto">
         Simpan
     </button>
 </div>
