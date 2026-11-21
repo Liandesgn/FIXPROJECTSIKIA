@@ -63,10 +63,7 @@
                         <th class="hidden whitespace-nowrap px-4 py-3 lg:table-cell">JK</th>
                         <th class="hidden whitespace-nowrap px-4 py-3 2xl:table-cell">Nama Ayah</th>
                         <th class="hidden whitespace-nowrap px-4 py-3 sm:table-cell">Nama Ibu</th>
-                        {{-- Kader hanya melihat data, tanpa kolom Aksi --}}
-                        @if ($base !== 'kader')
-                            <th class="whitespace-nowrap px-3 py-3 text-center sm:px-4">Aksi</th>
-                        @endif
+                        <th class="whitespace-nowrap px-3 py-3 text-center sm:px-4">Aksi</th>
                     </tr>
                 </thead>
 
@@ -87,25 +84,24 @@
                             <td class="hidden whitespace-nowrap px-4 py-3.5 text-sm text-slate-800 2xl:table-cell">{{ $a->nama_ayah }}</td>
                             <td class="hidden whitespace-nowrap px-4 py-3.5 text-sm text-slate-800 sm:table-cell">{{ $a->ibu?->user?->name ?? '(belum terhubung)' }}</td>
 
-                            @if ($base !== 'kader')
-                                <td class="whitespace-nowrap px-3 py-3.5 sm:px-4">
-                                    <div class="flex items-center justify-center gap-2">
-                                        <a href="{{ route($base.'.data-anak.show', $a) }}"
-                                           class="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-lg bg-[#C9517E] px-3 text-xs font-bold text-white shadow-sm transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40 active:scale-[0.97] sm:h-8">Detail</a>
+                            {{-- Detail untuk Admin, Bidan, dan Kader. Edit hanya untuk Admin. --}}
+                            <td class="whitespace-nowrap px-3 py-3.5 sm:px-4">
+                                <div class="flex items-center justify-center gap-2">
+                                    <a href="{{ route($base.'.data-anak.show', $a) }}"
+                                       class="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-lg bg-[#C9517E] px-3 text-xs font-bold text-white shadow-sm transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40 active:scale-[0.97] sm:h-8">Detail</a>
 
-                                        @if ($base === 'admin')
-                                            @can('anak.update')
-                                                <a href="{{ route('admin.data-anak.edit', $a) }}"
-                                                   class="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-lg bg-[#E99AB7] px-3 text-xs font-bold text-[#542D3D] shadow-sm transition hover:bg-[#DD87A8] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40 active:scale-[0.97] sm:h-8">Edit</a>
-                                            @endcan
-                                        @endif
-                                    </div>
-                                </td>
-                            @endif
+                                    @if ($base === 'admin')
+                                        @can('anak.update')
+                                            <a href="{{ route('admin.data-anak.edit', $a) }}"
+                                               class="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-lg bg-[#E99AB7] px-3 text-xs font-bold text-[#542D3D] shadow-sm transition hover:bg-[#DD87A8] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40 active:scale-[0.97] sm:h-8">Edit</a>
+                                        @endcan
+                                    @endif
+                                </div>
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="{{ $base === 'kader' ? 7 : 8 }}" class="px-5 py-12 text-center">
+                            <td colspan="8" class="px-5 py-12 text-center">
                                 <p class="font-bold text-[#542D3D]">{{ request('search') ? 'Data tidak ditemukan.' : 'Belum ada data anak.' }}</p>
                             </td>
                         </tr>

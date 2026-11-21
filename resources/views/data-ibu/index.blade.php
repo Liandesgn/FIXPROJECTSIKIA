@@ -126,10 +126,7 @@
                         <th class="whitespace-nowrap px-3 py-3 sm:px-4">Status Kehamilan</th>
                         <th class="hidden whitespace-nowrap px-4 py-3 xl:table-cell">Usia Kehamilan</th>
                         <th class="hidden whitespace-nowrap px-4 py-3 xl:table-cell">HPL</th>
-                        {{-- Kader hanya melihat data, tanpa kolom Aksi --}}
-                        @if ($base !== 'kader')
-                            <th class="whitespace-nowrap px-3 py-3 text-center sm:px-4">Aksi</th>
-                        @endif
+                        <th class="whitespace-nowrap px-3 py-3 text-center sm:px-4">Aksi</th>
                     </tr>
                 </thead>
 
@@ -154,25 +151,24 @@
                             </td>
                             <td class="hidden whitespace-nowrap px-4 py-3.5 text-sm text-slate-800 xl:table-cell">{{ $ibu->hpl?->format('d/m/Y') ?? '-' }}</td>
 
-                            @if ($base !== 'kader')
-                                <td class="whitespace-nowrap px-3 py-3.5 sm:px-4">
-                                    <div class="flex items-center justify-center gap-2">
-                                        <a href="{{ route($base.'.data-ibu.show', $ibu) }}"
-                                           class="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-lg bg-[#C9517E] px-3 text-xs font-bold text-white shadow-sm transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40 active:scale-[0.97] sm:h-8">Detail</a>
+                            {{-- Detail untuk Admin, Bidan, dan Kader. Edit hanya untuk Admin. --}}
+                            <td class="whitespace-nowrap px-3 py-3.5 sm:px-4">
+                                <div class="flex items-center justify-center gap-2">
+                                    <a href="{{ route($base.'.data-ibu.show', $ibu) }}"
+                                       class="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-lg bg-[#C9517E] px-3 text-xs font-bold text-white shadow-sm transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40 active:scale-[0.97] sm:h-8">Detail</a>
 
-                                        @if ($base === 'admin')
-                                            @can('ibu.update')
-                                                <a href="{{ route('admin.data-ibu.edit', $ibu) }}"
-                                                   class="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-lg bg-[#E99AB7] px-3 text-xs font-bold text-[#542D3D] shadow-sm transition hover:bg-[#DD87A8] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40 active:scale-[0.97] sm:h-8">Edit</a>
-                                            @endcan
-                                        @endif
-                                    </div>
-                                </td>
-                            @endif
+                                    @if ($base === 'admin')
+                                        @can('ibu.update')
+                                            <a href="{{ route('admin.data-ibu.edit', $ibu) }}"
+                                               class="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-lg bg-[#E99AB7] px-3 text-xs font-bold text-[#542D3D] shadow-sm transition hover:bg-[#DD87A8] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40 active:scale-[0.97] sm:h-8">Edit</a>
+                                        @endcan
+                                    @endif
+                                </div>
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="{{ $base === 'kader' ? 7 : 8 }}" class="px-5 py-12 text-center">
+                            <td colspan="8" class="px-5 py-12 text-center">
                                 <p class="font-bold text-[#542D3D]">{{ $sedangMencari ? 'Data tidak ditemukan.' : 'Belum ada data ibu.' }}</p>
                             </td>
                         </tr>
