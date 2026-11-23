@@ -396,6 +396,7 @@
                         'permissions'   => 'Permission',
                         'data-ibu'      => 'Akun Ibu',
                         'data-anak'     => 'Data Anak',
+                        'jadwal'        => 'Jadwal',
                     ];
                     $entity     = $entities[$segments[1] ?? ''] ?? null;
                     $failVerb   = ['create' => 'Tambah', 'edit' => 'Edit'][$pageAction] ?? null;

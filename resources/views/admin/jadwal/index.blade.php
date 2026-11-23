@@ -1,117 +1,107 @@
-
 @extends('layouts.app')
 
 @section('title', 'Kelola Jadwal')
 
 @section('content')
-<div class="min-h-screen bg-white px-4 py-5 sm:px-6">
+@php
+    $jadwalPosyandu    = $jadwals->where('tipe_jadwal', 'posyandu');
+    $jadwalPemeriksaan = $jadwals->where('tipe_jadwal', 'pemeriksaan');
 
-    <div class="mx-auto max-w-7xl">
+    $thClass = 'px-4 py-3 text-xs font-bold uppercase tracking-wide text-[#542D3D]';
+    $tdClass = 'px-4 py-3.5 text-sm text-slate-800';
+@endphp
 
-        {{-- Judul --}}
-        <div class="mb-5">
-            <h1 class="text-2xl font-bold text-gray-900">
-                Kelola Jadwal
-            </h1>
-        </div>
+<div class="mx-auto w-full max-w-7xl space-y-5">
 
-        {{-- Notifikasi --}}
-        @if (session('success'))
-            <div class="mb-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">
-                {{ session('success') }}
-            </div>
-        @endif
+    {{-- Judul --}}
+    <div>
+        <h1 class="text-2xl font-bold tracking-tight text-[#542D3D] sm:text-3xl">Kelola Jadwal</h1>
+        <p class="mt-1 text-sm font-medium text-slate-700">Data Master / Kelola Jadwal</p>
+    </div>
 
-        @if (session('error'))
-            <div class="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
-                {{ session('error') }}
-            </div>
-        @endif
-
-        {{-- Tab Jadwal --}}
-        <div class="flex items-center gap-8 border-b border-gray-300">
-            <button type="button"
-                    id="tab-pemeriksaan"
-                    class="tab-jadwal border-b-2 border-gray-900 px-3 py-3 text-sm font-semibold text-gray-900">
+    {{-- Tab + tombol Tambah (sejajar) --}}
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex w-full gap-2 rounded-2xl border border-[#F1D5E0] bg-white p-1.5 shadow-sm sm:w-auto" role="tablist" aria-label="Jenis jadwal">
+            <button type="button" id="tab-pemeriksaan" role="tab"
+                    class="tab-jadwal flex-1 whitespace-nowrap rounded-xl bg-[#C9517E] px-4 py-2 text-sm font-semibold text-white shadow-sm transition sm:flex-none">
                 Pemeriksaan Ibu Hamil
             </button>
 
-            <button type="button"
-                    id="tab-posyandu"
-                    class="tab-jadwal border-b-2 border-transparent px-3 py-3 text-sm font-semibold text-gray-500">
+            <button type="button" id="tab-posyandu" role="tab"
+                    class="tab-jadwal flex-1 whitespace-nowrap rounded-xl px-4 py-2 text-sm font-semibold text-[#542D3D] transition hover:bg-[#FCE7F0] sm:flex-none">
                 Posyandu
             </button>
         </div>
 
-        {{-- Pencarian dan Filter --}}
-        <div class="my-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-
-            <div class="relative w-full sm:max-w-xs">
-                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                    🔍
-                </span>
-
-                <input type="text"
-                       id="search-jadwal"
-                       placeholder="Cari Posyandu"
-                       class="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-3 text-sm focus:border-pink-400 focus:outline-none focus:ring-1 focus:ring-pink-400">
-            </div>
-
-            <select id="filter-bulan"
-                    class="rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-700 focus:border-pink-400 focus:outline-none">
-                <option value="">Semua Bulan</option>
-
-                @foreach (range(1, 12) as $bulan)
-                    <option value="{{ sprintf('%02d', $bulan) }}">
-                        {{ \Carbon\Carbon::create()->month($bulan)->locale('id')->translatedFormat('F') }}
-                    </option>
-                @endforeach
-            </select>
-
         <a id="tambah-jadwal"
-        href="{{ route('admin.jadwal.create', ['tipe' => 'posyandu']) }}"
-        class="sm:ml-auto inline-flex items-center justify-center rounded-lg bg-[#C9517E] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#B7436D]">
-            + Tambah Jadwal
+           href="{{ route('admin.jadwal.create', ['tipe' => 'posyandu']) }}"
+           class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#C9517E] px-5 py-3 text-sm font-semibold text-white shadow-md shadow-[#C9517E]/25 transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40 sm:w-auto">
+            <span class="text-lg leading-none">+</span> Tambah Jadwal
         </a>
+    </div>
 
+    {{-- Daftar --}}
+    <div class="overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm">
+
+        {{-- Pencarian dan filter bulan --}}
+        <div class="border-b border-[#E99AB7] bg-[#FCE7F0] p-3 sm:p-4">
+            <div class="flex flex-col gap-3 sm:flex-row">
+                <div class="relative flex-1">
+                    <label for="search-jadwal" class="sr-only">Cari jadwal</label>
+                    <svg class="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-[#C9517E]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="m20 20-3.5-3.5"/></svg>
+                    <input type="search" id="search-jadwal" autocomplete="off" placeholder="Cari Pemeriksaan"
+                           class="w-full rounded-xl border-2 border-[#C9517E]/60 bg-white py-2.5 pl-11 pr-3 text-sm font-medium text-gray-900 outline-none transition placeholder:text-slate-500 focus:border-[#C9517E] focus:ring-4 focus:ring-[#E99AB7]/40">
+                </div>
+
+                <div class="sm:w-56">
+                    <label for="filter-bulan" class="sr-only">Filter bulan</label>
+                    <select id="filter-bulan"
+                            class="w-full rounded-xl border-2 border-[#C9517E]/60 bg-white px-3 py-2.5 text-sm font-semibold text-gray-900 outline-none transition focus:border-[#C9517E] focus:ring-4 focus:ring-[#E99AB7]/40">
+                        <option value="">Semua Bulan</option>
+
+                        @foreach (range(1, 12) as $bulan)
+                            <option value="{{ sprintf('%02d', $bulan) }}">
+                                {{ \Carbon\Carbon::create()->month($bulan)->locale('id')->translatedFormat('F') }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
         </div>
 
         {{-- ================================= --}}
         {{-- TABEL POSYANDU --}}
         {{-- ================================= --}}
         <div id="panel-posyandu" class="hidden overflow-x-auto">
-
-            <table class="min-w-full border-collapse text-left text-xs">
-
-                <thead class="bg-[#F3F6FA] text-gray-600">
+            <table class="w-full text-left">
+                <thead class="bg-[#FCE7F0]">
                     <tr>
-                        <th class="px-3 py-3">NO</th>
-                        <th class="px-3 py-3">JENIS KEGIATAN</th>
-                        <th class="px-3 py-3">HARI, TANGGAL</th>
-                        <th class="px-3 py-3">WAKTU</th>
-                        <th class="px-3 py-3">LOKASI</th>
-                        <th class="px-3 py-3">KELURAHAN/DESA</th>
-                        <th class="px-3 py-3">POSYANDU</th>
-                        <th class="px-3 py-3">KADER</th>
-                        <th class="px-3 py-3">BIDAN</th>
-                        <th class="px-3 py-3 text-center">AKSI</th>
+                        <th class="{{ $thClass }}">No</th>
+                        <th class="{{ $thClass }}">Jenis Kegiatan</th>
+                        <th class="{{ $thClass }} hidden xl:table-cell">Hari, Tanggal</th>
+                        <th class="{{ $thClass }} hidden xl:table-cell">Waktu</th>
+                        <th class="{{ $thClass }} hidden xl:table-cell">Lokasi</th>
+                        <th class="{{ $thClass }} hidden xl:table-cell">Kelurahan/Desa</th>
+                        <th class="{{ $thClass }} hidden xl:table-cell">Posyandu</th>
+                        <th class="{{ $thClass }} hidden xl:table-cell">Kader</th>
+                        <th class="{{ $thClass }} hidden xl:table-cell">Bidan</th>
+                        <th class="{{ $thClass }} text-center">Aksi</th>
                     </tr>
                 </thead>
 
-                <tbody class="divide-y divide-gray-100">
-
-                    @php
-                        $jadwalPosyandu = $jadwals->where('tipe_jadwal', 'posyandu');
-                    @endphp
-
+                <tbody class="divide-y divide-[#F7E6ED]">
                     @forelse ($jadwalPosyandu as $jadwal)
                         @php
                             $tanggal = \Carbon\Carbon::parse($jadwal->tanggal);
                             $namaKelurahan = $jadwal->rw?->kelurahanDesa?->nama_kelurahan_desa ?? '-';
                             $nomorRw = $jadwal->rw?->nomor_rw;
+                            $hariTanggal = $tanggal->locale('id')->translatedFormat('l, d/m/Y');
+                            $namaPosyandu = $nomorRw ? 'Posyandu RW '.$nomorRw : '-';
+                            $namaKader = $jadwal->kader?->user?->name ?? '-';
+                            $namaBidan = $jadwal->bidan?->user?->name ?? '-';
                         @endphp
 
-                        <tr class="jadwal-row hover:bg-gray-50"
+                        <tr class="jadwal-row transition hover:bg-[#FCE7F0]/40"
                             data-type="posyandu"
                             data-month="{{ $tanggal->format('m') }}"
                             data-search="{{ strtolower(
@@ -123,80 +113,65 @@
                                 ($jadwal->bidan?->user?->name ?? '')
                             ) }}">
 
-                            <td class="whitespace-nowrap px-3 py-4">
-                                {{ $loop->iteration }}
+                            <td class="{{ $tdClass }} whitespace-nowrap font-semibold text-slate-700">{{ $loop->iteration }}</td>
+
+                            <td class="{{ $tdClass }}">
+                                <p class="font-bold text-[#542D3D]">{{ $jadwal->jenis_kegiatan }}</p>
+
+                                {{-- Ringkasan untuk layar kecil --}}
+                                <div class="mt-1 space-y-0.5 text-xs text-slate-700 xl:hidden">
+                                    <p>{{ $hariTanggal }}, {{ substr($jadwal->waktu, 0, 5) }}</p>
+                                    <p>{{ $jadwal->lokasi }} · {{ $namaKelurahan }}</p>
+                                    <p>{{ $namaPosyandu }}</p>
+                                    <p>Kader: {{ $namaKader }} · Bidan: {{ $namaBidan }}</p>
+                                </div>
                             </td>
 
-                            <td class="min-w-32 px-3 py-4 font-semibold text-gray-800">
-                                {{ $jadwal->jenis_kegiatan }}
-                            </td>
+                            <td class="{{ $tdClass }} hidden whitespace-nowrap xl:table-cell">{{ $hariTanggal }}</td>
+                            <td class="{{ $tdClass }} hidden whitespace-nowrap xl:table-cell">{{ substr($jadwal->waktu, 0, 5) }}</td>
+                            <td class="{{ $tdClass }} hidden xl:table-cell">{{ $jadwal->lokasi }}</td>
+                            <td class="{{ $tdClass }} hidden xl:table-cell">{{ $namaKelurahan }}</td>
+                            <td class="{{ $tdClass }} hidden whitespace-nowrap xl:table-cell">{{ $namaPosyandu }}</td>
+                            <td class="{{ $tdClass }} hidden xl:table-cell">{{ $namaKader }}</td>
+                            <td class="{{ $tdClass }} hidden xl:table-cell">{{ $namaBidan }}</td>
 
-                            <td class="whitespace-nowrap px-3 py-4">
-                                {{ $tanggal->locale('id')->translatedFormat('l, d/m/Y') }}
-                            </td>
-
-                            <td class="whitespace-nowrap px-3 py-4">
-                                {{ substr($jadwal->waktu, 0, 5) }}
-                            </td>
-
-                            <td class="min-w-28 px-3 py-4">
-                                {{ $jadwal->lokasi }}
-                            </td>
-
-                            <td class="px-3 py-4">
-                                {{ $namaKelurahan }}
-                            </td>
-
-                            <td class="whitespace-nowrap px-3 py-4">
-                                {{ $nomorRw ? 'Posyandu RW '.$nomorRw : '-' }}
-                            </td>
-
-                            <td class="px-3 py-4">
-                                {{ $jadwal->kader?->user?->name ?? '-' }}
-                            </td>
-
-                            <td class="px-3 py-4">
-                                {{ $jadwal->bidan?->user?->name ?? '-' }}
-                            </td>
-
-                            <td class="whitespace-nowrap px-3 py-4">
-                                <div class="flex items-center justify-center gap-1.5">
-
+                            <td class="whitespace-nowrap px-4 py-3.5">
+                                <div class="flex items-center justify-center gap-2">
                                     <a href="{{ route('admin.jadwal.edit', $jadwal->id_jadwal) }}"
-                                       class="rounded-md border border-teal-300 px-2 py-1 text-xs font-semibold text-teal-700 hover:bg-teal-50">
+                                       class="inline-flex h-8 items-center justify-center whitespace-nowrap rounded-lg bg-[#E99AB7] px-3 text-xs font-bold text-[#542D3D] shadow-sm transition hover:bg-[#DD87A8] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40">
                                         Edit
                                     </a>
 
-                                    <form action="{{ route('admin.jadwal.destroy', $jadwal->id_jadwal) }}"
-                                          method="POST"
-                                          onsubmit="return confirm('Yakin ingin menghapus jadwal ini?')">
+                                    <form action="{{ route('admin.jadwal.destroy', $jadwal->id_jadwal) }}" method="POST" class="m-0"
+                                          data-confirm-delete
+                                          data-name="{{ $jadwal->jenis_kegiatan }}"
+                                          data-title="Hapus jadwal {{ $jadwal->jenis_kegiatan }}?"
+                                          data-text="Jadwal akan dihapus permanen. Lanjutkan?"
+                                          data-confirm-text="Ya, Hapus">
                                         @csrf
                                         @method('DELETE')
-
                                         <button type="submit"
-                                                class="rounded-md border border-red-300 px-2 py-1 text-xs font-semibold text-red-600 hover:bg-red-50">
+                                                class="inline-flex h-8 items-center justify-center whitespace-nowrap rounded-lg bg-red-600 px-3 text-xs font-bold text-white shadow-sm transition hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-200">
                                             Hapus
                                         </button>
                                     </form>
-
                                 </div>
                             </td>
                         </tr>
 
                     @empty
                         <tr class="empty-row">
-                            <td colspan="10" class="px-4 py-10 text-center text-gray-500">
-                                Belum ada jadwal Posyandu.
+                            <td colspan="10" class="px-5 py-12 text-center">
+                                <p class="font-bold text-[#542D3D]">Belum ada jadwal Posyandu.</p>
                             </td>
                         </tr>
                     @endforelse
 
                     <tr id="posyandu-no-result" class="hidden">
-                        <td colspan="10" class="px-4 py-10 text-center text-gray-500">
-                            Jadwal Posyandu tidak ditemukan.
+                        <td colspan="10" class="px-5 py-12 text-center">
+                            <p class="font-bold text-[#542D3D]">Jadwal Posyandu tidak ditemukan.</p>
                         </td>
                     </tr>
-
                 </tbody>
             </table>
         </div>
@@ -205,29 +180,22 @@
         {{-- TABEL PEMERIKSAAN IBU HAMIL --}}
         {{-- ================================= --}}
         <div id="panel-pemeriksaan" class="overflow-x-auto">
-
-            <table class="min-w-full border-collapse text-left text-xs">
-
-                <thead class="bg-[#F3F6FA] text-gray-600">
+            <table class="w-full text-left">
+                <thead class="bg-[#FCE7F0]">
                     <tr>
-                        <th class="px-3 py-3">NO</th>
-                        <th class="px-3 py-3">JENIS KEGIATAN</th>
-                        <th class="px-3 py-3">HARI, TANGGAL</th>
-                        <th class="px-3 py-3">WAKTU</th>
-                        <th class="px-3 py-3">LOKASI</th>
-                        <th class="px-3 py-3">KELURAHAN/DESA</th>
-                        <th class="px-3 py-3">BIDAN PEMERIKSA</th>
-                        <th class="px-3 py-3">CATATAN</th>
-                        <th class="px-3 py-3 text-center">AKSI</th>
+                        <th class="{{ $thClass }}">No</th>
+                        <th class="{{ $thClass }}">Jenis Kegiatan</th>
+                        <th class="{{ $thClass }} hidden xl:table-cell">Hari, Tanggal</th>
+                        <th class="{{ $thClass }} hidden xl:table-cell">Waktu</th>
+                        <th class="{{ $thClass }} hidden xl:table-cell">Lokasi</th>
+                        <th class="{{ $thClass }} hidden xl:table-cell">Kelurahan/Desa</th>
+                        <th class="{{ $thClass }} hidden xl:table-cell">Bidan Pemeriksa</th>
+                        <th class="{{ $thClass }} hidden xl:table-cell">Catatan</th>
+                        <th class="{{ $thClass }} text-center">Aksi</th>
                     </tr>
                 </thead>
 
-                <tbody class="divide-y divide-gray-100">
-
-                    @php
-                        $jadwalPemeriksaan = $jadwals->where('tipe_jadwal', 'pemeriksaan');
-                    @endphp
-
+                <tbody class="divide-y divide-[#F7E6ED]">
                     @forelse ($jadwalPemeriksaan as $jadwal)
                         @php
                             $tanggal = \Carbon\Carbon::parse($jadwal->tanggal);
@@ -237,9 +205,11 @@
                                 ?? '-';
 
                             $catatan = $jadwal->pemeriksaan?->catatan ?? '-';
+                            $hariTanggal = $tanggal->locale('id')->translatedFormat('l, d/m/Y');
+                            $namaBidan = $jadwal->bidan?->user?->name ?? '-';
                         @endphp
 
-                        <tr class="jadwal-row hover:bg-gray-50"
+                        <tr class="jadwal-row transition hover:bg-[#FCE7F0]/40"
                             data-type="pemeriksaan"
                             data-month="{{ $tanggal->format('m') }}"
                             data-search="{{ strtolower(
@@ -250,84 +220,75 @@
                                 $catatan
                             ) }}">
 
-                            <td class="px-3 py-4">
-                                {{ $loop->iteration }}
+                            <td class="{{ $tdClass }} whitespace-nowrap font-semibold text-slate-700">{{ $loop->iteration }}</td>
+
+                            <td class="{{ $tdClass }}">
+                                <p class="font-bold text-[#542D3D]">{{ $jadwal->jenis_kegiatan }}</p>
+
+                                {{-- Ringkasan untuk layar kecil --}}
+                                <div class="mt-1 space-y-0.5 text-xs text-slate-700 xl:hidden">
+                                    <p>{{ $hariTanggal }}, {{ substr($jadwal->waktu, 0, 5) }}</p>
+                                    <p>{{ $jadwal->lokasi }} · {{ $namaKelurahan }}</p>
+                                    <p>Bidan: {{ $namaBidan }}</p>
+                                    @if ($catatan !== '-')
+                                        <p>Catatan: {{ $catatan }}</p>
+                                    @endif
+                                </div>
                             </td>
 
-                            <td class="min-w-32 px-3 py-4 font-semibold text-gray-800">
-                                {{ $jadwal->jenis_kegiatan }}
-                            </td>
+                            <td class="{{ $tdClass }} hidden whitespace-nowrap xl:table-cell">{{ $hariTanggal }}</td>
+                            <td class="{{ $tdClass }} hidden whitespace-nowrap xl:table-cell">{{ substr($jadwal->waktu, 0, 5) }}</td>
+                            <td class="{{ $tdClass }} hidden xl:table-cell">{{ $jadwal->lokasi }}</td>
+                            <td class="{{ $tdClass }} hidden xl:table-cell">{{ $namaKelurahan }}</td>
+                            <td class="{{ $tdClass }} hidden xl:table-cell">{{ $namaBidan }}</td>
+                            <td class="{{ $tdClass }} hidden xl:table-cell">{{ $catatan }}</td>
 
-                            <td class="whitespace-nowrap px-3 py-4">
-                                {{ $tanggal->locale('id')->translatedFormat('l, d/m/Y') }}
-                            </td>
-
-                            <td class="whitespace-nowrap px-3 py-4">
-                                {{ substr($jadwal->waktu, 0, 5) }}
-                            </td>
-
-                            <td class="min-w-28 px-3 py-4">
-                                {{ $jadwal->lokasi }}
-                            </td>
-
-                            <td class="px-3 py-4">
-                                {{ $namaKelurahan }}
-                            </td>
-
-                            <td class="px-3 py-4">
-                                {{ $jadwal->bidan?->user?->name ?? '-' }}
-                            </td>
-
-                            {{-- Kolom Catatan --}}
-                            <td class="min-w-32 px-3 py-4">
-                                {{ $catatan }}
-                            </td>
-
-                            <td class="whitespace-nowrap px-3 py-4">
-                                <div class="flex items-center justify-center gap-1.5">
-
+                            <td class="whitespace-nowrap px-4 py-3.5">
+                                <div class="flex items-center justify-center gap-2">
                                     <a href="{{ route('admin.jadwal.edit', $jadwal->id_jadwal) }}"
-                                       class="rounded-md border border-teal-300 px-2 py-1 text-xs font-semibold text-teal-700 hover:bg-teal-50">
+                                       class="inline-flex h-8 items-center justify-center whitespace-nowrap rounded-lg bg-[#E99AB7] px-3 text-xs font-bold text-[#542D3D] shadow-sm transition hover:bg-[#DD87A8] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40">
                                         Edit
                                     </a>
 
-                                    <form action="{{ route('admin.jadwal.destroy', $jadwal->id_jadwal) }}"
-                                          method="POST"
-                                          onsubmit="return confirm('Yakin ingin menghapus jadwal ini?')">
+                                    <form action="{{ route('admin.jadwal.destroy', $jadwal->id_jadwal) }}" method="POST" class="m-0"
+                                          data-confirm-delete
+                                          data-name="{{ $jadwal->jenis_kegiatan }}"
+                                          data-title="Hapus jadwal {{ $jadwal->jenis_kegiatan }}?"
+                                          data-text="Jadwal akan dihapus permanen. Lanjutkan?"
+                                          data-confirm-text="Ya, Hapus">
                                         @csrf
                                         @method('DELETE')
-
                                         <button type="submit"
-                                                class="rounded-md border border-red-300 px-2 py-1 text-xs font-semibold text-red-600 hover:bg-red-50">
+                                                class="inline-flex h-8 items-center justify-center whitespace-nowrap rounded-lg bg-red-600 px-3 text-xs font-bold text-white shadow-sm transition hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-200">
                                             Hapus
                                         </button>
                                     </form>
-
                                 </div>
                             </td>
                         </tr>
 
                     @empty
                         <tr class="empty-row">
-                            <td colspan="9" class="px-4 py-10 text-center text-gray-500">
-                                Belum ada jadwal pemeriksaan ibu hamil.
+                            <td colspan="9" class="px-5 py-12 text-center">
+                                <p class="font-bold text-[#542D3D]">Belum ada jadwal pemeriksaan ibu hamil.</p>
                             </td>
                         </tr>
                     @endforelse
 
                     <tr id="pemeriksaan-no-result" class="hidden">
-                        <td colspan="9" class="px-4 py-10 text-center text-gray-500">
-                            Jadwal pemeriksaan tidak ditemukan.
+                        <td colspan="9" class="px-5 py-12 text-center">
+                            <p class="font-bold text-[#542D3D]">Jadwal pemeriksaan tidak ditemukan.</p>
                         </td>
                     </tr>
-
                 </tbody>
             </table>
         </div>
 
     </div>
 </div>
+@endsection
 
+@push('scripts')
 {{-- Script Tab, Pencarian, dan Filter Bulan --}}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -346,6 +307,15 @@ document.addEventListener('DOMContentLoaded', function () {
         ? 'posyandu'
         : 'pemeriksaan';
 
+    const kelasAktif = ['bg-[#C9517E]', 'text-white', 'shadow-sm'];
+    const kelasNonaktif = ['text-[#542D3D]', 'hover:bg-[#FCE7F0]'];
+
+    function aturTab(tombol, aktif) {
+        kelasAktif.forEach(function (c) { tombol.classList.toggle(c, aktif); });
+        kelasNonaktif.forEach(function (c) { tombol.classList.toggle(c, !aktif); });
+        tombol.setAttribute('aria-selected', String(aktif));
+    }
+
     function gantiTab(tipe) {
         tipeAktif = tipe;
 
@@ -354,15 +324,8 @@ document.addEventListener('DOMContentLoaded', function () {
         panelPosyandu.classList.toggle('hidden', !posyanduAktif);
         panelPemeriksaan.classList.toggle('hidden', posyanduAktif);
 
-        tabPosyandu.classList.toggle('border-gray-900', posyanduAktif);
-        tabPosyandu.classList.toggle('text-gray-900', posyanduAktif);
-        tabPosyandu.classList.toggle('border-transparent', !posyanduAktif);
-        tabPosyandu.classList.toggle('text-gray-500', !posyanduAktif);
-
-        tabPemeriksaan.classList.toggle('border-gray-900', !posyanduAktif);
-        tabPemeriksaan.classList.toggle('text-gray-900', !posyanduAktif);
-        tabPemeriksaan.classList.toggle('border-transparent', posyanduAktif);
-        tabPemeriksaan.classList.toggle('text-gray-500', posyanduAktif);
+        aturTab(tabPosyandu, posyanduAktif);
+        aturTab(tabPemeriksaan, !posyanduAktif);
 
         document.getElementById('tambah-jadwal').href =
         `{{ route('admin.jadwal.create') }}?tipe=${tipe}`;
@@ -415,8 +378,8 @@ document.addEventListener('DOMContentLoaded', function () {
     searchInput.addEventListener('input', filterJadwal);
     filterBulan.addEventListener('change', filterJadwal);
 
-gantiTab(tipeAktif);
+    gantiTab(tipeAktif);
 
 });
 </script>
-@endsection
+@endpush
