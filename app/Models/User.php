@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use App\Enums\StatusKehamilanEnum;
 use App\Enums\RoleEnum;
 use App\Enums\UserStatusEnum;
@@ -167,6 +168,15 @@ class User extends Authenticatable
     public function ttl(): ?string
 {
     return $this->ibu?->ttl();
+}
+
+
+public function notifications(): MorphMany
+{
+    return $this->morphMany(
+        Notifikasi::class,
+        'notifiable'
+    )->latest();
 }
 
 

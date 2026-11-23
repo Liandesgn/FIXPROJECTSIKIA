@@ -22,7 +22,6 @@ protected $fillable = [
     'kelurahan_desa_id',
     'rw_id',
     'rt_id',
-    'deskripsi',
 ];
 
     // Relasi master wilayah.

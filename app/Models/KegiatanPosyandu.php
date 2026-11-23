@@ -8,18 +8,23 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['id_wilayah', 'jenis_kegiatan', 'tanggal', 'waktu', 'lokasi'])]
+#[Fillable([
+    'id_wilayah',
+    'rw_id',
+    'jenis_kegiatan',
+    'tanggal',
+    'waktu',
+    'lokasi',
+])]
 class KegiatanPosyandu extends Model
 {
     protected $table = 'kegiatan_posyandu';
 
-    /**
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
             'id_wilayah' => 'integer',
+            'rw_id' => 'integer',
             'tanggal' => 'date',
             'lokasi' => 'string',
             'jenis_kegiatan' => 'string',
@@ -28,15 +33,31 @@ class KegiatanPosyandu extends Model
 
     public function wilayah(): BelongsTo
     {
-        return $this->belongsTo(WilayahKerja::class, 'id_wilayah');
+        return $this->belongsTo(
+            WilayahKerja::class,
+            'id_wilayah'
+        );
+    }
+
+    public function rw(): BelongsTo
+    {
+        return $this->belongsTo(
+            Rw::class,
+            'rw_id'
+        );
     }
 
     public function pemeriksaan(): HasMany
     {
-        return $this->hasMany(PemeriksaanPosyandu::class, 'kegiatan_posyandu_id');
+        return $this->hasMany(
+            PemeriksaanPosyandu::class,
+            'kegiatan_posyandu_id'
+        );
     }
 
-    /** Kegiatan hari ini atau setelahnya, yang terdekat di atas. */
+    /**
+     * Kegiatan hari ini atau setelahnya.
+     */
     public function scopeMendatang(Builder $query): Builder
     {
         return $query->whereDate('tanggal', '>=', today())
@@ -44,9 +65,13 @@ class KegiatanPosyandu extends Model
             ->orderBy('waktu');
     }
 
-    /** Kegiatan pada wilayah tertentu. */
-    public function scopeDiWilayah(Builder $query, int $wilayahId): Builder
-    {
+    /**
+     * Kegiatan pada wilayah tertentu.
+     */
+    public function scopeDiWilayah(
+        Builder $query,
+        int $wilayahId
+    ): Builder {
         return $query->where('id_wilayah', $wilayahId);
     }
 }

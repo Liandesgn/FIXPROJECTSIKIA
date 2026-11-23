@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\RoleEnum;
 use App\Enums\StatusKehamilanEnum;
 use App\Http\Requests\Admin\UpdateIbuRequest;
 use App\Models\Ibu;
@@ -18,10 +17,14 @@ use Illuminate\View\View;
 
 class DataIbuController extends Controller
 {
+    /**
+     * Menampilkan daftar data Ibu sesuai hak akses pengguna.
+     */
     public function index(Request $request): View
     {
         $user = $request->user();
 
+        // Ibu hanya dapat melihat data miliknya sendiri.
         if ($user->isOrangTua()) {
             $ibu = Ibu::where('user_id', $user->id)->firstOrFail();
 
@@ -34,21 +37,23 @@ class DataIbuController extends Controller
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = '%' . $request->string('search') . '%';
 
-                $query->where(fn ($q) => $q
-                    ->where('nik', 'like', $search)
-                    ->orWhereHas('user', fn ($u) => $u->where('name', 'like', $search))
-                );
+                $query->where(function ($q) use ($search) {
+                    $q->where('nik', 'like', $search)
+                        ->orWhereHas('user', function ($u) use ($search) {
+                            $u->where('name', 'like', $search);
+                        });
+                });
             })
             ->when(
                 $request->filled('wilayah_kerja_id'),
-                fn ($q) => $q->where(
+                fn ($query) => $query->where(
                     'wilayah_kerja_id',
                     $request->integer('wilayah_kerja_id')
                 )
             )
             ->when(
                 $request->filled('status_kehamilan'),
-                fn ($q) => $q->where(
+                fn ($query) => $query->where(
                     'status_kehamilan',
                     $request->string('status_kehamilan')
                 )
@@ -65,22 +70,27 @@ class DataIbuController extends Controller
         ]);
     }
 
+    /**
+     * Menampilkan detail Ibu.
+     *
+     * Admin dan SuperAdmin mengikuti cakupan aksesnya.
+     * Bidan dan Kader hanya dapat melihat Ibu di wilayah tugasnya.
+     * Ibu hanya dapat melihat data miliknya sendiri.
+     */
     public function show(Request $request, Ibu $ibu): View
     {
         $user = $request->user();
 
-        abort_if(
-            $user->hasRole(RoleEnum::Kader->value),
-            403,
-            'Akses ditolak.'
-        );
-
+        // Periksa apakah data Ibu termasuk cakupan akses pengguna.
         abort_unless(
-            Ibu::visibleTo($user)->whereKey($ibu->id)->exists(),
+            Ibu::visibleTo($user)
+                ->whereKey($ibu->id)
+                ->exists(),
             403,
             'Akses ditolak.'
         );
 
+        // Pengguna dengan role Ibu hanya boleh melihat datanya sendiri.
         if ($user->isOrangTua()) {
             abort_unless(
                 (int) $ibu->user_id === (int) $user->id,
@@ -89,7 +99,11 @@ class DataIbuController extends Controller
             );
         }
 
-        $ibu->load(['user', 'wilayahKerja', 'anak']);
+        $ibu->load([
+            'user',
+            'wilayahKerja',
+            'anak',
+        ]);
 
         $riwayatPemeriksaanIbu = PemeriksaanIbu::query()
             ->where('ibu_id', $ibu->id)
@@ -106,12 +120,17 @@ class DataIbuController extends Controller
         ]);
     }
 
+    /**
+     * Menampilkan form edit data Ibu.
+     */
     public function edit(Request $request, Ibu $ibu): View
     {
         $user = $request->user();
 
         abort_unless(
-            Ibu::visibleTo($user)->whereKey($ibu->id)->exists(),
+            Ibu::visibleTo($user)
+                ->whereKey($ibu->id)
+                ->exists(),
             403,
             'Akses ditolak.'
         );
@@ -123,22 +142,27 @@ class DataIbuController extends Controller
         ]);
     }
 
+    /**
+     * Memperbarui data Ibu.
+     */
     public function update(
         UpdateIbuRequest $request,
         Ibu $ibu
     ): RedirectResponse {
         $user = $request->user();
 
-        // Pastikan ibu memang berada dalam cakupan akses pengguna.
+        // Pastikan Ibu berada dalam cakupan akses pengguna.
         abort_unless(
-            Ibu::visibleTo($user)->whereKey($ibu->id)->exists(),
+            Ibu::visibleTo($user)
+                ->whereKey($ibu->id)
+                ->exists(),
             403,
             'Akses ditolak.'
         );
 
         $data = $request->validated();
 
-        // Pastikan wilayah yang dikirim memang boleh dipilih pengguna.
+        // Pastikan wilayah yang dipilih boleh dikelola pengguna.
         $wilayah = $this->wilayahQuery($user)
             ->whereKey($data['wilayah_kerja_id'])
             ->first();
@@ -152,9 +176,10 @@ class DataIbuController extends Controller
         $hamil = $data['status_kehamilan']
             === StatusKehamilanEnum::Hamil->value;
 
-        // HPL dihitung ulang di server dengan patokan kehamilan 40 minggu.
+        // HPL dihitung ulang dengan patokan kehamilan 40 minggu.
         $hpl = $hamil
-            ? now()->startOfDay()
+            ? now()
+                ->startOfDay()
                 ->addDays((40 - (int) $data['usia_kehamilan']) * 7)
                 ->toDateString()
             : null;
@@ -191,11 +216,12 @@ class DataIbuController extends Controller
     }
 
     /**
-     * Query wilayah yang boleh diakses pengguna.
+     * Mengambil wilayah yang boleh diakses pengguna.
      *
-     * Admin: semua wilayah dalam Puskesmas miliknya.
-     * Superadmin: semua wilayah.
-     * Bidan/Kader: hanya wilayah penugasannya.
+     * Admin      : wilayah dalam Puskesmas miliknya.
+     * SuperAdmin : seluruh wilayah.
+     * Bidan      : wilayah penugasannya.
+     * Kader      : wilayah penugasannya.
      */
     private function wilayahQuery(User $user): Builder
     {
@@ -215,6 +241,8 @@ class DataIbuController extends Controller
                 : $query->whereRaw('1 = 0');
         }
 
+        $user->loadMissing(['bidan', 'kader']);
+
         $wilayahId = $user->bidan?->wilayah_kerja_id
             ?? $user->kader?->wilayah_kerja_id
             ?? $user->wilayah_kerja_id;
@@ -224,17 +252,24 @@ class DataIbuController extends Controller
             : $query->whereRaw('1 = 0');
     }
 
+    /**
+     * Mengambil daftar wilayah sesuai hak akses pengguna.
+     */
     private function wilayahs(User $user)
     {
         return $this->wilayahQuery($user)
-            ->orderBy('kecamatan')
-            ->orderBy('kelurahan')
+            ->orderBy('nama_wilayah')
             ->get();
     }
 
-    /** Awalan nama route sesuai role. */
+    /**
+     * Mengambil awalan nama route berdasarkan role pengguna.
+     */
     private function base(Request $request): string
     {
-        return Str::before($request->route()->getName(), '.');
+        return Str::before(
+            $request->route()->getName(),
+            '.'
+        );
     }
 }
