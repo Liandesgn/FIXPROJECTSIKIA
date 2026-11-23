@@ -14,34 +14,39 @@ class WilayahKerja extends Model
 
     protected $table = 'wilayah_kerja';
 
-protected $fillable = [
-    'nama_wilayah',
-    'kabupaten',
-    'kecamatan_id',
-    'puskesmas_id',
-    'kelurahan_desa_id',
-    'rw_id',
-    'rt_id',
-];
+    protected $fillable = [
+        'nama_wilayah',
+        'kabupaten',
+        'kecamatan_id',
+        'puskesmas_id',
+        'kelurahan_desa_id',
+        'rw_id',
+        'rt_id',
+    ];
 
     // Relasi master wilayah.
 
+    public function masterKecamatan(): BelongsTo
+    {
+        return $this->belongsTo(Kecamatan::class, 'kecamatan_id');
+    }
     public function kecamatan(): BelongsTo
     {
-        return $this->belongsTo(Kecamatan::class);
+        return $this->belongsTo(Kecamatan::class, 'kecamatan_id');
     }
 
     public function puskesmas(): BelongsTo
     {
-        return $this->belongsTo(Puskesmas::class);
+        return $this->belongsTo(Puskesmas::class, 'puskesmas_id');
     }
 
     public function kelurahanDesa(): BelongsTo
     {
-        return $this->belongsTo(KelurahanDesa::class);
+        return $this->belongsTo(KelurahanDesa::class, 'kelurahan_desa_id');
     }
 
     // Relasi pengguna.
+
     public function users(): HasMany
     {
         return $this->hasMany(User::class, 'wilayah_kerja_id');
@@ -77,7 +82,7 @@ protected $fillable = [
         return $this->hasMany(Ibu::class, 'wilayah_kerja_id');
     }
 
-    // Relasi Modul 2 tetap dipertahankan.
+    // Relasi kegiatan Posyandu.
 
     public function kegiatanPosyandu(): HasMany
     {
@@ -99,7 +104,7 @@ protected $fillable = [
     public function label(): string
     {
         return implode(' / ', array_filter([
-            $this->kecamatan?->nama_kecamatan,
+            $this->masterKecamatan?->nama_kecamatan,
             $this->puskesmas?->nama_puskesmas,
             $this->kelurahanDesa?->nama_kelurahan_desa,
         ]));

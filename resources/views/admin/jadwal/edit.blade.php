@@ -1,145 +1,119 @@
-
 @extends('layouts.app')
 
 @section('title', 'Edit Jadwal')
 
 @section('content')
-<div class="min-h-screen bg-[#FFF8FA] px-4 py-6 sm:px-6 lg:px-8">
-    <div class="mx-auto max-w-4xl">
+@php
+    $fieldClass = 'mt-1.5 w-full rounded-xl border border-[#E99AB7] bg-white px-3.5 py-2.5 text-sm font-medium text-gray-900 outline-none transition placeholder:text-slate-400 focus:border-[#C9517E] focus:ring-4 focus:ring-[#E99AB7]/40';
+    $lockedClass = 'mt-1.5 w-full cursor-not-allowed rounded-xl border border-[#F1D5E0] bg-slate-100 px-3.5 py-2.5 text-sm font-medium text-slate-600';
+    $labelClass = 'text-sm font-semibold text-[#542D3D]';
+    $star = '<span class="text-[#C9517E]">*</span>';
+    $judulBagian = 'mb-3 border-b border-[#F1D5E0] pb-2 text-sm font-bold uppercase tracking-wide text-[#C9517E]';
+@endphp
 
-        {{-- Header --}}
-        <div class="mb-6">
-            <a href="{{ route('admin.jadwal.index') }}"
-               class="text-sm font-medium text-[#C9517E] hover:underline">
-                ← Kembali ke Daftar Jadwal
-            </a>
+<div class="mx-auto w-full max-w-3xl space-y-5">
 
-            <h1 class="mt-3 text-2xl font-bold text-[#542D3D]">
-                Edit Jadwal Kegiatan
-            </h1>
+    <div>
+        <h1 class="text-2xl font-bold tracking-tight text-[#542D3D] sm:text-3xl">Kelola Jadwal</h1>
+        <p class="mt-1 text-sm font-medium text-slate-700">Data Master / Kelola Jadwal / Edit</p>
+    </div>
 
-            <p class="mt-1 text-sm text-gray-500">
-                Perbarui informasi dan penugasan jadwal kegiatan.
-            </p>
+    <div class="overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm">
+        <div class="border-b border-[#F1D5E0] bg-[#FCE7F0] px-6 py-4">
+            <h2 class="text-lg font-bold text-[#542D3D]">Edit Jadwal Kegiatan</h2>
+            <p class="mt-0.5 text-sm text-slate-600">Perbarui informasi dan penugasan jadwal kegiatan.</p>
         </div>
-
-        {{-- Error Validasi --}}
-        @if ($errors->any())
-            <div class="mb-5 rounded-xl border border-red-200 bg-red-50 p-4">
-                <p class="font-semibold text-red-700">
-                    Terdapat kesalahan pada pengisian form:
-                </p>
-                <ul class="mt-2 list-inside list-disc text-sm text-red-600">
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        @endif
 
         <form action="{{ route('admin.jadwal.update', $jadwal->id_jadwal) }}"
               method="POST"
-              class="space-y-6">
+              class="space-y-6 p-4 sm:p-6">
             @csrf
             @method('PUT')
 
-            {{-- Jenis Jadwal --}}
-            <div class="rounded-2xl border border-[#F1D5E0] bg-white p-6 shadow-sm">
-                <h2 class="mb-4 font-semibold text-[#542D3D]">
-                    1. Jenis Jadwal
-                </h2>
+            @if ($errors->any())
+                <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    <p class="font-semibold">Terdapat kesalahan pada pengisian form:</p>
+                    <ul class="mt-2 list-inside list-disc space-y-0.5">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
 
-                <label for="tipe_jadwal" class="mb-2 block text-sm font-medium text-gray-700">
-                    Jenis Jadwal
-                </label>
+            {{-- 1. Jenis Jadwal --}}
+            <div>
+                <h3 class="{{ $judulBagian }}">1. Jenis Jadwal</h3>
 
-                <input type="text"
+                <label for="tipe_jadwal" class="{{ $labelClass }}">Jenis Jadwal</label>
+
+                <input type="text" id="tipe_jadwal"
                        value="{{ $detail['tipe_jadwal'] === 'posyandu' ? 'Jadwal Posyandu' : 'Jadwal Pemeriksaan Kehamilan' }}"
                        disabled
-                       class="w-full rounded-xl border border-gray-300 bg-gray-100 px-4 py-3 text-sm text-gray-600">
+                       class="{{ $lockedClass }}">
 
-                <p class="mt-2 text-xs text-gray-400">
+                <p class="mt-1 text-xs text-slate-500">
                     Jenis jadwal tidak dapat diubah setelah dibuat.
                 </p>
             </div>
 
-            {{-- Informasi Umum --}}
-            <div class="rounded-2xl border border-[#F1D5E0] bg-white p-6 shadow-sm">
-                <h2 class="mb-4 font-semibold text-[#542D3D]">
-                    2. Informasi Kegiatan
-                </h2>
+            {{-- 2. Informasi Kegiatan --}}
+            <div>
+                <h3 class="{{ $judulBagian }}">2. Informasi Kegiatan</h3>
 
-                <div class="grid gap-5 sm:grid-cols-2">
+                <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
 
                     <div class="sm:col-span-2">
-                        <label for="jenis_kegiatan" class="mb-2 block text-sm font-medium text-gray-700">
-                            Nama / Jenis Kegiatan <span class="text-red-500">*</span>
-                        </label>
+                        <label for="jenis_kegiatan" class="{{ $labelClass }}">Nama / Jenis Kegiatan {!! $star !!}</label>
 
                         <input type="text" name="jenis_kegiatan" id="jenis_kegiatan"
                                value="{{ old('jenis_kegiatan', $jadwal->jenis_kegiatan) }}"
-                               required
-                               class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:border-[#C9517E] focus:outline-none focus:ring-2 focus:ring-pink-100">
+                               required class="{{ $fieldClass }}">
                     </div>
 
                     <div>
-                        <label for="tanggal" class="mb-2 block text-sm font-medium text-gray-700">
-                            Tanggal <span class="text-red-500">*</span>
-                        </label>
+                        <label for="tanggal" class="{{ $labelClass }}">Tanggal {!! $star !!}</label>
 
                         <input type="date" name="tanggal" id="tanggal"
                                value="{{ old('tanggal', \Carbon\Carbon::parse($jadwal->tanggal)->format('Y-m-d')) }}"
-                               required
-                               class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:border-[#C9517E] focus:outline-none focus:ring-2 focus:ring-pink-100">
+                               required class="{{ $fieldClass }}">
                     </div>
 
                     <div>
-                        <label for="waktu" class="mb-2 block text-sm font-medium text-gray-700">
-                            Waktu <span class="text-red-500">*</span>
-                        </label>
+                        <label for="waktu" class="{{ $labelClass }}">Waktu {!! $star !!}</label>
 
                         <input type="time" name="waktu" id="waktu"
                                value="{{ old('waktu', substr($jadwal->waktu, 0, 5)) }}"
-                               required
-                               class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:border-[#C9517E] focus:outline-none focus:ring-2 focus:ring-pink-100">
+                               required class="{{ $fieldClass }}">
                     </div>
 
                     <div class="sm:col-span-2">
-                        <label for="lokasi" class="mb-2 block text-sm font-medium text-gray-700">
-                            Lokasi Kegiatan <span class="text-red-500">*</span>
-                        </label>
+                        <label for="lokasi" class="{{ $labelClass }}">Lokasi Kegiatan {!! $star !!}</label>
 
                         <input type="text" name="lokasi" id="lokasi"
                                value="{{ old('lokasi', $jadwal->lokasi) }}"
-                               required
-                               class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:border-[#C9517E] focus:outline-none focus:ring-2 focus:ring-pink-100">
+                               required class="{{ $fieldClass }}">
                     </div>
 
                 </div>
             </div>
 
-            {{-- Form Posyandu --}}
+            {{-- 3. Penugasan --}}
             @if ($detail['tipe_jadwal'] === 'posyandu')
 
-                <div class="rounded-2xl border border-[#F1D5E0] bg-white p-6 shadow-sm">
+                <div>
+                    <h3 class="{{ $judulBagian }}">3. Penugasan Jadwal Posyandu</h3>
 
-                    <h2 class="mb-2 font-semibold text-[#542D3D]">
-                        3. Penugasan Jadwal Posyandu
-                    </h2>
-
-                    <p class="mb-5 text-sm text-gray-500">
+                    <p class="mb-4 text-sm text-slate-600">
                         Jadwal ditujukan untuk seluruh RT dalam RW yang dipilih.
                     </p>
 
-                    <div class="space-y-5">
+                    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
 
                         <div>
-                            <label for="rw_id" class="mb-2 block text-sm font-medium text-gray-700">
-                                RW Tujuan <span class="text-red-500">*</span>
-                            </label>
+                            <label for="rw_id" class="{{ $labelClass }}">RW Tujuan {!! $star !!}</label>
 
-                            <select name="rw_id" id="rw_id" required
-                                    class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:border-[#C9517E] focus:outline-none focus:ring-2 focus:ring-pink-100">
+                            <select name="rw_id" id="rw_id" required class="{{ $fieldClass }}">
                                 <option value="">-- Pilih RW --</option>
 
                                 @foreach ($rws as $rw)
@@ -153,12 +127,9 @@
                         </div>
 
                         <div>
-                            <label for="id_kader" class="mb-2 block text-sm font-medium text-gray-700">
-                                Kader Penanggung Jawab <span class="text-red-500">*</span>
-                            </label>
+                            <label for="id_kader" class="{{ $labelClass }}">Kader Penanggung Jawab {!! $star !!}</label>
 
-                            <select name="id_kader" id="id_kader" required
-                                    class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:border-[#C9517E] focus:outline-none focus:ring-2 focus:ring-pink-100">
+                            <select name="id_kader" id="id_kader" required class="{{ $fieldClass }}">
                                 <option value="">-- Pilih Kader --</option>
 
                                 @foreach ($kaders as $kader)
@@ -175,23 +146,16 @@
 
             @else
 
-                {{-- Form Pemeriksaan --}}
-                <div class="rounded-2xl border border-[#F1D5E0] bg-white p-6 shadow-sm">
+                <div>
+                    <h3 class="{{ $judulBagian }}">3. Penugasan Pemeriksaan Kehamilan</h3>
 
-                    <h2 class="mb-2 font-semibold text-[#542D3D]">
-                        3. Penugasan Pemeriksaan Kehamilan
-                    </h2>
-
-                    <p class="mb-5 text-sm text-gray-500">
+                    <p class="mb-4 text-sm text-slate-600">
                         Tentukan wilayah kerja untuk jadwal pemeriksaan.
                     </p>
 
-                    <label for="id_wilayah_kerja" class="mb-2 block text-sm font-medium text-gray-700">
-                        Wilayah Kerja <span class="text-red-500">*</span>
-                    </label>
+                    <label for="id_wilayah_kerja" class="{{ $labelClass }}">Wilayah Kerja {!! $star !!}</label>
 
-                    <select name="id_wilayah_kerja" id="id_wilayah_kerja" required
-                            class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:border-[#C9517E] focus:outline-none focus:ring-2 focus:ring-pink-100">
+                    <select name="id_wilayah_kerja" id="id_wilayah_kerja" required class="{{ $fieldClass }}">
                         <option value="">-- Pilih Wilayah --</option>
 
                         @foreach ($wilayahs as $wilayah)
@@ -202,24 +166,17 @@
                             </option>
                         @endforeach
                     </select>
-
                 </div>
 
             @endif
 
-            {{-- Bidan --}}
-            <div class="rounded-2xl border border-[#F1D5E0] bg-white p-6 shadow-sm">
+            {{-- 4. Bidan --}}
+            <div>
+                <h3 class="{{ $judulBagian }}">4. Bidan Pemeriksa</h3>
 
-                <h2 class="mb-4 font-semibold text-[#542D3D]">
-                    4. Bidan Pemeriksa
-                </h2>
+                <label for="id_bidan" class="{{ $labelClass }}">Bidan yang Bertugas {!! $star !!}</label>
 
-                <label for="id_bidan" class="mb-2 block text-sm font-medium text-gray-700">
-                    Bidan yang Bertugas <span class="text-red-500">*</span>
-                </label>
-
-                <select name="id_bidan" id="id_bidan" required
-                        class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:border-[#C9517E] focus:outline-none focus:ring-2 focus:ring-pink-100">
+                <select name="id_bidan" id="id_bidan" required class="{{ $fieldClass }}">
                     <option value="">-- Pilih Bidan --</option>
 
                     @foreach ($bidans as $bidan)
@@ -231,37 +188,30 @@
                 </select>
             </div>
 
-            {{-- Catatan Pemeriksaan --}}
+            {{-- 5. Catatan Pemeriksaan --}}
             @if ($detail['tipe_jadwal'] === 'pemeriksaan')
-                <div class="rounded-2xl border border-[#F1D5E0] bg-white p-6 shadow-sm">
+                <div>
+                    <h3 class="{{ $judulBagian }}">5. Catatan Tambahan</h3>
 
-                    <h2 class="mb-4 font-semibold text-[#542D3D]">
-                        5. Catatan Tambahan
-                    </h2>
-
-                    <label for="catatan" class="mb-2 block text-sm font-medium text-gray-700">
-                        Catatan
-                    </label>
+                    <label for="catatan" class="{{ $labelClass }}">Catatan</label>
 
                     <textarea name="catatan" id="catatan" rows="4"
                               placeholder="Masukkan catatan tambahan..."
-                              class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:border-[#C9517E] focus:outline-none focus:ring-2 focus:ring-pink-100">{{ old('catatan', $detail['catatan']) }}</textarea>
+                              class="{{ $fieldClass }}">{{ old('catatan', $detail['catatan']) }}</textarea>
                 </div>
             @endif
 
             {{-- Tombol --}}
-            <div class="flex flex-col-reverse justify-end gap-3 sm:flex-row">
-
+            <div class="flex flex-col-reverse gap-3 border-t border-[#F1D5E0] pt-5 sm:flex-row sm:justify-end">
                 <a href="{{ route('admin.jadwal.index') }}"
-                   class="rounded-xl border border-gray-300 bg-white px-6 py-3 text-center text-sm font-semibold text-gray-600 hover:bg-gray-50">
+                   class="inline-flex w-full justify-center rounded-xl border-2 border-[#E99AB7] bg-white px-6 py-3 text-sm font-semibold text-[#C9517E] transition hover:bg-[#FCE7F0] sm:w-auto">
                     Batal
                 </a>
 
                 <button type="submit"
-                        class="rounded-xl bg-[#C9517E] px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#B7436D]">
-                    Simpan Perubahan
+                        class="inline-flex w-full justify-center rounded-xl bg-[#C9517E] px-8 py-3 text-sm font-semibold text-white shadow-md shadow-[#C9517E]/25 transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40 sm:w-auto">
+                    Simpan
                 </button>
-
             </div>
 
         </form>

@@ -12,10 +12,17 @@ class DashboardController extends Controller
 {
     public function index(Request $request): View
     {
-        $user = $request->user()->load('wilayahKerja');
+        $user = $request->user()->load([
+            'kader.wilayahKerja',
+            'wilayahKerja',
+        ]);
 
-        $wilayah = $user->wilayahKerja;
-        $wilayahId = $wilayah?->id;
+        // Wilayah kerja Kader.
+        $wilayah = $user->kader?->wilayahKerja
+            ?? $user->wilayahKerja;
+
+        // Cakupan utama Kader adalah kelurahan/desa.
+        $kelurahanDesaId = $wilayah?->kelurahan_desa_id;
 
         $stats = [
             'posyandu' => 0,
@@ -25,41 +32,65 @@ class DashboardController extends Controller
         $jadwalTerdekat = collect();
         $notifikasiTerbaru = collect();
 
-        if ($wilayahId) {
-            // Menghitung jumlah kegiatan Posyandu di wilayah Kader.
-            $stats['posyandu'] = KegiatanPosyandu::query()
-                ->where('id_wilayah', $wilayahId)
-                ->count();
+        if ($kelurahanDesaId) {
 
-            // Menghitung jumlah pemeriksaan anak di wilayah Kader.
-            $stats['pengukuran'] = PemeriksaanPosyandu::query()
-                ->whereHas('kegiatan', function ($query) use ($wilayahId) {
-                    $query->where('id_wilayah', $wilayahId);
+            // Jumlah seluruh kegiatan Posyandu
+            // dalam kelurahan/desa Kader.
+            $stats['posyandu'] = KegiatanPosyandu::query()
+                ->whereHas('rw', function ($query) use ($kelurahanDesaId) {
+                    $query->where(
+                        'kelurahan_desa_id',
+                        $kelurahanDesaId
+                    );
                 })
                 ->count();
 
-            // Mengambil maksimal 5 jadwal Posyandu mendatang.
+            // Jumlah pengukuran anak berdasarkan
+            // kegiatan Posyandu dalam kelurahan/desa Kader.
+            $stats['pengukuran'] = PemeriksaanPosyandu::query()
+                ->whereHas('kegiatan.rw', function ($query) use ($kelurahanDesaId) {
+                    $query->where(
+                        'kelurahan_desa_id',
+                        $kelurahanDesaId
+                    );
+                })
+                ->count();
+
+            // Jadwal Posyandu mendatang.
             $jadwalTerdekat = KegiatanPosyandu::query()
-                ->with('wilayah')
-                ->where('id_wilayah', $wilayahId)
+                ->with(['rw'])
+                ->whereHas('rw', function ($query) use ($kelurahanDesaId) {
+                    $query->where(
+                        'kelurahan_desa_id',
+                        $kelurahanDesaId
+                    );
+                })
                 ->whereDate('tanggal', '>=', today())
                 ->orderBy('tanggal')
                 ->orderBy('waktu')
                 ->limit(5)
                 ->get();
 
-
-             // Notifikasi dari pemeriksaan anak yang perlu perhatian.
+            // Notifikasi pemeriksaan anak yang perlu perhatian.
             $notifikasiTerbaru = PemeriksaanPosyandu::query()
-                ->with(['anak.ibu.user', 'kegiatan'])
-                ->where('status_kesehatan', PemeriksaanPosyandu::PERLU_PERHATIAN)
-                ->whereHas('anak.ibu', function ($query) use ($wilayahId) {
-                    $query->where('wilayah_kerja_id', $wilayahId);
+                ->with([
+                    'anak.ibu.user',
+                    'kegiatan',
+                ])
+                ->where(
+                    'status_kesehatan',
+                    PemeriksaanPosyandu::PERLU_PERHATIAN
+                )
+                ->whereHas('kegiatan.rw', function ($query) use ($kelurahanDesaId) {
+                    $query->where(
+                        'kelurahan_desa_id',
+                        $kelurahanDesaId
+                    );
                 })
                 ->orderByDesc('id')
                 ->limit(5)
                 ->get();
-                    }
+        }
 
         return view('kader.dashboard', [
             'user' => $user,

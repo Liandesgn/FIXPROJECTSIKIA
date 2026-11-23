@@ -81,9 +81,16 @@
 
             {{-- Jadwal Posyandu --}}
             <div class="flex h-full flex-col overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm">
-                <div class="border-b border-[#F1D5E0] bg-[#FCE7F0] px-4 py-3">
-                    <h2 class="text-base font-bold text-[#542D3D]">Jadwal Posyandu</h2>
-                </div>
+            <div class="flex items-center justify-between border-b border-[#F1D5E0] bg-[#FCE7F0] px-4 py-3">
+                <h2 class="text-base font-bold text-[#542D3D]">
+                    Jadwal Posyandu
+                </h2>
+
+                <a href="{{ route('kader.jadwal.index') }}"
+                class="text-xs font-bold text-[#C9517E] transition hover:text-[#A83D67]">
+                    Lihat Semua →
+                </a>
+            </div>
 
                 @if ($jadwalList->isNotEmpty())
                     <ul class="divide-y divide-[#F7E6ED] p-4">

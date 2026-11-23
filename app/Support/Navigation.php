@@ -158,9 +158,8 @@ private static function superAdmin(): array
                     self::link('Data Anak', 'bidan.data-anak.index', 'bidan.data-anak.*'),
                     self::soon('Pemeriksaan Pasien', 'pemeriksaan-pasien'),
                     self::soon('Posyandu', 'posyandu'),
-                    self::soon('Riwayat Pemeriksaan', 'riwayat-pemeriksaan'),
                     self::soon('Konsultasi', 'konsultasi'),
-                    self::soon('Jadwal', 'jadwal'),
+                    self::link('Jadwal', 'bidan.jadwal.index', 'bidan.jadwal.*'),
                     self::link('Laporan Wilayah', 'bidan.laporan.index', 'bidan.laporan.*'),
                 ],
             ],
@@ -190,7 +189,11 @@ private static function superAdmin(): array
                 'items' => [
                     self::link('Data Ibu', 'kader.data-ibu.index', 'kader.data-ibu.*'),
                     self::link('Data Anak', 'kader.data-anak.index', 'kader.data-anak.*'),
-                    self::soon('Jadwal Posyandu', 'jadwal-posyandu'),
+                    self::link(
+                    'Jadwal Posyandu',
+                    'kader.jadwal.index',
+                    'kader.jadwal.*'
+                ),
                     self::soon('Pendataan Posyandu', 'pendataan-posyandu'),
                 ],
             ],
@@ -223,7 +226,7 @@ private static function superAdmin(): array
                     self::soon('Jadwal Pemeriksaan', 'jadwal-pemeriksaan'),
                     self::soon('Konsultasi Bidan', 'konsultasi'),
                     self::soon('Edukasi Kesehatan', 'edukasi'),
-                    self::soon('Jadwal', 'jadwal')
+                    self::link('Jadwal', 'ibu.jadwal.index', 'ibu.jadwal.*'),
                 ],
             ],
             [

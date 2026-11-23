@@ -1,5 +1,9 @@
 <?php
 
+use App\Http\Controllers\NotifikasiController;
+use App\Http\Controllers\Bidan\JadwalController as BidanJadwalController;
+use App\Http\Controllers\Kader\JadwalController as KaderJadwalController;
+use App\Http\Controllers\OrangTua\JadwalController as OrangTuaJadwalController;
 use App\Http\Controllers\Admin\JadwalController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Admin\BidanController;
@@ -74,6 +78,22 @@ Route::middleware('auth')->group(function () {
 
     Route::get('modul/{module}', [ComingSoonController::class, 'show'])
         ->name('panel.module');
+
+
+/*
+|--------------------------------------------------------------------------
+| NOTIFIKASI SEMUA PENGGUNA
+|--------------------------------------------------------------------------
+*/
+
+Route::get('notifikasi', [NotifikasiController::class, 'index'])
+    ->name('notifikasi.index');
+
+Route::patch('notifikasi/{notifikasi}/baca', [NotifikasiController::class, 'markAsRead'])
+    ->name('notifikasi.read');
+
+Route::patch('notifikasi/baca-semua', [NotifikasiController::class, 'markAllAsRead'])
+    ->name('notifikasi.read-all');
 
     /*
     |--------------------------------------------------------------------------
@@ -443,6 +463,10 @@ Route::middleware('auth')->group(function () {
 
             Route::get('data-posyandu/{kegiatan}', [DataPosyanduController::class, 'show'])
                 ->name('data-posyandu.show');
+
+            Route::get('/jadwal', [BidanJadwalController::class, 'index'])
+            ->name('jadwal.index');
+
         });
 
     /*
@@ -479,7 +503,10 @@ Route::middleware('auth')->group(function () {
 
             Route::get('data-posyandu/{kegiatan}', [DataPosyanduController::class, 'show'])
                 ->name('data-posyandu.show');
-        });
+
+            Route::get('/jadwal', [KaderJadwalController::class, 'index'])
+                ->name('jadwal.index');
+    });
 
     /*
     |--------------------------------------------------------------------------
@@ -506,5 +533,8 @@ Route::middleware('auth')->group(function () {
 
             Route::get('data-anak/{anak}', [DataAnakController::class, 'show'])
                 ->name('data-anak.show');
+
+            Route::get('jadwal', [OrangTuaJadwalController::class, 'index'])
+                ->name('jadwal.index');
         });
 });

@@ -293,10 +293,25 @@
 
         <div class="flex items-center gap-2 sm:gap-3">
             {{-- Lonceng notifikasi --}}
-            <button type="button" aria-label="Notifikasi"
-                    class="rounded-full p-2 text-[#C9517E] transition hover:bg-[#FCE7F0] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C9517E]">
-                <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="{{ $icons['bell'] }}"/></svg>
-            </button>
+            <a href="{{ route('notifikasi.index') }}"
+            aria-label="Notifikasi"
+            class="relative rounded-full p-2 text-[#C9517E] transition hover:bg-[#FCE7F0] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C9517E]">
+                <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="1.7">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="{{ $icons['bell'] }}"/>
+                </svg>
+
+                @php
+                    $jumlahNotifikasiBelumDibaca = $user->unreadNotifications()->count();
+                @endphp
+                @if ($jumlahNotifikasiBelumDibaca > 0)
+                    <span class="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                        {{ $jumlahNotifikasiBelumDibaca > 99 ? '99+' : $jumlahNotifikasiBelumDibaca }}
+                    </span>
+                @endif
+</a>
+
 
             {{-- Dropdown profil --}}
             <div class="relative" id="profileMenu">
@@ -396,6 +411,7 @@
                         'permissions'   => 'Permission',
                         'data-ibu'      => 'Akun Ibu',
                         'data-anak'     => 'Data Anak',
+                        'jadwal'        => 'Jadwal',
                     ];
                     $entity     = $entities[$segments[1] ?? ''] ?? null;
                     $failVerb   = ['create' => 'Tambah', 'edit' => 'Edit'][$pageAction] ?? null;

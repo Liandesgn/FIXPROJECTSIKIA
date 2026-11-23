@@ -1,12 +1,17 @@
+
 @extends('layouts.app')
 
 @section('title', 'Profil Saya')
 
 @section('content')
 @php
-    $roleKey   = \Illuminate\Support\Str::before($user->primaryRole()?->dashboard() ?? '', '.');
+    $roleKey = \Illuminate\Support\Str::before(
+        $user->primaryRole()?->dashboard() ?? '',
+        '.'
+    );
+
     $roleLabel = $user->primaryRole()?->label() ?? '-';
-    $isIbu     = $user->isOrangTua();
+    $isIbu = $user->isOrangTua();
 
     $wk = match ($roleKey) {
         'admin' => $user->admin?->wilayahKerja,
@@ -24,7 +29,7 @@
     // Data Kecamatan
     $kecamatan = $roleKey === 'admin'
         ? $puskesmas?->kecamatan
-        : $wk?->kecamatan()->first();
+        : $wk?->masterKecamatan;
 
     $initial = \Illuminate\Support\Str::upper(
         \Illuminate\Support\Str::substr($user->name, 0, 1)
@@ -32,22 +37,21 @@
 
     $hamil = $isIbu && $user->ibu?->sedangHamil();
 
-    // Ikon kecil untuk setiap label (path SVG 24x24)
+    // Ikon SVG
     $ikon = [
-        'user'     => 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 9a7 7 0 0 1 14 0',
-        'mail'     => 'M3 7l9 6 9-6M5 5h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z',
-        'phone'    => 'M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2Z',
-        'shield'   => 'M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-3Z',
-        'pin'      => 'M12 21s-7-6.2-7-11a7 7 0 1 1 14 0c0 4.8-7 11-7 11Zm0-8.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z',
+        'user' => 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 9a7 7 0 0 1 14 0',
+        'mail' => 'M3 7l9 6 9-6M5 5h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z',
+        'phone' => 'M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2Z',
+        'shield' => 'M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-3Z',
+        'pin' => 'M12 21s-7-6.2-7-11a7 7 0 1 1 14 0c0 4.8-7 11-7 11Zm0-8.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z',
         'building' => 'M3 21h18M5 21V8l7-5 7 5v13M10 21v-6h4v6',
-        'idcard'   => 'M3 6h18v12H3V6Zm4 4h4m-4 4h6m4-4h2',
+        'idcard' => 'M3 6h18v12H3V6Zm4 4h4m-4 4h6m4-4h2',
         'calendar' => 'M7 3v4m10-4v4M4 9h16M5 5h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z',
-        'heart'    => 'M12 21s-8-4.5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 6.5-8 11-8 11Z',
-        'clock'    => 'M12 8v4l3 2m6-2a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
+        'heart' => 'M12 21s-8-4.5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 6.5-8 11-8 11Z',
+        'clock' => 'M12 8v4l3 2m6-2a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
     ];
 
-    // Satu isian: ikon + label di atas, nilai tegas di dalam kotak.
-    // Hover hanya mengubah warna dan bayangan secara lembut (tidak ada gerakan).
+    // Komponen isian profil
     $field = fn (string $label, $value, string $ikonKey, bool $lebar = false) =>
         '<div class="group min-w-0' . ($lebar ? ' sm:col-span-2' : '') . '">'
         . '<dt class="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-[#C9517E]">'
@@ -74,11 +78,11 @@
         </p>
     </div>
 
-    {{-- Kartu profil --}}
+    {{-- Kartu Profil --}}
     <section class="overflow-hidden rounded-3xl border border-[#F1D5E0] bg-white shadow-sm">
         <div class="flex flex-col sm:flex-row">
 
-            {{-- Panel kiri: foto, nama, role --}}
+            {{-- Panel kiri --}}
             <div class="flex shrink-0 flex-col items-center gap-3 border-b border-[#F1D5E0] bg-gradient-to-b from-[#FCE7F0] via-[#FDF0F5] to-white px-6 py-8 sm:w-64 sm:border-b-0 sm:border-r">
                 <span class="flex h-28 w-28 items-center justify-center rounded-full bg-[#C9517E] text-5xl font-bold text-white shadow-lg ring-4 ring-white sm:h-32 sm:w-32"
                       aria-hidden="true">
@@ -97,7 +101,7 @@
                 </span>
             </div>
 
-            {{-- Panel kanan: isian --}}
+            {{-- Panel kanan --}}
             <div class="min-w-0 flex-1 p-6">
 
                 <h3 class="mb-4 flex items-center gap-2 text-sm font-bold text-[#542D3D]">
@@ -119,6 +123,7 @@
                     </h3>
 
                     <dl class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+
                         @if ($wk)
                             {!! $field('Wilayah Kerja', $wk->label(), 'pin', true) !!}
                         @endif
@@ -130,31 +135,51 @@
                         @if ($puskesmas)
                             {!! $field('Puskesmas', $puskesmas->nama_puskesmas, 'building') !!}
                         @endif
+
                     </dl>
                 @endif
+
             </div>
         </div>
     </section>
 
-    {{-- Data Ibu (khusus role Ibu) --}}
+    {{-- Data Ibu --}}
     @if ($isIbu)
         <section class="overflow-hidden rounded-3xl border border-[#F1D5E0] bg-white shadow-sm">
+
             <div class="border-b border-[#F1D5E0] bg-gradient-to-r from-[#FCE7F0] to-white px-6 py-4">
-                <h2 class="text-lg font-bold text-[#542D3D]">Data Ibu</h2>
+                <h2 class="text-lg font-bold text-[#542D3D]">
+                    Data Ibu
+                </h2>
                 <p class="mt-0.5 text-sm text-slate-600">
                     Data registrasi ibu yang tercatat di sistem.
                 </p>
             </div>
 
             <dl class="grid grid-cols-1 gap-5 p-6 sm:grid-cols-2">
+
                 {!! $field('NIK', $user->ibu?->nik, 'idcard') !!}
+
                 {!! $field('Tempat, Tanggal Lahir', $user->ibu?->ttl(), 'calendar') !!}
+
                 {!! $field('Status Kehamilan', $user->ibu?->status_kehamilan?->label(), 'heart') !!}
 
                 @if ($hamil)
-                    {!! $field('Usia Kehamilan', $user->ibu?->usia_kehamilan ? $user->ibu?->usia_kehamilan . ' minggu' : null, 'clock') !!}
-                    {!! $field('HPL (Hari Perkiraan Lahir)', $user->ibu?->hpl?->format('d-m-Y'), 'calendar') !!}
+                    {!! $field(
+                        'Usia Kehamilan',
+                        $user->ibu?->usia_kehamilan
+                            ? $user->ibu->usia_kehamilan . ' minggu'
+                            : null,
+                        'clock'
+                    ) !!}
+
+                    {!! $field(
+                        'HPL (Hari Perkiraan Lahir)',
+                        $user->ibu?->hpl?->format('d-m-Y'),
+                        'calendar'
+                    ) !!}
                 @endif
+
             </dl>
         </section>
     @endif
