@@ -12,7 +12,7 @@ class KirimPengingatJadwalIbu extends Command
 {
     protected $signature = 'notifikasi:kirim-pengingat-ibu';
 
-    protected $description = 'Mengirim pengingat jadwal Posyandu dan pemeriksaan kepada Ibu pada H-3 dan hari-H';
+    protected $description = 'Mengirim pengingat jadwal Posyandu dan pemeriksaan kepada Ibu diH-3 dan hari-H';
 
     public function handle(): int
     {
