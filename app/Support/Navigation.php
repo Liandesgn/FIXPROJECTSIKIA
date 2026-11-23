@@ -121,7 +121,7 @@ private static function superAdmin(): array
                     self::link('Data Ibu', 'admin.data-ibu.index', 'admin.data-ibu.*'),
                     self::link('Data Anak', 'admin.data-anak.index', 'admin.data-anak.*'),
                     self::link('Data Posyandu', 'admin.data-posyandu.index', 'admin.data-posyandu.*'),
-                    self::link('Jadwal Posyandu & Pemeriksaan', 'admin.jadwal.index', 'admin.jadwal.*'),
+                    self::link('Jadwal', 'admin.jadwal.index', 'admin.jadwal.*'),
                 ],
             ],
             [

@@ -11,259 +11,396 @@ use App\Models\PemeriksaanPosyandu;
 use App\Models\WilayahKerja;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class LaporanController extends Controller
 {
     public function index(Request $request): View
     {
-      $request->validate([
-    'periode' => ['nullable', 'date_format:Y-m'],
-    ]);
+        $request->validate([
+            'periode' => ['nullable', 'date_format:Y-m'],
+        ]);
 
-        // Admin hanya dapat melihat wilayah yang menjadi tanggung jawabnya.
-        $wilayahId = $request->user()
+        /*
+         * 1. Identitas Puskesmas Admin yang login.
+         */
+        $admin = $request->user()
             ->loadMissing('admin')
-            ->managedWilayahId();
+            ->admin;
 
         abort_unless(
-            $wilayahId,
+            $admin && $admin->puskesmas_id,
             403,
-            'Akun Admin belum memiliki wilayah kerja.'
+            'Akun Admin belum terhubung dengan Puskesmas.'
         );
 
-        // Paksa filter wilayah sesuai wilayah Admin yang login.
-        $request->merge(['wilayah_id' => $wilayahId]);
+        $puskesmasId = (int) $admin->puskesmas_id;
 
-        $periode = $request->input('periode', now()->format('Y-m'));
+        /*
+         * 2. Ambil seluruh wilayah kerja Puskesmas Admin.
+         */
+        $wilayah = WilayahKerja::where(
+            'puskesmas_id',
+            $puskesmasId
+        )->get();
 
-        $tanggalMulai = Carbon::createFromFormat('Y-m', $periode)->startOfMonth();
-        $tanggalAkhir = Carbon::createFromFormat('Y-m', $periode)->endOfMonth();
+        $daftarWilayah = $wilayah;
+        $wilayahIds = $daftarWilayah->pluck('id')->all();
 
-        $wilayah = WilayahKerja::whereKey($wilayahId)->get();
+        $namaPuskesmas = DB::table('puskesmas')
+            ->where('id', $puskesmasId)
+            ->value('nama_puskesmas');
 
-        $daftarWilayah = WilayahKerja::whereKey($wilayahId)->get();
+        $namaWilayah = $namaPuskesmas ?? 'Puskesmas';
 
-        // Rekap kesehatan per wilayah.
-        $rekapWilayah = $daftarWilayah->map(function ($wilayahItem) use (
-            $tanggalMulai,
-            $tanggalAkhir
+        /*
+         * 3. Periode laporan.
+         */
+        $periode = $request->input(
+            'periode',
+            now()->format('Y-m')
+        );
+
+        $tanggalMulai = Carbon::createFromFormat(
+            '!Y-m',
+            $periode
+        )->startOfMonth();
+
+        $tanggalAkhir = $tanggalMulai->copy()->endOfMonth();
+
+        /*
+         * 4. Filter kegiatan berdasarkan Puskesmas.
+         *
+         * Jalur pertama:
+         * kegiatan_posyandu.id_wilayah
+         *
+         * Jalur kedua:
+         * kegiatan_posyandu.rw_id
+         * -> rw.kelurahan_desa_id
+         * -> kelurahan_desa.puskesmas_id
+         */
+        $filterKegiatanPuskesmas = function ($query) use (
+            $puskesmasId,
+            $wilayahIds
         ) {
-            $jumlahIbuHamil = Ibu::where('wilayah_kerja_id', $wilayahItem->id)
-            ->whereBetween('tanggal_pemeriksaan_awal', [
-                $tanggalMulai->toDateString(),
-                $tanggalAkhir->toDateString(),
-            ])
-            ->count();
+            $query->where(function ($scope) use (
+                $puskesmasId,
+                $wilayahIds
+            ) {
+                $scope->whereIn('id_wilayah', $wilayahIds)
+                    ->orWhereHas(
+                        'rw.kelurahanDesa',
+                        function ($kelurahan) use ($puskesmasId) {
+                            $kelurahan->where(
+                                'puskesmas_id',
+                                $puskesmasId
+                            );
+                        }
+                    );
+            });
+        };
 
-            $jumlahAnak = Anak::whereBetween('created_at', [
-            $tanggalMulai->copy()->startOfDay(),
-            $tanggalAkhir->copy()->endOfDay(),
-        ])
-            ->whereHas('ibu', function ($query) use ($wilayahItem) {
-                $query->where('wilayah_kerja_id', $wilayahItem->id);
-            })
-            ->count();
-
-            // Jumlah orang unik yang diperiksa.
-            $ibuDiperiksa = PemeriksaanIbu::whereBetween('tgl_pemeriksaan', [
-                $tanggalMulai->toDateString(),
-                $tanggalAkhir->toDateString(),
-            ])
-                ->whereHas('ibu', function ($query) use ($wilayahItem) {
-                    $query->where('wilayah_kerja_id', $wilayahItem->id);
-                })
-                ->distinct()
-                ->count('ibu_id');
-
-            $anakDiperiksa = PemeriksaanPosyandu::whereHas(
-                'kegiatan',
-                function ($query) use ($tanggalMulai, $tanggalAkhir, $wilayahItem) {
-                    $query->whereBetween('tanggal', [
+        /*
+         * 5. Rekap kesehatan setiap wilayah kerja.
+         */
+        $rekapWilayah = $daftarWilayah->map(
+            function ($wilayahItem) use (
+                $tanggalMulai,
+                $tanggalAkhir
+            ) {
+                $jumlahIbuHamil = Ibu::where(
+                    'wilayah_kerja_id',
+                    $wilayahItem->id
+                )
+                    ->whereBetween('tanggal_pemeriksaan_awal', [
                         $tanggalMulai->toDateString(),
                         $tanggalAkhir->toDateString(),
-                    ])->where('id_wilayah', $wilayahItem->id);
-                }
-            )
-                ->distinct()
-                ->count('anak_id');
+                    ])
+                    ->count();
 
-            // Jumlah orang unik yang perlu perhatian.
-            $ibuPerluPerhatian = PemeriksaanIbu::whereBetween('tgl_pemeriksaan', [
-                $tanggalMulai->toDateString(),
-                $tanggalAkhir->toDateString(),
-            ])
-                ->where('status_kesehatan', PemeriksaanIbu::PERLU_PERHATIAN)
-                ->whereHas('ibu', function ($query) use ($wilayahItem) {
-                    $query->where('wilayah_kerja_id', $wilayahItem->id);
-                })
-                ->distinct()
-                ->count('ibu_id');
+                $jumlahAnak = Anak::whereBetween('created_at', [
+                    $tanggalMulai->copy()->startOfDay(),
+                    $tanggalAkhir->copy()->endOfDay(),
+                ])
+                    ->whereHas('ibu', function ($query) use ($wilayahItem) {
+                        $query->where(
+                            'wilayah_kerja_id',
+                            $wilayahItem->id
+                        );
+                    })
+                    ->count();
 
-            $anakPerluPerhatian = PemeriksaanPosyandu::where(
-                'status_kesehatan',
-                PemeriksaanPosyandu::PERLU_PERHATIAN
-            )
-                ->whereHas(
+                $ibuDiperiksa = PemeriksaanIbu::whereBetween(
+                    'tgl_pemeriksaan',
+                    [
+                        $tanggalMulai->toDateString(),
+                        $tanggalAkhir->toDateString(),
+                    ]
+                )
+                    ->whereHas('ibu', function ($query) use ($wilayahItem) {
+                        $query->where(
+                            'wilayah_kerja_id',
+                            $wilayahItem->id
+                        );
+                    })
+                    ->distinct()
+                    ->count('ibu_id');
+
+                $anakDiperiksa = PemeriksaanPosyandu::whereHas(
                     'kegiatan',
-                    function ($query) use ($tanggalMulai, $tanggalAkhir, $wilayahItem) {
+                    function ($query) use (
+                        $tanggalMulai,
+                        $tanggalAkhir,
+                        $wilayahItem
+                    ) {
                         $query->whereBetween('tanggal', [
                             $tanggalMulai->toDateString(),
                             $tanggalAkhir->toDateString(),
-                        ])->where('id_wilayah', $wilayahItem->id);
+                        ])->where(
+                            'id_wilayah',
+                            $wilayahItem->id
+                        );
                     }
                 )
-                ->distinct()
-                ->count('anak_id');
+                    ->distinct()
+                    ->count('anak_id');
 
-            $diperiksa = $ibuDiperiksa + $anakDiperiksa;
-            $perluPerhatian = $ibuPerluPerhatian + $anakPerluPerhatian;
+                $ibuPerluPerhatian = PemeriksaanIbu::whereBetween(
+                    'tgl_pemeriksaan',
+                    [
+                        $tanggalMulai->toDateString(),
+                        $tanggalAkhir->toDateString(),
+                    ]
+                )
+                    ->where(
+                        'status_kesehatan',
+                        PemeriksaanIbu::PERLU_PERHATIAN
+                    )
+                    ->whereHas('ibu', function ($query) use ($wilayahItem) {
+                        $query->where(
+                            'wilayah_kerja_id',
+                            $wilayahItem->id
+                        );
+                    })
+                    ->distinct()
+                    ->count('ibu_id');
 
-            $persentase = $diperiksa > 0
-                ? round(($perluPerhatian / $diperiksa) * 100, 1)
-                : 0;
+                $anakPerluPerhatian = PemeriksaanPosyandu::where(
+                    'status_kesehatan',
+                    PemeriksaanPosyandu::PERLU_PERHATIAN
+                )
+                    ->whereHas(
+                        'kegiatan',
+                        function ($query) use (
+                            $tanggalMulai,
+                            $tanggalAkhir,
+                            $wilayahItem
+                        ) {
+                            $query->whereBetween('tanggal', [
+                                $tanggalMulai->toDateString(),
+                                $tanggalAkhir->toDateString(),
+                            ])->where(
+                                'id_wilayah',
+                                $wilayahItem->id
+                            );
+                        }
+                    )
+                    ->distinct()
+                    ->count('anak_id');
 
-            return (object) [
-                'nama_wilayah' => $wilayahItem->nama_wilayah,
-                'ibu_hamil' => $jumlahIbuHamil,
-                'anak' => $jumlahAnak,
-                'diperiksa' => $diperiksa,
-                'perlu_perhatian' => $perluPerhatian,
-                'persentase' => $persentase,
-            ];
-        });
+                $diperiksa = $ibuDiperiksa + $anakDiperiksa;
+                $perluPerhatian = $ibuPerluPerhatian
+                    + $anakPerluPerhatian;
 
-        // Data grafik status pemeriksaan Ibu.
+                $persentase = $diperiksa > 0
+                    ? round(($perluPerhatian / $diperiksa) * 100, 1)
+                    : 0;
+
+                return (object) [
+                    'nama_wilayah' => $wilayahItem->nama_wilayah,
+                    'ibu_hamil' => $jumlahIbuHamil,
+                    'anak' => $jumlahAnak,
+                    'diperiksa' => $diperiksa,
+                    'perlu_perhatian' => $perluPerhatian,
+                    'persentase' => $persentase,
+                ];
+            }
+        );
+
+        /*
+         * 6. Grafik status pemeriksaan Ibu dan Anak.
+         */
         $grafikStatus = [
-            'ibu_normal' => PemeriksaanIbu::whereBetween('tgl_pemeriksaan', [
-                $tanggalMulai->toDateString(),
-                $tanggalAkhir->toDateString(),
-            ])
-                ->where('status_kesehatan', PemeriksaanIbu::NORMAL)
-                ->whereHas('ibu', function ($query) use ($wilayahId) {
-                    $query->where('wilayah_kerja_id', $wilayahId);
+            'ibu_normal' => PemeriksaanIbu::whereBetween(
+                'tgl_pemeriksaan',
+                [
+                    $tanggalMulai->toDateString(),
+                    $tanggalAkhir->toDateString(),
+                ]
+            )
+                ->where(
+                    'status_kesehatan',
+                    PemeriksaanIbu::NORMAL
+                )
+                ->whereHas('ibu', function ($query) use ($wilayahIds) {
+                    $query->whereIn('wilayah_kerja_id', $wilayahIds);
                 })
                 ->count(),
 
-            'ibu_perhatian' => PemeriksaanIbu::whereBetween('tgl_pemeriksaan', [
-                $tanggalMulai->toDateString(),
-                $tanggalAkhir->toDateString(),
-            ])
-                ->where('status_kesehatan', PemeriksaanIbu::PERLU_PERHATIAN)
-                ->whereHas('ibu', function ($query) use ($wilayahId) {
-                    $query->where('wilayah_kerja_id', $wilayahId);
+            'ibu_perhatian' => PemeriksaanIbu::whereBetween(
+                'tgl_pemeriksaan',
+                [
+                    $tanggalMulai->toDateString(),
+                    $tanggalAkhir->toDateString(),
+                ]
+            )
+                ->where(
+                    'status_kesehatan',
+                    PemeriksaanIbu::PERLU_PERHATIAN
+                )
+                ->whereHas('ibu', function ($query) use ($wilayahIds) {
+                    $query->whereIn('wilayah_kerja_id', $wilayahIds);
                 })
                 ->count(),
 
-            // Data grafik status pemeriksaan Anak.
             'anak_normal' => PemeriksaanPosyandu::where(
                 'status_kesehatan',
                 PemeriksaanPosyandu::NORMAL
             )
-                ->whereHas('kegiatan', function ($query) use (
-                    $tanggalMulai,
-                    $tanggalAkhir,
-                    $wilayahId
-                ) {
-                    $query->whereBetween('tanggal', [
-                        $tanggalMulai->toDateString(),
-                        $tanggalAkhir->toDateString(),
-                    ])->where('id_wilayah', $wilayahId);
-                })
+                ->whereHas(
+                    'kegiatan',
+                    function ($query) use (
+                        $tanggalMulai,
+                        $tanggalAkhir,
+                        $filterKegiatanPuskesmas
+                    ) {
+                        $query->whereBetween('tanggal', [
+                            $tanggalMulai->toDateString(),
+                            $tanggalAkhir->toDateString(),
+                        ]);
+
+                        $filterKegiatanPuskesmas($query);
+                    }
+                )
                 ->count(),
 
             'anak_perhatian' => PemeriksaanPosyandu::where(
                 'status_kesehatan',
                 PemeriksaanPosyandu::PERLU_PERHATIAN
             )
-                ->whereHas('kegiatan', function ($query) use (
-                    $tanggalMulai,
-                    $tanggalAkhir,
-                    $wilayahId
-                ) {
-                    $query->whereBetween('tanggal', [
-                        $tanggalMulai->toDateString(),
-                        $tanggalAkhir->toDateString(),
-                    ])->where('id_wilayah', $wilayahId);
-                })
+                ->whereHas(
+                    'kegiatan',
+                    function ($query) use (
+                        $tanggalMulai,
+                        $tanggalAkhir,
+                        $filterKegiatanPuskesmas
+                    ) {
+                        $query->whereBetween('tanggal', [
+                            $tanggalMulai->toDateString(),
+                            $tanggalAkhir->toDateString(),
+                        ]);
+
+                        $filterKegiatanPuskesmas($query);
+                    }
+                )
                 ->count(),
         ];
 
-      $periode = $request->input('periode', now()->format('Y-m'));
-
-        try {
-            $tanggalPeriode = \Carbon\Carbon::createFromFormat('Y-m', $periode);
-        } catch (\Throwable $e) {
-            $tanggalPeriode = now();
-        }
-
-        $bulan = $tanggalPeriode->month;
-        $tahun = $tanggalPeriode->year;
-
-        // Laporan kegiatan Posyandu.
+        /*
+         * 7. Laporan kegiatan Posyandu.
+         */
         $kegiatanPosyandu = KegiatanPosyandu::query()
-            ->with('wilayah')
+            ->with([
+                'wilayah',
+                'rw.kelurahanDesa',
+            ])
             ->addSelect([
                 'anak_diperiksa' => PemeriksaanPosyandu::query()
-                    ->selectRaw('COUNT(DISTINCT pemeriksaan_posyandu.anak_id)')
+                    ->selectRaw(
+                        'COUNT(DISTINCT pemeriksaan_posyandu.anak_id)'
+                    )
                     ->whereColumn(
                         'pemeriksaan_posyandu.kegiatan_posyandu_id',
                         'kegiatan_posyandu.id'
                     ),
             ])
-            ->where('id_wilayah', $wilayahId)
             ->whereBetween('tanggal', [
                 $tanggalMulai->toDateString(),
                 $tanggalAkhir->toDateString(),
             ])
+            ->where($filterKegiatanPuskesmas)
             ->orderBy('tanggal')
             ->get();
-    
 
-        // Data risiko Ibu: pemeriksaan terakhir setiap Ibu.
+        /*
+         * 8. Data risiko Ibu.
+         */
         $risikoIbu = PemeriksaanIbu::with([
             'ibu.user',
             'ibu.wilayahKerja',
         ])
             ->terakhirPerIbu()
-            ->where('status_kesehatan', PemeriksaanIbu::PERLU_PERHATIAN)
+            ->where(
+                'status_kesehatan',
+                PemeriksaanIbu::PERLU_PERHATIAN
+            )
             ->whereBetween('tgl_pemeriksaan', [
                 $tanggalMulai->toDateString(),
                 $tanggalAkhir->toDateString(),
             ])
-            ->whereHas('ibu', function ($query) use ($wilayahId) {
-                $query->where('wilayah_kerja_id', $wilayahId);
+            ->whereHas('ibu', function ($query) use ($wilayahIds) {
+                $query->whereIn('wilayah_kerja_id', $wilayahIds);
             })
             ->get();
 
-        // Data risiko Anak: pemeriksaan terakhir setiap Anak.
+        /*
+         * 9. Data risiko Anak.
+         */
         $risikoAnak = PemeriksaanPosyandu::with([
             'anak.ibu.wilayahKerja',
-            'kegiatan',
+            'kegiatan.rw.kelurahanDesa',
         ])
             ->terakhirPerAnak()
-            ->where('status_kesehatan', PemeriksaanPosyandu::PERLU_PERHATIAN)
-            ->whereHas('kegiatan', function ($query) use ($tanggalMulai, $tanggalAkhir) {
-                $query->whereBetween('tanggal', [
-                    $tanggalMulai->toDateString(),
-                    $tanggalAkhir->toDateString(),
-                ]);
-            })
-            ->whereHas('anak.ibu', function ($query) use ($wilayahId) {
-                $query->where('wilayah_kerja_id', $wilayahId);
-            })
+            ->where(
+                'status_kesehatan',
+                PemeriksaanPosyandu::PERLU_PERHATIAN
+            )
+            ->whereHas(
+                'kegiatan',
+                function ($query) use (
+                    $tanggalMulai,
+                    $tanggalAkhir,
+                    $filterKegiatanPuskesmas
+                ) {
+                    $query->whereBetween('tanggal', [
+                        $tanggalMulai->toDateString(),
+                        $tanggalAkhir->toDateString(),
+                    ]);
+
+                    $filterKegiatanPuskesmas($query);
+                }
+            )
             ->get();
 
-        // Gabungkan data risiko Ibu dan Anak.
+        /*
+         * 10. Gabungkan data risiko Ibu dan Anak.
+         */
         $dataRisiko = collect();
 
         foreach ($risikoAnak as $pemeriksaan) {
             $dataRisiko->push((object) [
                 'nama' => $pemeriksaan->anak?->nama_anak ?? '-',
                 'jenis' => 'Anak',
-                'wilayah' => $pemeriksaan->anak?->ibu?->wilayahKerja?->nama_wilayah ?? '-',
+                'wilayah' => $pemeriksaan->anak?->ibu?->wilayahKerja?->nama_wilayah
+                    ?? $pemeriksaan->kegiatan?->rw?->kelurahanDesa?->nama_kelurahan_desa
+                    ?? '-',
                 'tanggal' => $pemeriksaan->kegiatan?->tanggal,
-                'indikator' => 'BB: '.($pemeriksaan->berat_badan ?? '-').' kg, TB: '.($pemeriksaan->tinggi_badan ?? '-').' cm',
+                'indikator' => 'BB: '
+                    . ($pemeriksaan->berat_badan ?? '-')
+                    . ' kg, TB: '
+                    . ($pemeriksaan->tinggi_badan ?? '-')
+                    . ' cm',
                 'penanda' => 'Perlu Perhatian',
             ]);
         }
@@ -272,30 +409,42 @@ class LaporanController extends Controller
             $dataRisiko->push((object) [
                 'nama' => $pemeriksaan->ibu?->user?->name ?? '-',
                 'jenis' => 'Ibu',
-                'wilayah' => $pemeriksaan->ibu?->wilayahKerja?->nama_wilayah ?? '-',
+                'wilayah' => $pemeriksaan->ibu?->wilayahKerja?->nama_wilayah
+                    ?? '-',
                 'tanggal' => $pemeriksaan->tgl_pemeriksaan,
                 'indikator' => 'Status pemeriksaan: Perlu Perhatian',
                 'penanda' => 'Perlu Perhatian',
             ]);
         }
 
-        // Rekap jumlah catatan pemeriksaan pada periode terpilih.
-        $jumlahPemeriksaanIbu = PemeriksaanIbu::whereBetween('tgl_pemeriksaan', [
-            $tanggalMulai->toDateString(),
-            $tanggalAkhir->toDateString(),
-        ])
-            ->whereHas('ibu', function ($query) use ($wilayahId) {
-                $query->where('wilayah_kerja_id', $wilayahId);
+        /*
+         * 11. Rekap jumlah pemeriksaan.
+         */
+        $jumlahPemeriksaanIbu = PemeriksaanIbu::whereBetween(
+            'tgl_pemeriksaan',
+            [
+                $tanggalMulai->toDateString(),
+                $tanggalAkhir->toDateString(),
+            ]
+        )
+            ->whereHas('ibu', function ($query) use ($wilayahIds) {
+                $query->whereIn('wilayah_kerja_id', $wilayahIds);
             })
             ->count();
 
         $jumlahPemeriksaanAnak = PemeriksaanPosyandu::whereHas(
             'kegiatan',
-            function ($query) use ($tanggalMulai, $tanggalAkhir, $wilayahId) {
+            function ($query) use (
+                $tanggalMulai,
+                $tanggalAkhir,
+                $filterKegiatanPuskesmas
+            ) {
                 $query->whereBetween('tanggal', [
                     $tanggalMulai->toDateString(),
                     $tanggalAkhir->toDateString(),
-                ])->where('id_wilayah', $wilayahId);
+                ]);
+
+                $filterKegiatanPuskesmas($query);
             }
         )->count();
 
@@ -308,21 +457,21 @@ class LaporanController extends Controller
             ],
         ]);
 
+        /*
+         * 12. Ringkasan dashboard laporan.
+         */
         $ringkasan = [
             'ibu_hamil' => $rekapWilayah->sum('ibu_hamil'),
             'anak' => $rekapWilayah->sum('anak'),
             'perlu_perhatian' => $rekapWilayah->sum('perlu_perhatian'),
         ];
 
-
-        $namaWilayah = $wilayah->first()?->nama_wilayah ?? 'Wilayah belum ditetapkan';
-
         $ringkasanKegiatan = [
             'jumlah_kegiatan' => $kegiatanPosyandu->count(),
             'anak_diperiksa' => $kegiatanPosyandu->sum('anak_diperiksa'),
         ];
 
-       return view('admin.laporan.index', compact(
+        return view('admin.laporan.index', compact(
             'wilayah',
             'namaWilayah',
             'rekapWilayah',

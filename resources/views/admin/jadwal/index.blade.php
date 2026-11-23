@@ -32,13 +32,13 @@
         <div class="flex items-center gap-8 border-b border-gray-300">
             <button type="button"
                     id="tab-pemeriksaan"
-                    class="tab-jadwal border-b-2 border-transparent px-3 py-3 text-sm font-semibold text-gray-500">
+                    class="tab-jadwal border-b-2 border-gray-900 px-3 py-3 text-sm font-semibold text-gray-900">
                 Pemeriksaan Ibu Hamil
             </button>
 
             <button type="button"
                     id="tab-posyandu"
-                    class="tab-jadwal border-b-2 border-gray-900 px-3 py-3 text-sm font-semibold text-gray-900">
+                    class="tab-jadwal border-b-2 border-transparent px-3 py-3 text-sm font-semibold text-gray-500">
                 Posyandu
             </button>
         </div>
@@ -79,7 +79,7 @@
         {{-- ================================= --}}
         {{-- TABEL POSYANDU --}}
         {{-- ================================= --}}
-        <div id="panel-posyandu" class="overflow-x-auto">
+        <div id="panel-posyandu" class="hidden overflow-x-auto">
 
             <table class="min-w-full border-collapse text-left text-xs">
 
@@ -204,7 +204,7 @@
         {{-- ================================= --}}
         {{-- TABEL PEMERIKSAAN IBU HAMIL --}}
         {{-- ================================= --}}
-        <div id="panel-pemeriksaan" class="hidden overflow-x-auto">
+        <div id="panel-pemeriksaan" class="overflow-x-auto">
 
             <table class="min-w-full border-collapse text-left text-xs">
 
@@ -342,9 +342,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const filterBulan = document.getElementById('filter-bulan');
 
     const params = new URLSearchParams(window.location.search);
-    let tipeAktif = params.get('tab') === 'pemeriksaan'
-        ? 'pemeriksaan'
-        : 'posyandu';
+    let tipeAktif = params.get('tab') === 'posyandu'
+        ? 'posyandu'
+        : 'pemeriksaan';
 
     function gantiTab(tipe) {
         tipeAktif = tipe;
