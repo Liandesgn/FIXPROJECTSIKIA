@@ -35,12 +35,22 @@ class BidanController extends Controller
             ->whereHas('bidan.wilayahKerja', function ($query) use ($puskesmasId) {
                 $query->where('puskesmas_id', $puskesmasId);
             })
-            ->when($search !== '', function ($query) use ($search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%");
-                });
-            })
+->when($search !== '', function ($query) use ($search) {
+    $query->where(function ($q) use ($search) {
+        $q->where('name', 'like', "%{$search}%")
+            ->orWhereHas('bidan.wilayahKerja', function ($wilayahQuery) use ($search) {
+                $wilayahQuery
+                    ->where('nama_wilayah', 'like', "%{$search}%")
+                    ->orWhereHas('kelurahanDesa', function ($desaQuery) use ($search) {
+                        $desaQuery->where(
+                            'nama_kelurahan_desa',
+                            'like',
+                            "%{$search}%"
+                        );
+                    });
+            });
+    });
+})
             ->when($request->filled('wilayah_kerja_id'), function ($query) use ($request, $puskesmasId) {
                 $query->whereHas('bidan.wilayahKerja', function ($wilayahQuery) use ($request, $puskesmasId) {
                     $wilayahQuery

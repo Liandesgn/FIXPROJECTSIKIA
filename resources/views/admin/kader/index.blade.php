@@ -95,7 +95,7 @@
                         <path stroke-linecap="round" d="m20 20-3.5-3.5"/>
                     </svg>
                     <input id="searchInput" type="search" name="search" value="{{ request('search') }}" autocomplete="off"
-                           placeholder="Cari nama / email"
+                           placeholder="Cari nama / wilayah"
                            class="w-full rounded-xl border-2 border-[#C9517E]/60 bg-white py-2.5 pl-11 pr-3 text-sm font-medium text-gray-900 outline-none transition placeholder:text-slate-500 focus:border-[#C9517E] focus:ring-4 focus:ring-[#E99AB7]/40">
                 </div>
 
