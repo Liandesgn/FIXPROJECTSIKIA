@@ -156,8 +156,15 @@ private static function superAdmin(): array
                 'items' => [
                     self::link('Data Ibu', 'bidan.data-ibu.index', 'bidan.data-ibu.*'),
                     self::link('Data Anak', 'bidan.data-anak.index', 'bidan.data-anak.*'),
-                    self::soon('Pemeriksaan Pasien', 'pemeriksaan-pasien'),
-                    self::soon('Posyandu', 'posyandu'),
+                    self::link(
+                        'Pemeriksaan',
+                        'bidan.pemeriksaan-ibu.index'
+                    ),
+                    self::link(
+                        'Posyandu',
+                        'bidan.data-posyandu.index',
+                        'bidan.data-posyandu.*'
+                    ),
                     self::soon('Konsultasi', 'konsultasi'),
                     self::link('Jadwal', 'bidan.jadwal.index', 'bidan.jadwal.*'),
                     self::link('Laporan Wilayah', 'bidan.laporan.index', 'bidan.laporan.*'),
@@ -194,7 +201,11 @@ private static function superAdmin(): array
                     'kader.jadwal.index',
                     'kader.jadwal.*'
                 ),
-                    self::soon('Pendataan Posyandu', 'pendataan-posyandu'),
+                    self::link(
+                    'Pendataan Posyandu',
+                    'kader.data-posyandu.index',
+                    'kader.data-posyandu.*'
+                                    ),
                 ],
             ],
             [

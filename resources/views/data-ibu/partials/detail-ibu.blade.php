@@ -197,15 +197,21 @@
                 <h2 class="text-base font-bold text-[#542D3D]">Data Anak</h2>
             </div>
 
-            @if ($base === 'admin')
+        @if ($base === 'admin')
+            @if ($ibu->status_kehamilan === \App\Enums\StatusKehamilanEnum::Melahirkan)
                 @can('anak.create')
                     <a href="{{ route('admin.data-anak.create', ['ibu_id' => $ibu->id]) }}"
-                       class="inline-flex items-center gap-2 rounded-xl bg-[#C9517E] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40 active:scale-[0.98]">
+                    class="inline-flex items-center gap-2 rounded-xl bg-[#C9517E] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40 active:scale-[0.98]">
                         <span class="text-lg leading-none">+</span>
                         Tambah Data Anak
                     </a>
                 @endcan
+            @else
+                <span class="rounded-xl bg-slate-100 px-4 py-2 text-xs font-medium text-slate-500">
+                    Menunggu ibu melahirkan
+                </span>
             @endif
+        @endif
         </div>
 
         @if ($ibu->anak->isNotEmpty())

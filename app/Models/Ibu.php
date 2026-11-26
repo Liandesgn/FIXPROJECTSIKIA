@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\PemeriksaanIbu;
 use App\Enums\StatusKehamilanEnum;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -92,6 +93,10 @@ class Ibu extends Model
     {
         return $this->hasMany(Anak::class, 'ibu_id');
     }
+        public function pemeriksaanIbu(): HasMany
+    {
+        return $this->hasMany(PemeriksaanIbu::class, 'ibu_id');
+    }
 
     public function sedangHamil(): bool
     {
@@ -108,6 +113,15 @@ class Ibu extends Model
             ($this->tempat_lahir ?? '') . ', ' .
             ($this->tgl_lahir?->format('d-m-Y') ?? ''),
             ', '
+        );
+    }
+
+        public function riwayatStatusKehamilan(): HasMany
+    {
+        return $this->hasMany(
+            RiwayatStatusKehamilan::class,
+            'id_ibu',
+            'id'
         );
     }
 

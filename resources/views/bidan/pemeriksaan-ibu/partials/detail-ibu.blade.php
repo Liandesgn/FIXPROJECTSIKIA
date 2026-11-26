@@ -1,0 +1,597 @@
+
+@php
+    $riwayatPemeriksaanIbu = $riwayatPemeriksaanIbu ?? collect();
+    $filterPeriode = $filterPeriode ?? false;
+    $base = $base ?? 'bidan';
+
+    $formatTanggal = fn ($t) => $t ? \Carbon\Carbon::parse($t)->format('d/m/Y') : '-';
+    $angka = fn ($v) => ($v === null || $v === '') ? '-' : number_format((float) $v, 1, ',', '.');
+
+    // Mengambil nilai kolom secara aman.
+    $ambil = function ($model, array $kolom) {
+        $atribut = $model->getAttributes();
+
+        foreach ($kolom as $k) {
+            if (array_key_exists($k, $atribut) && $atribut[$k] !== null && $atribut[$k] !== '') {
+                return $atribut[$k];
+            }
+        }
+
+        return null;
+    };
+
+    // Menyusun alamat ibu.
+    $alamatDari = function ($w) {
+        if (! $w) {
+            return '-';
+        }
+
+        $relasi = function (string $nama) use ($w) {
+            if ($w->relationLoaded($nama)) {
+                return $w->getRelation($nama);
+            }
+
+            return method_exists($w, $nama) ? $w->{$nama}()->first() : null;
+        };
+
+        $kec  = $relasi('kecamatan');
+        $desa = $relasi('kelurahanDesa');
+        $rw   = $relasi('rw');
+        $rt   = $relasi('rt');
+
+        $kolomKec  = $w->getAttribute('kecamatan');
+        $kolomDesa = $w->getAttribute('kelurahan');
+
+        $namaKec = $kec?->nama_kecamatan
+            ?? (is_string($kolomKec) && $kolomKec !== '' ? $kolomKec : null);
+
+        $bagian = [];
+
+        if ($namaKec) {
+            $bagian[] = 'Kec. ' . $namaKec;
+        }
+
+        if ($desa?->nama_kelurahan_desa) {
+            $bagian[] = (strtolower((string) $desa->jenis) === 'kelurahan' ? 'Kel. ' : 'Desa ')
+                . $desa->nama_kelurahan_desa;
+        } elseif (is_string($kolomDesa) && $kolomDesa !== '') {
+            $bagian[] = 'Desa ' . $kolomDesa;
+        }
+
+        $nomor = array_filter([
+            $rt?->nomor_rt ? 'RT ' . $rt->nomor_rt : null,
+            $rw?->nomor_rw ? 'RW ' . $rw->nomor_rw : null,
+        ]);
+
+        if ($nomor) {
+            $bagian[] = implode('/', $nomor);
+        }
+
+        return $bagian ? implode(', ', $bagian) : ($w->getAttribute('nama_wilayah') ?: '-');
+    };
+
+    $warnaStatus = fn ($s) => $s === 'normal' ? '#16a34a' : '#dc2626';
+    $labelStatus = fn ($s) => $s === 'normal' ? 'Normal' : 'Perlu Perhatian';
+
+    $dataIbu = [
+        'NIK'           => $ibu->nik,
+        'Nama'          => $ibu->user?->name,
+        'Tanggal Lahir' => $formatTanggal($ibu->tgl_lahir),
+        'Nomor HP'      => $ibu->user?->phone,
+        'Alamat'        => $alamatDari($ibu->wilayahKerja),
+    ];
+
+    // Riwayat pemeriksaan terbaru di atas.
+    $riwayat = collect($riwayatPemeriksaanIbu)->map(function ($p) use ($ambil) {
+        $sistol  = $ambil($p, ['tekanan_sistolik', 'sistol', 'sistolik']);
+        $diastol = $ambil($p, ['tekanan_diastolik', 'diastol', 'diastolik']);
+
+        $tekananDarah = $ambil($p, ['tekanan_darah']);
+
+        if (! $tekananDarah && $sistol !== null && $diastol !== null) {
+            $tekananDarah = $sistol . '/' . $diastol;
+        }
+
+        $statusPemeriksaan = strtolower(trim((string) $ambil($p, [
+            'status',
+            'status_pemeriksaan',
+        ])));
+
+        $tingkatRisiko = $ambil($p, [
+            'tingkat_risiko',
+            'status_risiko',
+            'risiko_kehamilan',
+        ]);
+
+        // Status untuk kebutuhan grafik.
+        if (in_array($statusPemeriksaan, ['normal', 'perlu_perhatian'], true)) {
+            $statusGrafik = $statusPemeriksaan;
+        } else {
+            $risikoNormal = ['normal', 'rendah', 'risiko rendah'];
+            $statusGrafik = $tingkatRisiko !== null
+                ? (in_array(strtolower(trim((string) $tingkatRisiko)), $risikoNormal, true)
+                    ? 'normal'
+                    : 'perlu_perhatian')
+                : null;
+        }
+
+        return [
+            'tanggal'       => $p->tgl_pemeriksaan,
+            'usia'          => $ambil($p, ['usia_kehamilan', 'usia_kehamilan_minggu']),
+            'bb'            => $ambil($p, ['berat_badan', 'berat_badan_ibu', 'bb']),
+            'tekanan_darah' => $tekananDarah,
+            'proteinuria'   => $ambil($p, ['proteinuria']),
+            'hb'            => $ambil($p, ['hb', 'hemoglobin']),
+            'risiko'        => $tingkatRisiko,
+            'status'        => $statusGrafik,
+        ];
+    })->sortByDesc('tanggal')->values();
+
+    $batasRiwayat = 4;
+    $adaLebih = $riwayat->count() > $batasRiwayat;
+
+    // Daftar bulan untuk dropdown filter periode.
+    $daftarPeriode = $riwayat
+        ->map(fn ($r) => $r['tanggal'] ? \Carbon\Carbon::parse($r['tanggal'])->format('Y-m') : null)
+        ->filter()
+        ->unique()
+        ->values();
+
+    // Grafik perkembangan kehamilan.
+    $tampilGrafik = $ibu->sedangHamil();
+
+    $dataGrafik = $riwayat
+        ->filter(fn ($r) => in_array($r['status'], ['normal', 'perlu_perhatian'], true))
+        ->when(
+            $riwayat->contains(fn ($r) => $r['bb'] !== null),
+            fn ($c) => $c->filter(fn ($r) => $r['bb'] !== null)
+        )
+        ->sortBy('tanggal')
+        ->values()
+        ->take(-12)
+        ->values();
+
+    $adaBB = $tampilGrafik
+        && $dataGrafik->isNotEmpty()
+        && $dataGrafik->contains(fn ($r) => $r['bb'] !== null);
+
+    $jumlahGrafik = $dataGrafik->count();
+
+    $xKiri = $adaBB ? 70 : 130;
+    $xKanan = 570;
+    $yAtas = 40;
+    $yBawah = 170;
+
+    $bbMin = $adaBB && $jumlahGrafik > 0
+        ? (float) $dataGrafik->min(fn ($r) => (float) $r['bb'])
+        : 0;
+
+    $bbMax = $adaBB && $jumlahGrafik > 0
+        ? (float) $dataGrafik->max(fn ($r) => (float) $r['bb'])
+        : 0;
+
+    $titik = [];
+
+    foreach ($dataGrafik as $i => $r) {
+        $x = $jumlahGrafik > 1
+            ? $xKiri + ($i * (($xKanan - $xKiri) / ($jumlahGrafik - 1)))
+            : ($xKiri + $xKanan) / 2;
+
+        if ($adaBB && $r['bb'] !== null) {
+            $y = $bbMax === $bbMin
+                ? ($yAtas + $yBawah) / 2
+                : $yBawah - ((((float) $r['bb'] - $bbMin) / ($bbMax - $bbMin)) * ($yBawah - $yAtas));
+        } else {
+            $y = $r['status'] === 'normal' ? 150 : 60;
+        }
+
+        $titik[] = [
+            'x'       => round($x, 1),
+            'y'       => round($y, 1),
+            'bb'      => $r['bb'],
+            'usia'    => $r['usia'],
+            'tanggal' => $r['tanggal'],
+            'status'  => $r['status'],
+        ];
+    }
+
+    // Gaya komponen.
+    $kartu = 'overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-[#E99AB7] hover:shadow-md motion-reduce:transform-none motion-reduce:transition-none';
+
+    $kepala = 'flex flex-wrap items-center justify-between gap-3 border-b border-[#F1D5E0] bg-gradient-to-r from-[#FCE7F0] to-[#FFF7FA] px-5 py-3.5';
+
+    $ikon = 'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-[#C9517E] shadow-sm';
+@endphp
+
+<div class="space-y-6">
+
+    {{-- Data Ibu dan Status Kehamilan --}}
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+
+        {{-- Data Ibu --}}
+        <div class="{{ $kartu }} lg:col-span-2">
+            <div class="{{ $kepala }}">
+                <div class="flex items-center gap-3">
+                    <span class="{{ $ikon }}">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 9a7 7 0 0 1 14 0"/>
+                        </svg>
+                    </span>
+                    <h2 class="text-base font-bold text-[#542D3D]">Data Ibu</h2>
+                </div>
+            </div>
+
+            <dl class="divide-y divide-[#F7E6ED] px-5">
+                @foreach ($dataIbu as $label => $nilai)
+                    <div class="flex flex-col gap-0.5 py-3 text-sm sm:flex-row sm:justify-between sm:gap-4">
+                        <dt class="font-semibold text-slate-600">{{ $label }}</dt>
+                        <dd class="font-semibold text-[#542D3D] sm:text-right">{{ $nilai ?: '-' }}</dd>
+                    </div>
+                @endforeach
+            </dl>
+        </div>
+
+        {{-- Status Kehamilan --}}
+        <div class="{{ $kartu }}">
+            <div class="{{ $kepala }}">
+                <div class="flex items-center gap-3">
+                    <span class="{{ $ikon }}">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 21s-8-4.5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 6.5-8 11-8 11Z"/>
+                        </svg>
+                    </span>
+                    <h2 class="text-base font-bold text-[#542D3D]">Status Kehamilan</h2>
+                </div>
+
+                <a href="{{ route('bidan.pemeriksaan-ibu.status', $ibu->id) }}"
+                   class="inline-flex items-center gap-1.5 rounded-lg bg-[#C9517E] px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40">
+                    Detail Status
+                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 18l6-6-6-6"/>
+                    </svg>
+                </a>
+            </div>
+
+            <div class="space-y-2 p-5">
+                @if ($ibu->sedangHamil())
+                    <p class="text-sm text-slate-700">
+                        Usia kehamilan:
+                        <span class="font-semibold text-[#542D3D]">
+                            {{ $ibu->usia_kehamilan_sekarang !== null ? $ibu->usia_kehamilan_sekarang . ' minggu' : '0 minggu' }}
+                        </span>
+                    </p>
+
+                    <p class="text-sm text-slate-700">
+                        HPL:
+                        <span class="font-semibold text-[#542D3D]">
+                            {{ $formatTanggal($ibu->hpl) }}
+                        </span>
+                    </p>
+                @else
+                    <p class="text-sm text-slate-600">
+                        Ibu saat ini tidak dalam status kehamilan.
+                    </p>
+                @endif
+            </div>
+        </div>
+
+    </div>
+
+    {{-- Data Anak --}}
+    <div class="{{ $kartu }}">
+        <div class="{{ $kepala }}">
+            <div class="flex items-center gap-3">
+                <span class="{{ $ikon }}">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm-4 14v-6l-2-4h12l-2 4v6"/>
+                    </svg>
+                </span>
+                <h2 class="text-base font-bold text-[#542D3D]">Data Anak</h2>
+            </div>
+
+            @if ($base === 'admin')
+                @if ($ibu->status_kehamilan === \App\Enums\StatusKehamilanEnum::Melahirkan)
+                    @can('anak.create')
+                        <a href="{{ route('admin.data-anak.create', ['ibu_id' => $ibu->id]) }}"
+                           class="rounded-xl bg-[#C9517E] px-4 py-2 text-sm font-semibold text-white">
+                            + Tambah Data Anak
+                        </a>
+                    @endcan
+                @else
+                    <span class="rounded-xl bg-slate-100 px-4 py-2 text-xs font-medium text-slate-500">
+                        Menunggu ibu melahirkan
+                    </span>
+                @endif
+            @endif
+        </div>
+
+        @if ($ibu->anak->isNotEmpty())
+            <div class="overflow-x-auto">
+                <table class="w-full min-w-[600px] text-left text-sm">
+                    <thead class="bg-[#FFF5F8] text-xs font-bold uppercase tracking-wide text-[#542D3D]">
+                        <tr>
+                            <th class="px-5 py-3">No</th>
+                            <th class="px-5 py-3">NIK Anak</th>
+                            <th class="px-5 py-3">Nama Anak</th>
+                            <th class="px-5 py-3">Tanggal Lahir</th>
+                            <th class="px-5 py-3">Jenis Kelamin</th>
+                        </tr>
+                    </thead>
+
+                    <tbody class="divide-y divide-[#F7E6ED]">
+                        @foreach ($ibu->anak as $anak)
+                            <tr>
+                                <td class="px-5 py-3">{{ $loop->iteration }}</td>
+                                <td class="px-5 py-3">{{ $anak->nik_anak ?: '-' }}</td>
+                                <td class="px-5 py-3">{{ $anak->nama_anak ?: '-' }}</td>
+                                <td class="px-5 py-3">{{ $formatTanggal($anak->tgl_lahir) }}</td>
+                                <td class="px-5 py-3">
+                                    {{ $anak->jenis_kelamin === 'L' ? 'Laki-laki' : ($anak->jenis_kelamin === 'P' ? 'Perempuan' : '-') }}
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @else
+            <div class="px-5 py-8 text-center">
+                <p class="text-sm font-medium text-slate-600">Belum ada data anak.</p>
+            </div>
+        @endif
+    </div>
+
+    {{-- Grafik Perkembangan Kehamilan --}}
+    @if ($tampilGrafik)
+        <div class="{{ $kartu }}">
+            <div class="{{ $kepala }}">
+                <div>
+                    <h2 class="text-base font-bold text-[#542D3D]">
+                        Grafik Perkembangan Kehamilan
+                    </h2>
+                    <p class="mt-0.5 text-sm text-slate-600">
+                        Hijau berarti normal, merah berarti perlu perhatian.
+                    </p>
+                </div>
+            </div>
+
+            <div class="p-5">
+                @if ($jumlahGrafik > 0)
+                    <div class="w-full overflow-x-auto">
+                        <svg viewBox="0 0 600 222" class="w-full min-w-[480px]" role="img" aria-label="Grafik perkembangan kehamilan">
+
+                            @if ($adaBB)
+                                @foreach ([40, 82, 126, 170] as $gy)
+                                    <line x1="{{ $xKiri - 10 }}" y1="{{ $gy }}" x2="{{ $xKanan + 10 }}" y2="{{ $gy }}" stroke="#F1D5E0" stroke-dasharray="4 4"/>
+                                @endforeach
+
+                                <text x="4" y="20" font-size="11" font-weight="700" fill="#64748B">BB (kg)</text>
+                                <text x="{{ $xKiri - 16 }}" y="44" font-size="11" text-anchor="end" fill="#64748B">{{ number_format($bbMax, 1) }}</text>
+                                <text x="{{ $xKiri - 16 }}" y="174" font-size="11" text-anchor="end" fill="#64748B">{{ number_format($bbMin, 1) }}</text>
+                            @else
+                                <line x1="{{ $xKiri - 20 }}" y1="60" x2="{{ $xKanan + 10 }}" y2="60" stroke="#FECACA" stroke-dasharray="4 4"/>
+                                <line x1="{{ $xKiri - 20 }}" y1="150" x2="{{ $xKanan + 10 }}" y2="150" stroke="#BBF7D0" stroke-dasharray="4 4"/>
+                                <text x="8" y="64" font-size="11" font-weight="700" fill="#dc2626">Perlu Perhatian</text>
+                                <text x="8" y="154" font-size="11" font-weight="700" fill="#16a34a">Normal</text>
+                            @endif
+
+                            @foreach ($titik as $i => $p)
+                                @if ($i > 0)
+                                    <line x1="{{ $titik[$i - 1]['x'] }}" y1="{{ $titik[$i - 1]['y'] }}"
+                                          x2="{{ $p['x'] }}" y2="{{ $p['y'] }}"
+                                          stroke="{{ $warnaStatus($p['status']) }}" stroke-width="3" stroke-linecap="round"/>
+                                @endif
+                            @endforeach
+
+                            @foreach ($titik as $i => $p)
+                                <circle cx="{{ $p['x'] }}" cy="{{ $p['y'] }}" r="6"
+                                        fill="{{ $warnaStatus($p['status']) }}" stroke="white" stroke-width="2">
+                                    <title>{{ $formatTanggal($p['tanggal']) }}{{ $p['bb'] !== null ? ' · ' . $p['bb'] . ' kg' : '' }} · {{ $labelStatus($p['status']) }}</title>
+                                </circle>
+
+                                @if ($adaBB && $jumlahGrafik <= 8)
+                                    <text x="{{ $p['x'] }}" y="{{ $p['y'] - 12 }}" font-size="11" font-weight="700"
+                                          text-anchor="middle" fill="#542D3D">{{ $p['bb'] }}</text>
+                                @endif
+
+                                @if ($jumlahGrafik <= 8 || $i % 2 === 0)
+                                    <text x="{{ $p['x'] }}" y="192" font-size="10" text-anchor="middle" fill="#64748B">
+                                        {{ $p['usia'] !== null ? $p['usia'] . ' mgg' : ($p['tanggal'] ? \Carbon\Carbon::parse($p['tanggal'])->format('d/m') : '') }}
+                                    </text>
+                                @endif
+                            @endforeach
+
+                            <text x="{{ ($xKiri + $xKanan) / 2 }}" y="214" font-size="11" text-anchor="middle" fill="#64748B">
+                                Usia kehamilan (minggu)
+                            </text>
+                        </svg>
+                    </div>
+
+                    <div class="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-semibold text-slate-700">
+                        <span class="inline-flex items-center gap-2">
+                            <span class="h-3 w-3 rounded-full bg-green-600"></span>
+                            Normal
+                        </span>
+                        <span class="inline-flex items-center gap-2">
+                            <span class="h-3 w-3 rounded-full bg-red-600"></span>
+                            Perlu Perhatian
+                        </span>
+                    </div>
+                @else
+                    <div class="flex min-h-48 flex-col items-center justify-center rounded-xl bg-[#FFF5F8]">
+                        <p class="text-sm font-semibold text-slate-600">Belum ada data pemeriksaan untuk grafik.</p>
+                        <p class="mt-1 text-sm text-slate-500">
+                            Grafik akan tampil jika data pemeriksaan memiliki status yang dapat dipetakan.
+                        </p>
+                    </div>
+                @endif
+            </div>
+        </div>
+    @endif
+
+    {{-- Riwayat Pemeriksaan Kehamilan --}}
+    <div data-riwayat class="{{ $kartu }}">
+        <div class="{{ $kepala }}">
+            <div>
+                <h2 class="text-base font-bold text-[#542D3D]">
+                    Riwayat Pemeriksaan Kehamilan
+                </h2>
+                <p class="mt-0.5 text-sm text-slate-600">
+                    Riwayat pemeriksaan ibu berdasarkan data pemeriksaan yang tersimpan.
+                </p>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+                @if ($filterPeriode && $daftarPeriode->isNotEmpty())
+                    <select data-periode-filter aria-label="Filter periode"
+                            class="rounded-xl border-2 border-[#E99AB7] bg-white px-3 py-2 text-sm font-semibold text-[#542D3D] outline-none transition focus:border-[#C9517E] focus:ring-4 focus:ring-[#E99AB7]/40">
+                        <option value="">Semua Periode</option>
+                        @foreach ($daftarPeriode as $periode)
+                            <option value="{{ $periode }}">
+                                {{ \Carbon\Carbon::createFromFormat('Y-m-d', $periode . '-01')->translatedFormat('F Y') }}
+                            </option>
+                        @endforeach
+                    </select>
+                @endif
+
+                @if ($adaLebih)
+                    <button type="button" data-riwayat-toggle
+                            data-label-buka="Tampilkan semua"
+                            data-label-tutup="Tampilkan sedikit"
+                            class="rounded-xl border-2 border-[#C9517E] bg-white px-4 py-2 text-sm font-semibold text-[#C9517E] transition hover:bg-[#C9517E] hover:text-white focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40 active:scale-[0.98]">
+                        Tampilkan semua
+                    </button>
+                @endif
+            </div>
+        </div>
+
+        @if ($riwayat->isNotEmpty())
+            <div class="overflow-x-auto">
+                <table class="w-full min-w-[900px] text-left text-sm">
+                    <thead class="bg-[#FFF5F8] text-xs font-bold uppercase tracking-wide text-[#542D3D]">
+                        <tr>
+                            <th class="px-5 py-3">Tanggal</th>
+                            <th class="px-5 py-3">Usia Kehamilan</th>
+                            <th class="px-5 py-3 text-center">Tekanan Darah</th>
+                            <th class="px-5 py-3 text-center">Proteinuria</th>
+                            <th class="px-5 py-3 text-center">Hb</th>
+                            <th class="px-5 py-3 text-center">Status Risiko</th>
+                        </tr>
+                    </thead>
+
+                    <tbody class="divide-y divide-[#F7E6ED]">
+                        @foreach ($riwayat as $r)
+                            @php
+                                $lebih = $loop->index >= $batasRiwayat;
+                                $risiko = $r['risiko'];
+                                $risikoLower = strtolower(trim((string) $risiko));
+                            @endphp
+
+                            <tr class="transition-colors hover:bg-[#FCE7F0]/40 {{ $lebih ? 'hidden' : '' }}"
+                                data-periode="{{ $r['tanggal'] ? \Carbon\Carbon::parse($r['tanggal'])->format('Y-m') : '' }}"
+                                @if ($lebih) data-extra @endif>
+
+                                <td class="px-5 py-3">
+                                    {{ $formatTanggal($r['tanggal']) }}
+                                </td>
+
+                                <td class="px-5 py-3">
+                                    {{ $r['usia'] !== null ? $r['usia'] . ' minggu' : '-' }}
+                                </td>
+
+                                <td class="px-5 py-3 text-center">
+                                    {{ $r['tekanan_darah'] ?: '-' }}
+                                </td>
+
+                                <td class="px-5 py-3 text-center">
+                                    {{ $r['proteinuria'] ?: '-' }}
+                                </td>
+
+                                <td class="px-5 py-3 text-center">
+                                    {{ $r['hb'] !== null && $r['hb'] !== '' ? $r['hb'] : '-' }}
+                                </td>
+
+                                <td class="px-5 py-3 text-center">
+                                    @if ($risiko !== null && $risiko !== '')
+                                        @if (in_array($risikoLower, ['normal', 'rendah', 'risiko rendah'], true))
+                                            <span class="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+                                                {{ $risiko }}
+                                            </span>
+                                        @elseif (in_array($risikoLower, ['tinggi', 'risiko tinggi', 'sedang', 'risiko sedang'], true))
+                                            <span class="rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700">
+                                                {{ $risiko }}
+                                            </span>
+                                        @else
+                                            <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                                                {{ $risiko }}
+                                            </span>
+                                        @endif
+                                    @else
+                                        <span class="text-slate-500">-</span>
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @else
+            <div class="px-5 py-10 text-center">
+                <p class="text-sm font-medium text-slate-600">
+                    Belum ada riwayat pemeriksaan kehamilan.
+                </p>
+                <p class="mt-1 text-xs text-slate-500">
+                    Data akan ditampilkan setelah pemeriksaan tersimpan.
+                </p>
+            </div>
+        @endif
+    </div>
+
+</div>
+
+@once
+    @push('scripts')
+        <script>
+            // Tombol Tampilkan semua / Tampilkan sedikit.
+            document.addEventListener('click', function (e) {
+                const btn = e.target.closest('[data-riwayat-toggle]');
+                if (!btn) return;
+
+                const box = btn.closest('[data-riwayat]');
+                const rows = box.querySelectorAll('[data-extra]');
+                const buka = rows.length > 0 && rows[0].classList.contains('hidden');
+
+                rows.forEach(function (r) {
+                    r.classList.toggle('hidden', !buka);
+                });
+
+                btn.textContent = buka
+                    ? btn.dataset.labelTutup
+                    : btn.dataset.labelBuka;
+            });
+
+            // Filter riwayat berdasarkan periode.
+            document.addEventListener('change', function (e) {
+                const sel = e.target.closest('[data-periode-filter]');
+                if (!sel) return;
+
+                const box = sel.closest('[data-riwayat]');
+                const rows = box.querySelectorAll('tbody tr[data-periode]');
+                const btn = box.querySelector('[data-riwayat-toggle]');
+                const nilai = sel.value;
+
+                rows.forEach(function (r) {
+                    if (nilai === '') {
+                        r.classList.toggle('hidden', r.hasAttribute('data-extra'));
+                    } else {
+                        r.classList.toggle('hidden', r.dataset.periode !== nilai);
+                    }
+                });
+
+                if (btn) {
+                    btn.classList.toggle('hidden', nilai !== '');
+                    btn.textContent = btn.dataset.labelBuka;
+                }
+            });
+        </script>
+    @endpush
+@endonce

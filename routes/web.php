@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Bidan\PemeriksaanAnakController;
+use App\Http\Controllers\Bidan\PemeriksaanIbuController;
 use App\Http\Controllers\NotifikasiController;
 use App\Http\Controllers\Bidan\JadwalController as BidanJadwalController;
 use App\Http\Controllers\Kader\JadwalController as KaderJadwalController;
@@ -291,6 +293,10 @@ Route::patch('notifikasi/baca-semua', [NotifikasiController::class, 'markAllAsRe
                 ->middleware('can:anak.update')
                 ->name('data-anak.update');
 
+            Route::get('data-anak/{anak}/detail-status', [DataAnakController::class, 'detailStatus'])
+                ->middleware('can:anak.view')
+                ->name('data-anak.detail-status');
+
             // Data Posyandu
             Route::get('data-posyandu', [DataPosyanduController::class, 'index'])
                 ->middleware('can:posyandu.view')
@@ -455,6 +461,10 @@ Route::patch('notifikasi/baca-semua', [NotifikasiController::class, 'markAllAsRe
             Route::get('data-anak/{anak}', [DataAnakController::class, 'show'])
                 ->name('data-anak.show');
 
+            Route::get('data-anak/{anak}/detail-status', [DataAnakController::class, 'detailStatus'])
+            ->middleware('can:anak.view')
+            ->name('data-anak.detail-status');
+
             Route::get('data-posyandu', [DataPosyanduController::class, 'index'])
                 ->name('data-posyandu.index');
 
@@ -464,8 +474,51 @@ Route::patch('notifikasi/baca-semua', [NotifikasiController::class, 'markAllAsRe
             Route::get('data-posyandu/{kegiatan}', [DataPosyanduController::class, 'show'])
                 ->name('data-posyandu.show');
 
+             // Modul 3 - Pemeriksaan Pertumbuhan Anak
+            // Create pemeriksaan — tetap menggunakan DataPosyanduController
+            Route::get(
+                'data-posyandu/{kegiatan}/anak/{anak}/pemeriksaan/create',
+                [DataPosyanduController::class, 'createPemeriksaan']
+            )->name('data-posyandu.pemeriksaan.create');
+
+            // Store pemeriksaan — tetap menggunakan DataPosyanduController
+            Route::post(
+                'data-posyandu/{kegiatan}/anak/{anak}/pemeriksaan',
+                [DataPosyanduController::class, 'storePemeriksaan']
+            )->name('data-posyandu.pemeriksaan.store');
+
+            // Edit pemeriksaan — pindah ke PemeriksaanAnakController
+            Route::get(
+                'data-posyandu/{kegiatan}/anak/{anak}/pemeriksaan/{pemeriksaan}/edit',
+                [PemeriksaanAnakController::class, 'edit']
+            )->name('data-posyandu.pemeriksaan.edit');
+
+            // Update pemeriksaan — pindah ke PemeriksaanAnakController
+            Route::put(
+                'data-posyandu/{kegiatan}/anak/{anak}/pemeriksaan/{pemeriksaan}',
+                [PemeriksaanAnakController::class, 'update']
+                )->name('data-posyandu.pemeriksaan.update');
+            
             Route::get('/jadwal', [BidanJadwalController::class, 'index'])
             ->name('jadwal.index');
+
+                        // PB-01 Pemeriksaan Ibu Hamil
+            Route::prefix('pemeriksaan-ibu')
+                ->name('pemeriksaan-ibu.')
+                ->controller(PemeriksaanIbuController::class)
+                ->group(function () {
+                    Route::get('/', 'index')->name('index');
+
+                    Route::get('/{ibu}', 'show')->name('show');
+                    Route::get('/{ibu}/status', 'status')->name('status');
+
+                    
+                    Route::get('/{ibu}/create', 'create')->name('create');
+                    Route::post('/{ibu}', 'store')->name('store');
+
+                    Route::get('/{ibu}/{pemeriksaan}/edit', 'edit')->name('edit');
+                    Route::put('/{ibu}/{pemeriksaan}', 'update')->name('update');
+                });
 
         });
 
@@ -495,6 +548,10 @@ Route::patch('notifikasi/baca-semua', [NotifikasiController::class, 'markAllAsRe
             Route::get('data-anak/{anak}', [DataAnakController::class, 'show'])
                 ->name('data-anak.show');
 
+            Route::get('data-anak/{anak}/detail-status', [DataAnakController::class, 'detailStatus'])
+            ->middleware('can:anak.view')
+            ->name('data-anak.detail-status');
+
             Route::get('data-posyandu', [DataPosyanduController::class, 'index'])
                 ->name('data-posyandu.index');
 
@@ -503,6 +560,27 @@ Route::patch('notifikasi/baca-semua', [NotifikasiController::class, 'markAllAsRe
 
             Route::get('data-posyandu/{kegiatan}', [DataPosyanduController::class, 'show'])
                 ->name('data-posyandu.show');
+
+          // Modul 3 - Pemeriksaan Pertumbuhan Anak
+            Route::get(
+                'data-posyandu/{kegiatan}/anak/{anak}/pemeriksaan/create',
+                [DataPosyanduController::class, 'createPemeriksaan']
+            )->name('data-posyandu.pemeriksaan.create');
+
+            Route::post(
+                'data-posyandu/{kegiatan}/anak/{anak}/pemeriksaan',
+                [DataPosyanduController::class, 'storePemeriksaan']
+            )->name('data-posyandu.pemeriksaan.store');
+
+            Route::get(
+                'data-posyandu/{kegiatan}/anak/{anak}/pemeriksaan/{pemeriksaan}/edit',
+                [DataPosyanduController::class, 'editPemeriksaan']
+            )->name('data-posyandu.pemeriksaan.edit');
+
+            Route::put(
+                'data-posyandu/{kegiatan}/anak/{anak}/pemeriksaan/{pemeriksaan}',
+                [DataPosyanduController::class, 'updatePemeriksaan']
+            )->name('data-posyandu.pemeriksaan.update');
 
             Route::get('/jadwal', [KaderJadwalController::class, 'index'])
                 ->name('jadwal.index');
@@ -533,6 +611,10 @@ Route::patch('notifikasi/baca-semua', [NotifikasiController::class, 'markAllAsRe
 
             Route::get('data-anak/{anak}', [DataAnakController::class, 'show'])
                 ->name('data-anak.show');
+
+            Route::get('data-anak/{anak}/detail-status', [DataAnakController::class, 'detailStatus'])
+            ->middleware('can:anak.view')
+            ->name('data-anak.detail-status');
 
             Route::get('jadwal', [OrangTuaJadwalController::class, 'index'])
                 ->name('jadwal.index');

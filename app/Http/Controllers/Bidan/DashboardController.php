@@ -71,11 +71,8 @@ class DashboardController extends Controller
                 ->count();
 
             // Jumlah pemeriksaan ibu yang perlu perhatian.
-            $stats['perlu_perhatian'] = PemeriksaanIbu::query()
-                ->where(
-                    'status_kesehatan',
-                    PemeriksaanIbu::PERLU_PERHATIAN
-                )
+            $stats['ibu_perlu_perhatian'] = PemeriksaanIbu::query()
+                ->whereIn('tingkat_risiko', ['sedang', 'tinggi'])
                 ->whereHas('ibu', function ($query) use ($wilayahId) {
                     $query->where('wilayah_kerja_id', $wilayahId);
                 })
@@ -99,19 +96,16 @@ class DashboardController extends Controller
                 ->limit(5)
                 ->get();
 
-            // Notifikasi pemeriksaan ibu yang perlu perhatian.
-            $notifikasiTerbaru = PemeriksaanIbu::query()
-                ->with(['ibu.user'])
-                ->where(
-                    'status_kesehatan',
-                    PemeriksaanIbu::PERLU_PERHATIAN
-                )
-                ->whereHas('ibu', function ($query) use ($wilayahId) {
-                    $query->where('wilayah_kerja_id', $wilayahId);
-                })
-                ->orderByDesc('tgl_pemeriksaan')
-                ->limit(5)
-                ->get();
+        // Notifikasi pemeriksaan ibu dengan risiko sedang atau tinggi.
+        $notifikasiTerbaru = PemeriksaanIbu::query()
+            ->with(['ibu.user'])
+            ->whereIn('tingkat_risiko', ['sedang', 'tinggi'])
+            ->whereHas('ibu', function ($query) use ($wilayahId) {
+                $query->where('wilayah_kerja_id', $wilayahId);
+            })
+            ->orderByDesc('tgl_pemeriksaan')
+            ->limit(5)
+            ->get();
         }
 
         return view('bidan.dashboard', [

@@ -31,7 +31,8 @@ class KirimPengingatJadwalKader extends Command
     }
 
     /**
-     * Mengirim pengingat kepada semua Kader dalam wilayah kegiatan.
+     * Mengirim pengingat kepada seluruh Kader
+     * dalam kelurahan/desa kegiatan Posyandu.
      */
     private function kirimPengingatPosyandu(
         string $tanggal,
@@ -41,7 +42,7 @@ class KirimPengingatJadwalKader extends Command
             ->whereDate('tanggal', $tanggal)
             ->whereHas('jadwalPosyandu.kegiatan')
             ->with([
-                'jadwalPosyandu.kegiatan',
+                'jadwalPosyandu.kegiatan.rw',
                 'jadwalPosyandu.kader.user',
                 'jadwalPosyandu.bidan.user',
             ])
@@ -51,7 +52,15 @@ class KirimPengingatJadwalKader extends Command
             $detail = $jadwal->jadwalPosyandu;
             $kegiatan = $detail?->kegiatan;
 
-            if (!$kegiatan || !$kegiatan->id_wilayah) {
+            if (! $kegiatan) {
+                continue;
+            }
+
+            // Ambil kelurahan/desa dari RW kegiatan Posyandu.
+            $kelurahanDesaId = $kegiatan->rw?->kelurahan_desa_id;
+
+            // Lewati kegiatan jika RW atau kelurahannya tidak ditemukan.
+            if (! $kelurahanDesaId) {
                 continue;
             }
 
@@ -69,15 +78,22 @@ class KirimPengingatJadwalKader extends Command
                 ?? $kegiatan->lokasi
                 ?? '-';
 
-            // Ambil seluruh Kader di kelurahan/desa wilayah kegiatan.
-            $kaders = Kader::with('user')
-                ->where('wilayah_kerja_id', $kegiatan->id_wilayah)
+            // Cari seluruh Kader dalam kelurahan/desa yang sama.
+            // Tidak dibatasi berdasarkan RW atau RT.
+            $kaders = Kader::query()
+                ->whereHas('wilayahKerja', function ($query) use ($kelurahanDesaId) {
+                    $query->where(
+                        'kelurahan_desa_id',
+                        $kelurahanDesaId
+                    );
+                })
+                ->with('user')
                 ->get();
 
             foreach ($kaders as $kader) {
                 $user = $kader->user;
 
-                if (!$user) {
+                if (! $user) {
                     continue;
                 }
 
@@ -95,7 +111,8 @@ class KirimPengingatJadwalKader extends Command
     }
 
     /**
-     * Mencegah notifikasi ganda untuk jadwal dan jenis pengingat yang sama.
+     * Mencegah notifikasi ganda untuk jadwal
+     * dan jenis pengingat yang sama.
      */
     private function kirimJikaBelumAda(
         User $user,

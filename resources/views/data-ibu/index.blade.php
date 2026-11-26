@@ -153,9 +153,14 @@
 
                             {{-- Detail untuk Admin, Bidan, dan Kader. Edit hanya untuk Admin. --}}
                             <td class="whitespace-nowrap px-3 py-3.5 sm:px-4">
-                                <div class="flex items-center justify-center gap-2">
-                                    <a href="{{ route($base.'.data-ibu.show', $ibu) }}"
-                                       class="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-lg bg-[#C9517E] px-3 text-xs font-bold text-white shadow-sm transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40 active:scale-[0.97] sm:h-8">Detail</a>
+                                <div class="flex items-center justify-center gap-2">                       
+                                <a href="{{ $base === 'bidan'
+                                        ? route('bidan.pemeriksaan-ibu.show', $ibu->id)
+                                        : route($base.'.data-ibu.show', $ibu->id) }}"
+                                class="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-lg bg-[#C9517E] px-3 text-xs font-bold text-white shadow-sm transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40 active:scale-[0.97] sm:h-8">
+                                    Detail
+                                </a>
+
 
                                     @if ($base === 'admin')
                                         @can('ibu.update')

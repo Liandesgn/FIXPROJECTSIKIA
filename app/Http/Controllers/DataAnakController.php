@@ -177,6 +177,42 @@ public function show(Request $request, Anak $anak): View
 }
 
 
+public function detailStatus(Request $request, Anak $anak): View
+{
+    $user = $request->user();
+
+    // Pastikan anak termasuk dalam cakupan akses pengguna.
+    abort_unless(
+        Anak::visibleTo($user)
+            ->whereKey($anak->id)
+            ->exists(),
+        403,
+        'Akses ditolak.'
+    );
+
+    // Ambil data anak.
+    $anak->load('ibu.user');
+
+    // Ambil pemeriksaan terakhir berdasarkan tanggal kegiatan Posyandu.
+    $pemeriksaanTerakhir = PemeriksaanPosyandu::query()
+        ->with('kegiatan')
+        ->where('anak_id', $anak->id)
+        ->whereHas('kegiatan')
+        ->get()
+        ->sortBy(
+            fn ($item) => $item->kegiatan?->tanggal?->format('Y-m-d') ?? ''
+        )
+        ->last();
+
+    return view('data-anak.detail-status', [
+        'anak' => $anak,
+        'base' => $this->base($request),
+        'pemeriksaan' => $pemeriksaanTerakhir,
+    ]);
+}
+
+
+
     public function edit(Request $request, Anak $anak): View
     {
         abort_unless(

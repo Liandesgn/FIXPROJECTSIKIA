@@ -82,21 +82,21 @@ class DashboardController extends Controller
                     ->distinct()
                     ->count('ibu_id');
 
-                // Anak dengan pemeriksaan terakhir perlu perhatian
-                $perhatianAnak = PemeriksaanPosyandu::query()
-                    ->terakhirPerAnak()
-                    ->where(
-                        'status_kesehatan',
-                        PemeriksaanPosyandu::PERLU_PERHATIAN
-                    )
-                    ->whereHas('anak.ibu', function ($query) use ($wilayah) {
-                        $query->where(
-                            'wilayah_kerja_id',
-                            $wilayah->id
-                        );
-                    })
-                    ->distinct()
-                    ->count('anak_id');
+            // Anak dengan pemeriksaan terakhir memiliki risiko sedang atau tinggi
+            $perhatianAnak = PemeriksaanPosyandu::query()
+                ->terakhirPerAnak()
+                ->whereIn('tingkat_risiko', [
+                    PemeriksaanPosyandu::RISIKO_SEDANG,
+                    PemeriksaanPosyandu::RISIKO_TINGGI,
+                ])
+                ->whereHas('anak.ibu', function ($query) use ($wilayah) {
+                    $query->where(
+                        'wilayah_kerja_id',
+                        $wilayah->id
+                    );
+                })
+                ->distinct()
+                ->count('anak_id');
 
                 // Gabungan ibu dan anak yang perlu perhatian
                 $wilayah->ibu_hamil_count = $ibuHamil;

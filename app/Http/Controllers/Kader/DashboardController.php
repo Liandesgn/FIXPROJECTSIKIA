@@ -72,25 +72,22 @@ class DashboardController extends Controller
                 ->get();
 
             // Notifikasi pemeriksaan anak yang perlu perhatian.
-            $notifikasiTerbaru = PemeriksaanPosyandu::query()
-                ->with([
-                    'anak.ibu.user',
-                    'kegiatan',
-                ])
-                ->where(
-                    'status_kesehatan',
-                    PemeriksaanPosyandu::PERLU_PERHATIAN
-                )
-                ->whereHas('kegiatan.rw', function ($query) use ($kelurahanDesaId) {
-                    $query->where(
-                        'kelurahan_desa_id',
-                        $kelurahanDesaId
-                    );
-                })
-                ->orderByDesc('id')
-                ->limit(5)
-                ->get();
-        }
+                $notifikasiTerbaru = PemeriksaanPosyandu::query()
+                    ->with([
+                        'anak.ibu.user',
+                        'kegiatan',
+                    ])
+                    ->whereIn('tingkat_risiko', ['sedang', 'tinggi'])
+                    ->whereHas('kegiatan.rw', function ($query) use ($kelurahanDesaId) {
+                        $query->where(
+                            'kelurahan_desa_id',
+                            $kelurahanDesaId
+                        );
+                    })
+                    ->orderByDesc('id')
+                    ->limit(5)
+                    ->get();
+                 }
 
         return view('kader.dashboard', [
             'user' => $user,

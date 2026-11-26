@@ -151,7 +151,7 @@
                     onchange="filterJadwal('posyandu')"
                     class="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-[#C9517E] focus:outline-none">
 
-                    <option value="">Semua RW/RT</option>
+                    <option value="">RW/RT</option>
 
                     @foreach($daftarRw ?? collect() as $rw)
                         <option value="{{ $rw->nomor_rw }}">
