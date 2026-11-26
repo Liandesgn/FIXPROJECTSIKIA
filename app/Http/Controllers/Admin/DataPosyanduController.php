@@ -364,16 +364,10 @@ if ($base === 'kader') {
                         ->orderBy('a.nama_anak')
                         ->get();
                 }
-
-$view = 'admin.data-posyandu.index';
-
-return view($view, [
-    'kegiatans' => $kegiatans,
-    'periodes' => $periodes,
-    'jumlahAnak' => $jumlahAnak,
-    'jumlahKegiatan' => $jumlahKegiatan,
-    'jumlahAnakDiperiksa' => $jumlahAnakDiperiksa,
-    'posyanduAktif' => $posyanduAktif,
+return view('admin.data-posyandu.show', [
+    'kegiatan' => $kegiatan,
+    'pemeriksaan' => $pemeriksaan,
+    'tersedia' => $tersedia,
     'base' => $base,
 ]);
         }
