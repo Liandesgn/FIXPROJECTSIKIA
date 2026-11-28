@@ -104,8 +104,13 @@
     };
 
     // Usia anak saat ini.
-    $tglLahir = $anak->tgl_lahir
-        ? \Carbon\Carbon::parse($anak->tgl_lahir)
+    $tanggalLahirAnak = $ambil($anak, [
+        'tanggal_lahir',
+        'tgl_lahir',
+    ]);
+
+    $tglLahir = $tanggalLahirAnak
+        ? \Carbon\Carbon::parse($tanggalLahirAnak)
         : null;
 
     $usiaAnak = $tglLahir
@@ -220,6 +225,37 @@
         ->unique()
         ->values();
 
+    // Data identitas anak.
+    $nikAnak = $ambil($anak, ['nik_anak', 'nik']);
+    $tempatLahirAnak = $ambil($anak, ['tempat_lahir']);
+    $jenisKelaminAnak = $ambil($anak, ['jenis_kelamin', 'jk']);
+
+    $jenisKelaminAnak = match (strtoupper((string) $jenisKelaminAnak)) {
+        'L', 'LAKI-LAKI' => 'Laki-laki',
+        'P', 'PEREMPUAN' => 'Perempuan',
+        default => $jenisKelaminAnak ?: '-',
+    };
+
+    // Data identitas ibu.
+    $nikIbu = $ambil($ibu, ['nik']);
+    $tanggalLahirIbu = $ambil($ibu, ['tanggal_lahir']);
+
+    $nomorHp = $ambil($ibu, [
+        'nomor_hp',
+        'no_hp',
+        'no_telepon',
+        'telepon',
+        'phone',
+    ]) ?? $ambil($ibu?->user, [
+        'nomor_hp',
+        'no_hp',
+        'no_telepon',
+        'telepon',
+        'phone',
+    ]);
+
+    $wilayahIbu = $alamatDari($ibu?->wilayahKerja);
+
     // Kelas tampilan.
     $kartu = 'rounded-xl border border-[#D9D9D9] bg-white shadow-sm';
     $judulBagian = 'text-sm font-semibold text-[#333333]';
@@ -249,73 +285,135 @@
         </div>
     @endif
 
-    {{-- Identitas dan status gizi --}}
-    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+    {{-- Data Anak, Status Gizi, dan Data Ibu --}}
+    <div class="space-y-4">
 
-        {{-- Identitas --}}
+        {{-- Data Anak dan Status Gizi --}}
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+
+            {{-- Data Anak --}}
+            <section class="{{ $kartu }} p-4 sm:p-5">
+                <h2 class="{{ $judulBagian }} mb-4">
+                    Data Anak
+                </h2>
+
+                <dl class="space-y-3">
+                    <div class="grid grid-cols-[105px_1fr] gap-3">
+                        <dt class="{{ $labelData }}">NIK</dt>
+                        <dd class="{{ $nilaiData }}">
+                            {{ $nikAnak ?: '-' }}
+                        </dd>
+                    </div>
+
+                    <div class="grid grid-cols-[105px_1fr] gap-3">
+                        <dt class="{{ $labelData }}">Nama</dt>
+                        <dd class="{{ $nilaiData }}">
+                            {{ $anak->nama_anak ?: '-' }}
+                        </dd>
+                    </div>
+
+                    <div class="grid grid-cols-[105px_1fr] gap-3">
+                        <dt class="{{ $labelData }}">Tanggal Lahir</dt>
+                        <dd class="{{ $nilaiData }}">
+                            {{ $formatTanggal($tanggalLahirAnak) }}
+                        </dd>
+                    </div>
+
+                    <div class="grid grid-cols-[105px_1fr] gap-3">
+                        <dt class="{{ $labelData }}">Tempat Lahir</dt>
+                        <dd class="{{ $nilaiData }}">
+                            {{ $tempatLahirAnak ?: '-' }}
+                        </dd>
+                    </div>
+
+                    <div class="grid grid-cols-[105px_1fr] gap-3">
+                        <dt class="{{ $labelData }}">JK</dt>
+                        <dd class="{{ $nilaiData }}">
+                            {{ $jenisKelaminAnak }}
+                        </dd>
+                    </div>
+                </dl>
+            </section>
+
+            {{-- Status Gizi --}}
+            <section class="{{ $kartu }} p-4 sm:p-5">
+                <div class="mb-4 flex items-center justify-between gap-2">
+                    <h2 class="{{ $judulBagian }}">
+                        Status Gizi
+                    </h2>
+
+                    <a
+                        href="{{ route($base . '.data-anak.detail-status', $anak) }}"
+                        class="inline-flex items-center rounded-lg border border-[#D9D9D9] bg-white px-3 py-2 text-xs font-semibold text-[#C9517E] transition hover:bg-[#FFF5F8]"
+                    >
+                        Lihat Detail Status
+                    </a>
+                </div>
+
+                <dl class="space-y-3">
+                    <div class="grid grid-cols-[130px_1fr] gap-3">
+                        <dt class="{{ $labelData }}">Berat Badan</dt>
+                        <dd class="{{ $nilaiData }}">
+                            {{ $angka($beratTerakhir) }}{{ $beratTerakhir !== null ? ' kg' : '' }}
+                        </dd>
+                    </div>
+
+                    <div class="grid grid-cols-[130px_1fr] gap-3">
+                        <dt class="{{ $labelData }}">Tinggi Badan</dt>
+                        <dd class="{{ $nilaiData }}">
+                            {{ $angka($tinggiTerakhir) }}{{ $tinggiTerakhir !== null ? ' cm' : '' }}
+                        </dd>
+                    </div>
+
+                    <div class="grid grid-cols-[130px_1fr] gap-3">
+                        <dt class="{{ $labelData }}">Pengukuran Terakhir</dt>
+                        <dd class="{{ $nilaiData }}">
+                            {{ $formatTanggal($tanggalTerakhir) }}
+                        </dd>
+                    </div>
+                </dl>
+            </section>
+        </div>
+
+        {{-- Data Ibu --}}
         <section class="{{ $kartu }} p-4 sm:p-5">
             <h2 class="{{ $judulBagian }} mb-4">
-                Identitas
+                Data Ibu
             </h2>
 
             <dl class="space-y-3">
                 <div class="grid grid-cols-[105px_1fr] gap-3">
-                    <dt class="{{ $labelData }}">Nama Anak</dt>
+                    <dt class="{{ $labelData }}">NIK</dt>
                     <dd class="{{ $nilaiData }}">
-                        {{ $anak->nama_anak ?: '-' }}
+                        {{ $nikIbu ?: '-' }}
                     </dd>
                 </div>
 
                 <div class="grid grid-cols-[105px_1fr] gap-3">
-                    <dt class="{{ $labelData }}">Nama Ibu</dt>
+                    <dt class="{{ $labelData }}">Nama</dt>
                     <dd class="{{ $nilaiData }}">
                         {{ $ibu?->user?->name ?? '-' }}
                     </dd>
                 </div>
 
                 <div class="grid grid-cols-[105px_1fr] gap-3">
-                    <dt class="{{ $labelData }}">Usia</dt>
+                    <dt class="{{ $labelData }}">Tanggal Lahir</dt>
                     <dd class="{{ $nilaiData }}">
-                        {{ $labelUsia }}
-                    </dd>
-                </div>
-            </dl>
-        </section>
-
-        {{-- Status Gizi --}}
-        <section class="{{ $kartu }} p-4 sm:p-5">
-            <div class="mb-4 flex items-center justify-between gap-2">
-                <h2 class="{{ $judulBagian }}">
-                    Status Gizi
-                </h2>
-
-<a
-    href="{{ route($base . '.data-anak.detail-status', $anak) }}"
-    class="inline-flex items-center rounded-lg border border-[#D9D9D9] bg-white px-3 py-2 text-xs font-semibold text-[#C9517E] transition hover:bg-[#FFF5F8]"
->
-    Lihat Detail Status
-</a>
-            </div>
-
-            <dl class="space-y-3">
-                <div class="grid grid-cols-[130px_1fr] gap-3">
-                    <dt class="{{ $labelData }}">Berat Badan</dt>
-                    <dd class="{{ $nilaiData }}">
-                        {{ $angka($beratTerakhir) }}{{ $beratTerakhir !== null ? ' kg' : '' }}
+                        {{ $formatTanggal($tanggalLahirIbu) }}
                     </dd>
                 </div>
 
-                <div class="grid grid-cols-[130px_1fr] gap-3">
-                    <dt class="{{ $labelData }}">Tinggi Badan</dt>
+                <div class="grid grid-cols-[105px_1fr] gap-3">
+                    <dt class="{{ $labelData }}">Nomor HP</dt>
                     <dd class="{{ $nilaiData }}">
-                        {{ $angka($tinggiTerakhir) }}{{ $tinggiTerakhir !== null ? ' cm' : '' }}
+                        {{ $nomorHp ?: '-' }}
                     </dd>
                 </div>
 
-                <div class="grid grid-cols-[130px_1fr] gap-3">
-                    <dt class="{{ $labelData }}">Pengukuran Terakhir</dt>
+                <div class="grid grid-cols-[105px_1fr] gap-3">
+                    <dt class="{{ $labelData }}">Wilayah</dt>
                     <dd class="{{ $nilaiData }}">
-                        {{ $formatTanggal($tanggalTerakhir) }}
+                        {{ $wilayahIbu ?: '-' }}
                     </dd>
                 </div>
             </dl>

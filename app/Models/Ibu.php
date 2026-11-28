@@ -19,9 +19,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'status_kehamilan',
     'usia_kehamilan',
     'rt_id',
+    'alamat_lengkap',
     'tanggal_pemeriksaan_awal',
     'hpl',
 ])]
+
 class Ibu extends Model
 {
     protected $table = 'ibu';

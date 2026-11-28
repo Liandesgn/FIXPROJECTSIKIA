@@ -1,4 +1,3 @@
-
 @extends('layouts.app')
 
 @section('title', 'Pendataan Anak')
@@ -31,136 +30,100 @@
         ->unique()
         ->sort()
         ->values();
+
+    $pilihClass = 'w-full rounded-xl border-2 border-[#C9517E]/60 bg-white px-3 py-2.5 text-sm font-semibold text-gray-900 outline-none transition focus:border-[#C9517E] focus:ring-4 focus:ring-[#E99AB7]/40';
+    $btnAksi    = 'inline-flex h-8 items-center justify-center whitespace-nowrap rounded-lg px-3 text-xs font-bold shadow-sm transition focus:outline-none focus:ring-4';
 @endphp
 
-<div class="min-h-screen bg-white">
+<div class="mx-auto w-full max-w-7xl space-y-5">
 
-    {{-- HEADER HALAMAN --}}
-    <div class="mb-6">
-        <h1 class="text-2xl font-bold text-gray-900">
-            Pendataan Anak
-        </h1>
-
-        <p class="mt-1 text-sm text-gray-600">
-            Pendataan Posyandu
-        </p>
+    {{-- Judul --}}
+    <div>
+        <h1 class="text-2xl font-bold tracking-tight text-[#542D3D] sm:text-3xl">Pendataan Anak</h1>
+        <p class="mt-1 text-sm font-medium text-slate-700">Pendataan Posyandu</p>
     </div>
 
-    {{-- INFORMASI KEGIATAN --}}
-    <div class="mb-5 rounded-xl border border-gray-200 bg-white px-5 py-4">
+    {{-- Informasi kegiatan --}}
+    <div class="rounded-2xl border border-[#F1D5E0] bg-white px-5 py-4 shadow-sm">
         <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-
             <div>
-                <h2 class="text-sm font-bold text-gray-900">
+                <h2 class="text-base font-bold text-[#542D3D]">
                     {{ $kegiatan->jenis_kegiatan ?? 'Kegiatan Posyandu' }}
                     - {{ $kegiatan->wilayah->nama_wilayah ?? 'Wilayah Posyandu' }}
                 </h2>
 
-                <p class="mt-1 text-xs text-gray-500">
+                <p class="mt-1 text-sm font-medium text-slate-700">
                     Kegiatan
                     {{ Carbon::parse($kegiatan->tanggal)->format('d/m/Y') }}
                     - {{ $kegiatan->lokasi ?? '-' }}
                 </p>
             </div>
 
-            <span class="inline-flex w-fit items-center rounded-full border border-green-300 bg-green-50 px-3 py-1 text-xs font-semibold text-green-600">
-                <span class="mr-1.5 h-2 w-2 rounded-full bg-green-500"></span>
+            <span class="inline-flex w-fit items-center gap-1.5 rounded-full border border-green-300 bg-green-50 px-3 py-1 text-xs font-bold text-green-700">
+                <span class="h-2 w-2 rounded-full bg-green-500" aria-hidden="true"></span>
                 Berlangsung
             </span>
-
         </div>
     </div>
 
-    {{-- PENCARIAN DAN FILTER --}}
-    <div class="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
+    {{-- Daftar --}}
+    <div class="overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm">
 
-        {{-- Pencarian --}}
-        <div class="relative sm:col-span-1">
-            <svg class="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400"
-                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                 stroke-width="1.8">
-                <circle cx="10.5" cy="10.5" r="6.5"/>
-                <path d="m16 16 5 5"/>
-            </svg>
+        {{-- Pencarian dan filter --}}
+        <div class="border-b border-[#E99AB7] bg-[#FCE7F0] p-3 sm:p-4">
+            <div class="flex flex-col gap-3 lg:flex-row lg:items-center">
 
-            <input
-                type="text"
-                id="cariAnak"
-                placeholder="Cari nama / NIK"
-                class="h-10 w-full rounded-lg border border-gray-300 bg-white pl-10 pr-3 text-sm text-gray-700 placeholder-gray-400 focus:border-[#C9517E] focus:outline-none focus:ring-1 focus:ring-[#C9517E]"
-            >
+                <div class="relative flex-1">
+                    <label for="cariAnak" class="sr-only">Cari nama atau NIK</label>
+                    <svg class="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-[#C9517E]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="m20 20-3.5-3.5"/></svg>
+                    <input type="text" id="cariAnak" autocomplete="off" placeholder="Cari nama / NIK"
+                           class="w-full rounded-xl border-2 border-[#C9517E]/60 bg-white py-2.5 pl-11 pr-3 text-sm font-medium text-gray-900 outline-none transition placeholder:text-slate-500 focus:border-[#C9517E] focus:ring-4 focus:ring-[#E99AB7]/40">
+                </div>
+
+                <div class="lg:w-48">
+                    <label for="filterStatus" class="sr-only">Filter status</label>
+                    <select id="filterStatus" class="{{ $pilihClass }}">
+                        <option value="">Semua Status</option>
+
+                        @foreach ($statusOptions as $status)
+                            <option value="{{ strtolower($status) }}">{{ $status }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="lg:w-48">
+                    <label for="filterPeriode" class="sr-only">Filter periode</label>
+                    <select id="filterPeriode" class="{{ $pilihClass }}">
+                        <option value="">Semua Periode</option>
+
+                        @foreach ($periodeOptions as $periode)
+                            <option value="{{ $periode }}">
+                                {{ Carbon::createFromFormat('Y-m', $periode)->translatedFormat('F Y') }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+            </div>
         </div>
 
-        {{-- Filter Status --}}
-        <select
-            id="filterStatus"
-            class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-600 focus:border-[#C9517E] focus:outline-none"
-        >
-            <option value="">Semua Status</option>
-
-            @foreach($statusOptions as $status)
-                <option value="{{ strtolower($status) }}">
-                    {{ $status }}
-                </option>
-            @endforeach
-        </select>
-
-        {{-- Filter Periode --}}
-        <select
-            id="filterPeriode"
-            class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-600 focus:border-[#C9517E] focus:outline-none"
-        >
-            <option value="">Semua Periode</option>
-
-            @foreach($periodeOptions as $periode)
-                <option value="{{ $periode }}">
-                    {{ Carbon::createFromFormat('Y-m', $periode)->translatedFormat('F Y') }}
-                </option>
-            @endforeach
-        </select>
-
-    </div>
-
-    {{-- TABEL DATA ANAK --}}
-    <div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
-
+        {{-- Tabel --}}
         <div class="overflow-x-auto">
-
-            <table class="min-w-full text-sm">
-
-                <thead class="border-b border-gray-200 bg-white">
-                    <tr class="text-left text-xs font-semibold uppercase text-gray-700">
-
-                        <th class="whitespace-nowrap px-4 py-3">
-                            No
-                        </th>
-
-                        <th class="whitespace-nowrap px-4 py-3">
-                            Anak
-                        </th>
-
-                        <th class="whitespace-nowrap px-4 py-3">
-                            NIK
-                        </th>
-
-                        <th class="whitespace-nowrap px-4 py-3">
-                            Usia
-                        </th>
-
-                        <th class="whitespace-nowrap px-4 py-3">
-                            Status
-                        </th>
-
-                        <th class="whitespace-nowrap px-4 py-3 text-center">
-                            Aksi
-                        </th>
-
+            <table class="w-full text-left">
+                <thead class="bg-[#FCE7F0] text-xs font-bold uppercase tracking-wide text-[#542D3D]">
+                    <tr>
+                        <th class="whitespace-nowrap px-3 py-3 sm:px-4">No</th>
+                        <th class="whitespace-nowrap px-3 py-3 sm:px-4">Anak</th>
+                        <th class="hidden whitespace-nowrap px-4 py-3 md:table-cell">NIK</th>
+                        <th class="whitespace-nowrap px-3 py-3 sm:px-4">Usia</th>
+                        <th class="whitespace-nowrap px-3 py-3 text-center sm:px-4">Status</th>
+                        <th class="whitespace-nowrap px-3 py-3 text-center sm:px-4">Aksi</th>
                     </tr>
                 </thead>
 
-                <tbody id="daftarAnak" class="divide-y divide-gray-100">
+                <tbody id="daftarAnak" class="divide-y divide-[#F7E6ED]">
 
-                    @forelse($pemeriksaan as $index => $anak)
+                    @forelse ($pemeriksaan as $index => $anak)
 
                         @php
                             $tanggalLahir = $anak->tgl_lahir
@@ -184,38 +147,37 @@
                             $statusLower = strtolower($statusText);
 
                             $statusClass = str_contains($statusLower, 'normal')
-                                ? 'bg-green-100 text-green-600'
-                                : (str_contains($statusLower, 'stunting')
-                                    ? 'bg-red-100 text-red-600'
-                                    : 'bg-gray-100 text-gray-600');
+                                ? 'bg-green-100 text-green-700'
+                                : (str_contains($statusLower, 'stunting') || str_contains($statusLower, 'pendek')
+                                    ? 'bg-red-100 text-red-700'
+                                    : 'bg-slate-100 text-slate-600');
 
                             $periode = !empty($anak->tgl_pemeriksaan)
                                 ? Carbon::parse($anak->tgl_pemeriksaan)->format('Y-m')
                                 : '';
                         @endphp
 
-                        <tr
-                            class="baris-anak transition hover:bg-gray-50"
+                        <tr class="baris-anak transition hover:bg-[#FCE7F0]/50"
                             data-cari="{{ strtolower(($anak->nama_anak ?? '') . ' ' . ($anak->nik_anak ?? '')) }}"
                             data-status="{{ strtolower($statusText) }}"
-                            data-periode="{{ $periode }}"
-                        >
+                            data-periode="{{ $periode }}">
 
-                            <td class="whitespace-nowrap px-4 py-3 text-gray-700">
+                            <td class="whitespace-nowrap px-3 py-3.5 text-sm font-semibold text-slate-700 sm:px-4">
                                 {{ $index + 1 }}
                             </td>
 
-                            <td class="whitespace-nowrap px-4 py-3 font-medium text-gray-800">
-                                {{ $anak->nama_anak }}
+                            <td class="px-3 py-3.5 sm:px-4">
+                                <p class="break-words text-sm font-bold text-[#542D3D]">{{ $anak->nama_anak }}</p>
+                                <p class="text-xs text-slate-700 md:hidden">{{ $anak->nik_anak ?? '-' }}</p>
                             </td>
 
-                            <td class="whitespace-nowrap px-4 py-3 text-gray-600">
+                            <td class="hidden whitespace-nowrap px-4 py-3.5 text-sm text-slate-800 md:table-cell">
                                 {{ $anak->nik_anak ?? '-' }}
                             </td>
 
-                            <td class="whitespace-nowrap px-4 py-3 text-gray-700">
-                                @if($usiaBulan !== null)
-                                    @if(intdiv($usiaBulan, 12) > 0)
+                            <td class="whitespace-nowrap px-3 py-3.5 text-sm text-slate-800 sm:px-4">
+                                @if ($usiaBulan !== null)
+                                    @if (intdiv($usiaBulan, 12) > 0)
                                         {{ intdiv($usiaBulan, 12) }} th
                                     @endif
 
@@ -225,57 +187,47 @@
                                 @endif
                             </td>
 
-                            <td class="whitespace-nowrap px-4 py-3">
-
-                                <span class="inline-flex min-w-[76px] justify-center rounded-full px-3 py-1 text-xs font-semibold {{ $statusClass }}">
+                            <td class="whitespace-nowrap px-3 py-3.5 text-center sm:px-4">
+                                <span class="inline-flex min-w-[5rem] justify-center rounded-full px-3 py-1 text-xs font-bold {{ $statusClass }}">
                                     {{ $statusText }}
                                 </span>
-
                             </td>
 
-                            <td class="whitespace-nowrap px-4 py-3">
+                            <td class="whitespace-nowrap px-3 py-3.5 sm:px-4">
+                                <div class="flex items-center justify-center gap-2">
 
-                                <div class="flex items-center justify-center gap-1.5">
-
-                                    {{-- DETAIL --}}
-                                    <a
-                                        href="{{ route($routePrefix . '.data-anak.show', $anak->anak_id) }}"
-                                        class="rounded-md bg-gray-200 px-2.5 py-1 text-xs font-medium text-gray-800 transition hover:bg-gray-300"
-                                    >
+                                    {{-- Detail --}}
+                                    <a href="{{ route($routePrefix . '.data-anak.show', $anak->anak_id) }}"
+                                       class="{{ $btnAksi }} border-2 border-[#E99AB7] bg-white text-[#C9517E] hover:bg-[#FCE7F0] focus:ring-[#E99AB7]/30">
                                         Detail
                                     </a>
 
-                                    {{-- EDIT --}}
-                                    @if($sudah)
+                                    @if ($sudah)
 
-                                        <a
-                                            href="{{ route('kader.data-posyandu.pemeriksaan.edit', [
+                                        {{-- Edit --}}
+                                        <a href="{{ route('kader.data-posyandu.pemeriksaan.edit', [
                                                 'kegiatan' => $kegiatan->id,
                                                 'anak' => $anak->anak_id,
                                                 'pemeriksaan' => $anak->pemeriksaan_id,
                                             ]) }}"
-                                            class="rounded-md bg-gray-200 px-2.5 py-1 text-xs font-medium text-gray-800 transition hover:bg-gray-300"
-                                        >
+                                           class="{{ $btnAksi }} bg-[#E99AB7] text-[#542D3D] hover:bg-[#DD87A8] focus:ring-[#E99AB7]/40">
                                             Edit
                                         </a>
 
                                     @else
 
-                                        {{-- INPUT --}}
-                                        <a
-                                            href="{{ route('kader.data-posyandu.pemeriksaan.create', [
+                                        {{-- Input --}}
+                                        <a href="{{ route('kader.data-posyandu.pemeriksaan.create', [
                                                 'kegiatan' => $kegiatan->id,
                                                 'anak' => $anak->anak_id,
                                             ]) }}"
-                                            class="rounded-md bg-gray-200 px-2.5 py-1 text-xs font-medium text-gray-800 transition hover:bg-gray-300"
-                                        >
+                                           class="{{ $btnAksi }} bg-[#C9517E] text-white hover:bg-[#B7436D] focus:ring-[#E99AB7]/40">
                                             Input
                                         </a>
 
                                     @endif
 
                                 </div>
-
                             </td>
 
                         </tr>
@@ -283,58 +235,44 @@
                     @empty
 
                         <tr>
-                            <td colspan="6" class="px-4 py-10 text-center text-sm text-gray-500">
-                                Belum ada data anak di wilayah kerja ini.
+                            <td colspan="6" class="px-5 py-12 text-center">
+                                <p class="font-bold text-[#542D3D]">Belum ada data anak di wilayah kerja ini.</p>
                             </td>
                         </tr>
 
                     @endforelse
 
                 </tbody>
-
             </table>
-
         </div>
 
-        {{-- HASIL PENCARIAN KOSONG --}}
-        <div
-            id="hasilPencarianKosong"
-            class="hidden px-5 py-8 text-center text-sm text-gray-500"
-        >
-            Data anak yang dicari tidak ditemukan.
+        {{-- Hasil pencarian kosong --}}
+        <div id="hasilPencarianKosong" class="hidden px-5 py-12 text-center">
+            <p class="font-bold text-[#542D3D]">Data anak yang dicari tidak ditemukan.</p>
         </div>
 
-    </div>
+        {{-- Informasi dan pagination --}}
+        <div class="flex flex-col items-center justify-between gap-3 border-t border-[#F1D5E0] bg-white px-4 py-3 sm:flex-row">
+            <p id="jumlahData" class="text-xs font-medium text-slate-600">
+                Menampilkan data
+            </p>
 
-    {{-- INFORMASI DAN PAGINATION --}}
-    <div class="mt-4 flex flex-col items-center justify-between gap-3 sm:flex-row">
+            <div id="pagination" class="flex items-center gap-1">
 
-        <p id="jumlahData" class="text-xs text-gray-400">
-            Menampilkan data
-        </p>
+                <button type="button" id="halamanSebelumnya" aria-label="Halaman sebelumnya"
+                        class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#F1D5E0] bg-white text-lg font-semibold text-[#C9517E] transition hover:bg-[#FCE7F0] disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-white">
+                    ‹
+                </button>
 
-        <div id="pagination" class="flex items-center gap-1">
+                <div id="nomorHalaman" class="flex items-center gap-1"></div>
 
-            <button
-                type="button"
-                id="halamanSebelumnya"
-                class="rounded-md border border-gray-300 px-2 py-1 text-sm text-gray-600 hover:bg-gray-100"
-            >
-                ‹
-            </button>
+                <button type="button" id="halamanBerikutnya" aria-label="Halaman berikutnya"
+                        class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#F1D5E0] bg-white text-lg font-semibold text-[#C9517E] transition hover:bg-[#FCE7F0] disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-white">
+                    ›
+                </button>
 
-            <div id="nomorHalaman" class="flex items-center gap-1"></div>
-
-            <button
-                type="button"
-                id="halamanBerikutnya"
-                class="rounded-md border border-gray-300 px-2 py-1 text-sm text-gray-600 hover:bg-gray-100"
-            >
-                ›
-            </button>
-
+            </div>
         </div>
-
     </div>
 
 </div>
@@ -409,9 +347,6 @@ document.addEventListener('DOMContentLoaded', function () {
         sebelumnya.disabled = halamanAktif <= 1;
         berikutnya.disabled = halamanAktif >= totalHalaman;
 
-        sebelumnya.classList.toggle('opacity-40', sebelumnya.disabled);
-        berikutnya.classList.toggle('opacity-40', berikutnya.disabled);
-
         nomorHalaman.innerHTML = '';
 
         for (let i = 1; i <= totalHalaman; i++) {
@@ -422,8 +357,8 @@ document.addEventListener('DOMContentLoaded', function () {
             tombol.textContent = i;
 
             tombol.className = i === halamanAktif
-                ? 'min-w-7 rounded-md border border-gray-400 bg-gray-200 px-2 py-1 text-xs font-semibold text-gray-800'
-                : 'min-w-7 rounded-md border border-gray-300 px-2 py-1 text-xs text-gray-600 hover:bg-gray-100';
+                ? 'inline-flex h-9 min-w-9 items-center justify-center rounded-lg bg-[#C9517E] px-2 text-sm font-bold text-white shadow-sm'
+                : 'inline-flex h-9 min-w-9 items-center justify-center rounded-lg border border-[#F1D5E0] bg-white px-2 text-sm font-semibold text-[#542D3D] transition hover:bg-[#FCE7F0]';
 
             tombol.addEventListener('click', function () {
                 halamanAktif = i;

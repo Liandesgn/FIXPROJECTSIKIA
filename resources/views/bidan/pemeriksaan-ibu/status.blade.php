@@ -1,4 +1,3 @@
-
 @extends('layouts.app')
 
 @section('title', 'Detail Status Kehamilan')
@@ -17,8 +16,8 @@
     $warnaRisiko = $tinggi
         ? 'bg-red-100 text-red-700'
         : ($sedang
-            ? 'bg-yellow-100 text-yellow-700'
-            : 'bg-green-100 text-green-700');
+            ? 'bg-amber-100 text-amber-700'
+            : ($tingkatRisiko === 'rendah' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'));
 
     $faktorRisiko = collect(explode(';', $pemeriksaan->faktor_risiko ?? ''))
         ->map(fn ($faktor) => trim($faktor))
@@ -56,91 +55,59 @@
             : ($tingkatRisiko === 'rendah'
                 ? 'Lanjutkan pemeriksaan kehamilan secara rutin'
                 : 'Lakukan pemeriksaan lebih lanjut kepada Bidan'));
+
+    $baris = [
+        'Pemeriksaan terakhir' => $formatTanggal($pemeriksaan->tgl_pemeriksaan),
+        'Faktor Risiko'        => $teksFaktor,
+        'Aturan'               => $aturan,
+        'Saran'                => $saran,
+    ];
 @endphp
 
-<div class="mx-auto w-full max-w-5xl space-y-6">
+<div class="mx-auto w-full max-w-5xl space-y-5">
 
-    {{-- Judul halaman --}}
+    {{-- Judul --}}
     <div>
         <h1 class="text-2xl font-bold tracking-tight text-[#542D3D] sm:text-3xl">
             Detail Status {{ $namaIbu }}
         </h1>
-
-        <p class="mt-1 text-sm text-slate-600">
+        <p class="mt-1 text-sm font-medium text-slate-700">
             Pemeriksaan / Detail / Detail Status
         </p>
     </div>
 
-    {{-- Kartu ringkasan status risiko --}}
-    <div class="rounded-xl border border-[#D9D9D9] bg-white px-5 py-5 shadow-sm sm:px-6">
+    {{-- Kartu status risiko --}}
+    <div class="overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm">
+        <div class="border-b border-[#F1D5E0] bg-[#FCE7F0] px-5 py-4 sm:px-6">
+            <h2 class="text-lg font-bold text-[#542D3D]">
+                Status Risiko Kehamilan - {{ $namaIbu }}
+            </h2>
 
-        <h2 class="text-base font-bold text-[#542D3D]">
-            Status Risiko Kehamilan - {{ $namaIbu }}
-        </h2>
+            <div class="mt-3 flex flex-wrap items-center gap-2">
+                <span class="inline-flex min-w-[6.5rem] justify-center rounded-full px-4 py-1 text-xs font-bold {{ $warnaRisiko }}">
+                    {{ $labelRisiko }}
+                </span>
 
-        {{-- Badge risiko dan skor --}}
-        <div class="mt-3 flex flex-wrap items-center gap-2">
-
-            <span class="inline-flex min-w-[105px] justify-center rounded-full px-4 py-1 text-xs font-bold {{ $warnaRisiko }}">
-                {{ $labelRisiko }}
-            </span>
-
-            <span class="inline-flex rounded-full bg-slate-100 px-4 py-1 text-xs font-semibold text-slate-700">
-                Skor {{ $pemeriksaan->skor_risiko ?? 0 }} • {{ $jumlahFaktor }} faktor
-            </span>
-
+                <span class="inline-flex rounded-full bg-white px-4 py-1 text-xs font-bold text-[#542D3D] ring-1 ring-[#E99AB7]">
+                    Skor {{ $pemeriksaan->skor_risiko ?? 0 }} • {{ $jumlahFaktor }} faktor
+                </span>
+            </div>
         </div>
 
-        {{-- Informasi status --}}
-        <div class="mt-5 space-y-3 text-sm">
-
-            <div class="grid grid-cols-1 gap-1 sm:grid-cols-[155px_1fr] sm:gap-3">
-                <span class="font-medium text-slate-600">
-                    Pemeriksaan terakhir
-                </span>
-
-                <span class="text-[#542D3D]">
-                    {{ $formatTanggal($pemeriksaan->tgl_pemeriksaan) }}
-                </span>
-            </div>
-
-            <div class="grid grid-cols-1 gap-1 sm:grid-cols-[155px_1fr] sm:gap-3">
-                <span class="font-medium text-slate-600">
-                    Faktor Risiko
-                </span>
-
-                <span class="text-[#542D3D]">
-                    {{ $teksFaktor }}
-                </span>
-            </div>
-
-            <div class="grid grid-cols-1 gap-1 sm:grid-cols-[155px_1fr] sm:gap-3">
-                <span class="font-medium text-slate-600">
-                    Aturan
-                </span>
-
-                <span class="text-[#542D3D]">
-                    {{ $aturan }}
-                </span>
-            </div>
-
-            <div class="grid grid-cols-1 gap-1 sm:grid-cols-[155px_1fr] sm:gap-3">
-                <span class="font-medium text-slate-600">
-                    Saran
-                </span>
-
-                <span class="font-medium text-[#542D3D]">
-                    {{ $saran }}
-                </span>
-            </div>
-
-        </div>
+        <dl class="divide-y divide-[#F7E6ED] px-5 sm:px-6">
+            @foreach ($baris as $label => $nilai)
+                <div class="grid grid-cols-1 gap-1 py-3.5 text-sm sm:grid-cols-[11rem_1fr] sm:gap-4">
+                    <dt class="font-semibold text-slate-600">{{ $label }}</dt>
+                    <dd class="break-words font-bold text-[#542D3D]">{{ $nilai }}</dd>
+                </div>
+            @endforeach
+        </dl>
     </div>
 
     {{-- Tombol kembali --}}
     <div class="flex justify-end">
         <a href="{{ route('bidan.pemeriksaan-ibu.show', $ibu->id) }}"
-           class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-200">
+           class="inline-flex justify-center rounded-xl border-2 border-[#E99AB7] bg-white px-6 py-2.5 text-sm font-semibold text-[#C9517E] transition hover:bg-[#FCE7F0] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/30">
             Kembali
         </a>
     </div>

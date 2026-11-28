@@ -58,6 +58,12 @@ class UpdateIbuRequest extends FormRequest
                 'before:today',
             ],
 
+            'alamat_lengkap' => [
+            'nullable',
+            'string',
+            'max:1000',
+            ],
+
             'wilayah_kerja_id' => [
                 'required',
                 'integer',

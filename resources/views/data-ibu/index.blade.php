@@ -15,41 +15,47 @@
 
     // Susun alamat: Kec. A, Desa B, RT 001/RW 01 (memakai kolom lama bila relasi belum ada)
     $alamatDari = function ($w) {
-        if (! $w) return '-';
+    if (! $w) return '-';
 
-        $relasi = function (string $nama) use ($w) {
-            if ($w->relationLoaded($nama)) return $w->getRelation($nama);
-            return method_exists($w, $nama) ? $w->{$nama}()->first() : null;
-        };
-
-        $kec  = $relasi('kecamatan');
-        $desa = $relasi('kelurahanDesa');
-        $rw   = $relasi('rw');
-        $rt   = $relasi('rt');
-
-        $kolomKec  = $w->getAttribute('kecamatan');
-        $kolomDesa = $w->getAttribute('kelurahan');
-        $namaKec   = $kec?->nama_kecamatan ?? (is_string($kolomKec) && $kolomKec !== '' ? $kolomKec : null);
-
-        $bagian = [];
-        if ($namaKec) $bagian[] = 'Kec. ' . $namaKec;
-
-        if ($desa?->nama_kelurahan_desa) {
-            $bagian[] = (strtolower((string) $desa->jenis) === 'kelurahan' ? 'Kel. ' : 'Desa ') . $desa->nama_kelurahan_desa;
-        } elseif (is_string($kolomDesa) && $kolomDesa !== '') {
-            $bagian[] = 'Desa ' . $kolomDesa;
-        }
-
-        $nomor = array_filter([
-            $rt?->nomor_rt ? 'RT ' . $rt->nomor_rt : null,
-            $rw?->nomor_rw ? 'RW ' . $rw->nomor_rw : null,
-        ]);
-        if ($nomor) $bagian[] = implode('/', $nomor);
-
-        return $bagian ? implode(', ', $bagian) : ($w->getAttribute('nama_wilayah') ?: '-');
+    $relasi = function (string $nama) use ($w) {
+        if ($w->relationLoaded($nama)) return $w->getRelation($nama);
+        return method_exists($w, $nama) ? $w->{$nama}()->first() : null;
     };
 
-    $inputClass = 'w-full rounded-xl border-2 border-[#C9517E]/60 bg-white px-3.5 py-2.5 text-sm font-medium text-gray-900 outline-none transition placeholder:text-slate-500 focus:border-[#C9517E] focus:ring-4 focus:ring-[#E99AB7]/40';
+    $kec  = $relasi('kecamatan');
+    $desa = $relasi('kelurahanDesa');
+    $rw   = $relasi('rw');
+    $rt   = $relasi('rt');
+
+    $kolomKec  = $w->getAttribute('kecamatan');
+    $kolomDesa = $w->getAttribute('kelurahan');
+    $namaKec   = $kec?->nama_kecamatan ?? (is_string($kolomKec) && $kolomKec !== '' ? $kolomKec : null);
+
+    $bagian = [];
+
+    if ($namaKec) {
+        $bagian[] = $namaKec;
+    }
+
+    if ($desa?->nama_kelurahan_desa) {
+        $bagian[] = $desa->nama_kelurahan_desa;
+    } elseif (is_string($kolomDesa) && $kolomDesa !== '') {
+        $bagian[] = $kolomDesa;
+    }
+
+    $nomor = array_filter([
+        $rt?->nomor_rt ? 'RT ' . $rt->nomor_rt : null,
+        $rw?->nomor_rw ? 'RW ' . $rw->nomor_rw : null,
+    ]);
+
+    if ($nomor) {
+        $bagian[] = implode('/', $nomor);
+    }
+
+    return $bagian ? implode(', ', $bagian) : ($w->getAttribute('nama_wilayah') ?: '-');
+};
+
+$inputClass = 'w-full rounded-xl border-2 border-[#C9517E]/60 bg-white px-3.5 py-2.5 text-sm font-medium text-gray-900 outline-none transition placeholder:text-slate-500 focus:border-[#C9517E] focus:ring-4 focus:ring-[#E99AB7]/40';
 @endphp
 
 <div class="mx-auto w-full max-w-7xl space-y-5">
@@ -89,7 +95,7 @@
                     <div class="md:w-64">
                         <label for="filterWilayah" class="sr-only">Filter desa / kelurahan</label>
                         <select id="filterWilayah" name="wilayah_kerja_id" onchange="this.form.submit()" class="{{ $inputClass }}">
-                            <option value="">Desa / Kelurahan</option>
+                            <option value="">RW</option>
                             @foreach ($daftarWilayah as $w)
                                 <option value="{{ $w->id }}" @selected((string) request('wilayah_kerja_id') === (string) $w->id)>{{ $alamatDari($w) }}</option>
                             @endforeach

@@ -1,3 +1,4 @@
+
 @php
     $profil = $ibu?->ibu;
 
@@ -54,30 +55,56 @@
     <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <div>
             <label for="name" class="{{ $labelClass }}">Nama Lengkap {!! $star !!}</label>
-            <input id="name" type="text" name="name"
-                value="{{ old('name', $ibu?->name) }}" required
-                placeholder="Nama lengkap ibu" class="{{ $fieldClass }}">
-            @error('name') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
+            <input
+                id="name"
+                type="text"
+                name="name"
+                value="{{ old('name', $ibu?->name) }}"
+                required
+                placeholder="Nama lengkap ibu"
+                class="{{ $fieldClass }}"
+            >
+            @error('name')
+                <p class="{{ $errorClass }}">{{ $message }}</p>
+            @enderror
         </div>
 
         <div>
             <label for="email" class="{{ $labelClass }}">Email {!! $star !!}</label>
-            <input id="email" type="email" name="email"
-                value="{{ old('email', $ibu?->email) }}" required
-                placeholder="nama@gmail.com" class="{{ $fieldClass }}">
-            @error('email') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
+            <input
+                id="email"
+                type="email"
+                name="email"
+                value="{{ old('email', $ibu?->email) }}"
+                required
+                placeholder="nama@gmail.com"
+                class="{{ $fieldClass }}"
+            >
+            @error('email')
+                <p class="{{ $errorClass }}">{{ $message }}</p>
+            @enderror
         </div>
 
         <div>
             <label for="phone" class="{{ $labelClass }}">Nomor HP {!! $star !!}</label>
-            <input id="phone" type="tel" name="phone"
+            <input
+                id="phone"
+                type="tel"
+                name="phone"
                 value="{{ old('phone', $ibu?->phone) }}"
-                required inputmode="numeric" minlength="10" maxlength="13"
+                required
+                inputmode="numeric"
+                minlength="10"
+                maxlength="13"
                 pattern="[0-9]{10,13}"
                 title="Nomor HP harus berupa angka dengan panjang 10–13 digit"
                 oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 13)"
-                placeholder="08xxxxxxxxxx" class="{{ $fieldClass }}">
-            @error('phone') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
+                placeholder="08xxxxxxxxxx"
+                class="{{ $fieldClass }}"
+            >
+            @error('phone')
+                <p class="{{ $errorClass }}">{{ $message }}</p>
+            @enderror
         </div>
 
         <div>
@@ -87,10 +114,19 @@
                     <span class="font-normal text-slate-500">(kosongkan bila tidak diubah)</span>
                 @endif
             </label>
-            <input id="password" type="password" name="password"
-                @required(!$ibu) minlength="8" maxlength="8"
-                placeholder="Masukkan tepat 8 karakter" class="{{ $fieldClass }}">
-            @error('password') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
+            <input
+                id="password"
+                type="password"
+                name="password"
+                @required(!$ibu)
+                minlength="8"
+                maxlength="8"
+                placeholder="Masukkan tepat 8 karakter"
+                class="{{ $fieldClass }}"
+            >
+            @error('password')
+                <p class="{{ $errorClass }}">{{ $message }}</p>
+            @enderror
             <p class="mt-1 text-xs text-slate-500">
                 @if ($ibu)
                     Kosongkan jika tidak ingin mengganti password. Jika diisi, harus tepat 8 karakter.
@@ -109,128 +145,193 @@
     </h3>
 
     <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+
+        {{-- NIK --}}
         <div>
             <label for="nik" class="{{ $labelClass }}">NIK {!! $star !!}</label>
-            <input id="nik" type="text" name="nik"
+            <input
+                id="nik"
+                type="text"
+                name="nik"
                 value="{{ old('nik', $profil?->nik) }}"
-                maxlength="16" inputmode="numeric" required
-                placeholder="16 digit NIK" class="{{ $fieldClass }}">
-            @error('nik') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
+                maxlength="16"
+                inputmode="numeric"
+                required
+                placeholder="16 digit NIK"
+                class="{{ $fieldClass }}"
+            >
+            @error('nik')
+                <p class="{{ $errorClass }}">{{ $message }}</p>
+            @enderror
         </div>
 
+        {{-- Tempat Lahir --}}
         <div>
             <label for="tempat_lahir" class="{{ $labelClass }}">Tempat Lahir {!! $star !!}</label>
-            <input id="tempat_lahir" type="text" name="tempat_lahir"
+            <input
+                id="tempat_lahir"
+                type="text"
+                name="tempat_lahir"
                 value="{{ old('tempat_lahir', $profil?->tempat_lahir) }}"
-                required placeholder="Kota / kabupaten kelahiran"
-                class="{{ $fieldClass }}">
-            @error('tempat_lahir') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
+                required
+                placeholder="Kota / kabupaten kelahiran"
+                class="{{ $fieldClass }}"
+            >
+            @error('tempat_lahir')
+                <p class="{{ $errorClass }}">{{ $message }}</p>
+            @enderror
         </div>
 
+        {{-- Tanggal Lahir --}}
         <div>
             <label for="tgl_lahir" class="{{ $labelClass }}">Tanggal Lahir {!! $star !!}</label>
-            <input id="tgl_lahir" type="date" name="tgl_lahir"
+            <input
+                id="tgl_lahir"
+                type="date"
+                name="tgl_lahir"
                 value="{{ old('tgl_lahir', $profil?->tgl_lahir?->format('Y-m-d')) }}"
-                required class="{{ $fieldClass }}">
-            @error('tgl_lahir') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
+                required
+                class="{{ $fieldClass }}"
+            >
+            @error('tgl_lahir')
+                <p class="{{ $errorClass }}">{{ $message }}</p>
+            @enderror
         </div>
 
+        {{-- Status Kehamilan --}}
         <div>
             <label for="status_kehamilan" class="{{ $labelClass }}">
                 Status Kehamilan {!! $star !!}
             </label>
-            <select id="status_kehamilan" name="status_kehamilan"
-                required class="{{ $fieldClass }}">
+            <select
+                id="status_kehamilan"
+                name="status_kehamilan"
+                required
+                class="{{ $fieldClass }}"
+            >
                 <option value="">-- Pilih Status --</option>
                 @foreach ($statuses as $status)
-                    <option value="{{ $status->value }}"
-                        @selected($selectedStatus === $status->value)>
+                    <option
+                        value="{{ $status->value }}"
+                        @selected($selectedStatus === $status->value)
+                    >
                         {{ $status->value === 'hamil' ? 'Hamil' : 'Melahirkan' }}
                     </option>
                 @endforeach
             </select>
-            @error('status_kehamilan') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
+            @error('status_kehamilan')
+                <p class="{{ $errorClass }}">{{ $message }}</p>
+            @enderror
         </div>
 
-        {{-- Usia kehamilan --}}
+        {{-- Usia Kehamilan --}}
         <div data-hamil-fields class="{{ $isHamilNow ? '' : 'hidden' }}">
             <label for="usia_kehamilan" class="{{ $labelClass }}">
                 Usia Kehamilan (minggu) {!! $star !!}
             </label>
-            <input id="usia_kehamilan" type="number" name="usia_kehamilan"
-                min="1" max="42"
+            <input
+                id="usia_kehamilan"
+                type="number"
+                name="usia_kehamilan"
+                min="1"
+                max="42"
                 value="{{ old('usia_kehamilan', $profil?->usia_kehamilan) }}"
                 placeholder="Masukkan usia kehamilan (minggu)"
-                class="{{ $fieldClass }}">
-            @error('usia_kehamilan') <p class="{{ $errorClass }}">{{ $message }}</p> @enderror
+                class="{{ $fieldClass }}"
+            >
+            @error('usia_kehamilan')
+                <p class="{{ $errorClass }}">{{ $message }}</p>
+            @enderror
         </div>
 
-        {{-- HPL otomatis, tidak ada kalender --}}
+        {{-- HPL otomatis --}}
         <div data-hamil-fields class="{{ $isHamilNow ? '' : 'hidden' }}">
+            <label for="hpl" class="{{ $labelClass }}">
+                HPL <span class="text-[#C9517E]">*</span>
+            </label>
 
-<div data-hamil>
-    <label for="hpl" class="{{ $labelClass }}">
-        HPL <span class="text-[#C9517E]">*</span>
+            <input
+                id="hpl"
+                type="text"
+                name="hpl"
+                value="{{ old('hpl', $ibu?->hpl?->format('Y-m-d')) }}"
+                placeholder="HPL dihitung otomatis"
+                readonly
+                class="{{ $lockedClass }}"
+            >
+
+            <p class="mt-1 text-xs text-slate-500">
+                HPL otomatis dihitung berdasarkan usia kehamilan.
+            </p>
+
+            @error('hpl')
+                <p class="{{ $errorClass }}">{{ $message }}</p>
+            @enderror
+        </div>
+
+            @include('partials.dropdown-bertingkat', [
+                'ddId'          => 'alamat_ibu',
+                'ddLabel'       => 'Alamat',
+                'ddPlaceholder' => 'Pilih Kecamatan, Kelurahan/Desa, RW, lalu RT',
+                'ddLevels'      => [
+                    ['title' => 'Pilih Kecamatan', 'items' => $itemsKecamatan],
+                    ['title' => 'Pilih Kelurahan / Desa', 'items' => $itemsKelurahan],
+                    [
+                        'title' => 'Pilih RW',
+                        'url'   => route('admin.ibu.alamat.rw'),
+                        'param' => 'kelurahan_desa_id',
+                        'map'   => [
+                            'value'  => 'id',
+                            'label'  => 'nomor_rw',
+                            'prefix' => 'RW ',
+                        ],
+                    ],
+                    [
+                        'title' => 'Pilih RT',
+                        'url'   => route('admin.ibu.alamat.rt'),
+                        'param' => 'rw_id',
+                        'map'   => [
+                            'value'  => 'id',
+                            'label'  => 'nomor_rt',
+                            'prefix' => 'RT ',
+                        ],
+                    ],
+                ],
+                'ddHidden' => [
+                    ['name' => 'rt_id', 'level' => 3, 'value' => $rtAwal],
+                ],
+                'ddSelected' => [
+                    $kecamatanTerpilih,
+                    $kelurahanAwal,
+                    $rwAwal,
+                    $rtAwal,
+                ],
+            ])
+        </div>
+
+      
+{{-- Alamat Lengkap / Catatan --}}
+<div class="sm:col-span-2">
+    <label for="alamat_lengkap" class="{{ $labelClass }}">
+        Alamat Lengkap
     </label>
 
-    <input
-        id="hpl"
-        type="text"
-        name="hpl"
-        value="{{ old('hpl', $ibu?->hpl?->format('Y-m-d')) }}"
-        placeholder="HPL dihitung otomatis"
-        readonly
-        class="{{ $lockedClass }}"
-    >
+    <textarea
+        name="alamat_lengkap"
+        id="alamat_lengkap"
+        rows="3"
+        maxlength="1000"
+        placeholder="Contoh: Perumahan GKB Blok A No. 10, dekat masjid"
+        class="{{ $fieldClass }}"
+    >{{ old('alamat_lengkap', $profil?->alamat_lengkap) }}</textarea>
 
-    <p class="mt-1 text-xs text-slate-500">
-        HPL otomatis dihitung berdasarkan usia kehamilan.
-    </p>
-
-    @error('hpl')
+    @error('alamat_lengkap')
         <p class="{{ $errorClass }}">{{ $message }}</p>
     @enderror
 </div>
 
-
-        </div>
     </div>
 </div>
-
-
-{{-- C. Alamat Domisili Ibu: satu kolom dropdown bertingkat --}}
-<div>
-    <h3 class="mb-3 border-b border-[#F1D5E0] pb-2 text-sm font-bold uppercase tracking-wide text-[#C9517E]">
-        C. Alamat Domisili Ibu
-    </h3>
-
-    @include('partials.dropdown-bertingkat', [
-        'ddId'          => 'alamat_ibu',
-        'ddLabel'       => 'Alamat',
-        'ddPlaceholder' => 'Pilih Kecamatan, Kelurahan/Desa, RW, lalu RT',
-        'ddLevels'      => [
-            ['title' => 'Pilih Kecamatan', 'items' => $itemsKecamatan],
-            ['title' => 'Pilih Kelurahan / Desa', 'items' => $itemsKelurahan],
-            [
-                'title' => 'Pilih RW',
-                'url'   => route('admin.ibu.alamat.rw'),
-                'param' => 'kelurahan_desa_id',
-                'map'   => ['value' => 'id', 'label' => 'nomor_rw', 'prefix' => 'RW '],
-            ],
-            [
-                'title' => 'Pilih RT',
-                'url'   => route('admin.ibu.alamat.rt'),
-                'param' => 'rw_id',
-                'map'   => ['value' => 'id', 'label' => 'nomor_rt', 'prefix' => 'RT '],
-            ],
-        ],
-        'ddHidden'      => [
-            ['name' => 'rt_id', 'level' => 3, 'value' => $rtAwal],
-        ],
-        'ddSelected'    => [$kecamatanTerpilih, $kelurahanAwal, $rwAwal, $rtAwal],
-    ])
-</div>
-
 
 @once
     @push('scripts')
@@ -241,6 +342,7 @@
 
                 if (nameInput) {
                     nameInput.value = nameInput.value.replace(/[^\p{L} ]/gu, '');
+
                     nameInput.addEventListener('input', function () {
                         this.value = this.value.replace(/[^\p{L} ]/gu, '');
                     });

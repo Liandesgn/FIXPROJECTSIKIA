@@ -5,9 +5,61 @@
 @section('content')
 @php
     $pg        = $anaks instanceof \Illuminate\Contracts\Pagination\LengthAwarePaginator ? $anaks : null;
+    $daftarWilayah = collect($wilayahs ?? []);
+    $sedangMencari = request()->hasAny(['search', 'wilayah_kerja_id']);
     $nomorAwal = $pg ? ($pg->firstItem() ?? 1) : 1;
 
     if ($pg) { $pg->appends(request()->query()); }
+ $daftarWilayah = collect($wilayahs ?? []);
+
+    $sedangMencari = request()->hasAny([
+        'search',
+        'wilayah_kerja_id',
+        'rw_id',
+    ]);
+
+$alamatDari = function ($w) {
+    if (! $w) {
+        return '-';
+    }
+
+    $relasi = function (string $nama) use ($w) {
+        if ($w->relationLoaded($nama)) {
+            return $w->getRelation($nama);
+        }
+
+        return method_exists($w, $nama)
+            ? $w->{$nama}()->first()
+            : null;
+    };
+
+    $kec = $relasi('masterKecamatan') ?? $relasi('kecamatan');
+    $desa = $relasi('kelurahanDesa');
+    $rw = $relasi('rw');
+    $rt = $relasi('rt');
+
+    $bagian = [];
+
+    if ($kec?->nama_kecamatan) {
+        $bagian[] = $kec->nama_kecamatan;
+    }
+
+    if ($desa?->nama_kelurahan_desa) {
+        $bagian[] = 'Desa ' . $desa->nama_kelurahan_desa;
+    }
+
+    if ($rw?->nomor_rw) {
+        $bagian[] = 'RW ' . $rw->nomor_rw;
+    }
+
+    if ($rt?->nomor_rt) {
+        $bagian[] = 'RT ' . $rt->nomor_rt;
+    }
+
+    return $bagian
+        ? implode(', ', $bagian)
+        : ($w->nama_wilayah ?: '-');
+};
 @endphp
 
 <div class="mx-auto w-full max-w-7xl space-y-5">
@@ -33,23 +85,71 @@
 
     <div class="overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm">
 
-        {{-- Pencarian --}}
-        <div class="border-b border-[#E99AB7] bg-[#FCE7F0] p-3 sm:p-4">
-            <form method="GET" action="{{ route($base.'.data-anak.index') }}" class="flex flex-col gap-3 sm:flex-row">
-                <div class="relative flex-1">
-                    <label for="searchInput" class="sr-only">Cari anak</label>
-                    <svg class="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-[#C9517E]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="m20 20-3.5-3.5"/></svg>
-                    <input id="searchInput" type="search" name="search" value="{{ request('search') }}" autocomplete="off"
-                           placeholder="Cari nama / NIK anak"
-                           class="w-full rounded-xl border-2 border-[#C9517E]/60 bg-white py-2.5 pl-11 pr-3 text-sm font-medium text-gray-900 outline-none transition placeholder:text-slate-500 focus:border-[#C9517E] focus:ring-4 focus:ring-[#E99AB7]/40">
-                </div>
+{{-- Pencarian dan Filter --}}
 
-                <button type="submit"
-                        class="rounded-xl bg-[#C9517E] px-6 py-2.5 text-sm font-semibold text-white shadow-md shadow-[#C9517E]/25 transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40 active:scale-[0.98]">
-                    Cari
-                </button>
-            </form>
+{{-- Pencarian + Filter RW --}}
+<div class="border-b border-[#E99AB7] bg-[#FCE7F0] p-3 sm:p-4">
+    <form method="GET"
+          action="{{ route($base.'.data-anak.index') }}"
+          class="flex flex-col gap-3 md:flex-row">
+
+        {{-- Cari nama / NIK anak --}}
+        <div class="relative flex-1">
+            <label for="searchInput" class="sr-only">Cari anak</label>
+
+            <svg class="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-[#C9517E]"
+                 viewBox="0 0 24 24"
+                 fill="none"
+                 stroke="currentColor"
+                 stroke-width="2"
+                 aria-hidden="true">
+                <circle cx="11" cy="11" r="7"/>
+                <path stroke-linecap="round" d="m20 20-3.5-3.5"/>
+            </svg>
+
+            <input
+                id="searchInput"
+                type="search"
+                name="search"
+                value="{{ request('search') }}"
+                autocomplete="off"
+                placeholder="Cari nama / NIK anak"
+                class="w-full rounded-xl border-2 border-[#C9517E]/60 bg-white px-3.5 py-2.5 pl-11 text-sm font-medium text-gray-900 outline-none transition placeholder:text-slate-500 focus:border-[#C9517E] focus:ring-4 focus:ring-[#E99AB7]/40">
         </div>
+
+        {{-- Filter RW sesuai wilayah pengguna --}}
+        @if ($daftarWilayah->isNotEmpty())
+            <div class="md:w-64">
+                <label for="filterWilayah" class="sr-only">Filter RW</label>
+
+                <select
+                    id="filterWilayah"
+                    name="wilayah_kerja_id"
+                    onchange="this.form.submit()"
+                    class="w-full rounded-xl border-2 border-[#C9517E]/60 bg-white px-3.5 py-2.5 text-sm font-medium text-gray-900 outline-none transition focus:border-[#C9517E] focus:ring-4 focus:ring-[#E99AB7]/40">
+
+                    <option value="">RW</option>
+
+                    @foreach ($daftarWilayah as $w)
+                        <option
+                            value="{{ $w->id }}"
+                            @selected((string) request('wilayah_kerja_id') === (string) $w->id)>
+                            {{ $alamatDari($w) }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        @endif
+
+        <button
+            type="submit"
+            class="rounded-xl bg-[#C9517E] px-6 py-2.5 text-sm font-semibold text-white shadow-md shadow-[#C9517E]/25 transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40 active:scale-[0.98]">
+            Cari
+        </button>
+    </form>
+</div>
+
+
 
         {{-- Tabel --}}
         <div class="overflow-x-auto">
@@ -102,7 +202,7 @@
                     @empty
                         <tr>
                             <td colspan="8" class="px-5 py-12 text-center">
-                                <p class="font-bold text-[#542D3D]">{{ request('search') ? 'Data tidak ditemukan.' : 'Belum ada data anak.' }}</p>
+                                <p class="font-bold text-[#542D3D]">{{ $sedangMencari ? 'Data tidak ditemukan.' : 'Belum ada data anak.' }}</p>
                             </td>
                         </tr>
                     @endforelse

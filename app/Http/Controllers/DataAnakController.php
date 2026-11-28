@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
+use App\Models\WilayahKerja;
+use Illuminate\Database\Eloquent\Builder;
+use App\Models\Rw;
 use App\Enums\StatusKehamilanEnum;
 use App\Enums\RoleEnum;
 use App\Http\Requests\AnakRequest;
@@ -15,23 +19,23 @@ use Illuminate\View\View;
 
 class DataAnakController extends Controller
 {
-    public function index(Request $request): View
+   
+
+public function index(Request $request): View
 {
     $user = $request->user();
 
-    // Tampilan khusus Ibu: seluruh detail anak dalam satu halaman.
+    // Ibu hanya melihat data anak miliknya sendiri.
     if ($user->isOrangTua()) {
         $ibu = Ibu::query()
             ->where('user_id', $user->id)
             ->firstOrFail();
 
-        // Ambil semua anak milik Ibu yang sedang login.
         $anaks = $ibu->anak()
             ->with(['ibu.user', 'ibu.wilayahKerja'])
             ->orderBy('tgl_lahir')
             ->get();
 
-        // Ambil riwayat pemeriksaan seluruh anak sekaligus.
         $riwayatSemuaAnak = PemeriksaanPosyandu::query()
             ->with('kegiatan')
             ->whereIn('anak_id', $anaks->modelKeys())
@@ -39,7 +43,6 @@ class DataAnakController extends Controller
             ->get()
             ->groupBy('anak_id');
 
-        // Siapkan detail dan riwayat masing-masing anak.
         $detailAnak = $anaks->map(function ($anak) use ($riwayatSemuaAnak) {
             $riwayatPemeriksaan = ($riwayatSemuaAnak->get($anak->id) ?? collect())
                 ->sortBy(
@@ -60,16 +63,31 @@ class DataAnakController extends Controller
         ]);
     }
 
-    // Tampilan Admin, Bidan, dan Kader tetap seperti sebelumnya.
+    // Data Anak untuk Admin, Bidan, dan Kader.
     $anaks = Anak::query()
         ->visibleTo($user)
-        ->with('ibu.user')
+        ->with(['ibu.user', 'ibu.wilayahKerja'])
         ->when($request->filled('search'), function ($query) use ($request) {
-            $search = '%'.$request->string('search').'%';
+            $search = '%' . $request->input('search') . '%';
 
-            $query->where(fn ($q) => $q
-                ->where('nama_anak', 'like', $search)
-                ->orWhere('nik_anak', 'like', $search));
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_anak', 'like', $search)
+                    ->orWhere('nik_anak', 'like', $search);
+            });
+        })
+        ->when($request->filled('wilayah_kerja_id'), function ($query) use ($request, $user) {
+            // Pastikan wilayah yang dipilih termasuk cakupan pengguna.
+            $wilayahId = $this->wilayahQuery($user)
+                ->whereKey($request->integer('wilayah_kerja_id'))
+                ->value('id');
+
+            $query->whereHas('ibu', function ($ibuQuery) use ($wilayahId) {
+                if ($wilayahId) {
+                    $ibuQuery->where('wilayah_kerja_id', $wilayahId);
+                } else {
+                    $ibuQuery->whereRaw('1 = 0');
+                }
+            });
         })
         ->latest()
         ->paginate(10)
@@ -77,9 +95,12 @@ class DataAnakController extends Controller
 
     return view('data-anak.index', [
         'anaks' => $anaks,
+        'wilayahs' => $this->wilayahs($user),
         'base' => $this->base($request),
     ]);
 }
+
+
 
 public function create(Request $request): View
 {
@@ -251,6 +272,54 @@ public function detailStatus(Request $request, Anak $anak): View
             ->route($this->base($request).'.data-anak.index')
             ->with('success', 'Data anak berhasil diperbarui.');
     }
+
+/**
+ * Mengambil wilayah yang boleh diakses pengguna.
+ *
+ * Admin      : wilayah dalam Puskesmas miliknya.
+ * SuperAdmin : seluruh wilayah.
+ * Bidan      : wilayah penugasannya.
+ * Kader      : wilayah penugasannya.
+ */
+private function wilayahQuery(User $user): Builder
+{
+    $query = WilayahKerja::query();
+
+    if ($user->isSuperAdmin()) {
+        return $query;
+    }
+
+    if ($user->isAdmin()) {
+        $user->loadMissing('admin');
+
+        $puskesmasId = $user->admin?->puskesmas_id;
+
+        return $puskesmasId
+            ? $query->where('puskesmas_id', $puskesmasId)
+            : $query->whereRaw('1 = 0');
+    }
+
+    $user->loadMissing(['bidan', 'kader']);
+
+    $wilayahId = $user->bidan?->wilayah_kerja_id
+        ?? $user->kader?->wilayah_kerja_id
+        ?? $user->wilayah_kerja_id;
+
+    return $wilayahId
+        ? $query->where('id', $wilayahId)
+        : $query->whereRaw('1 = 0');
+}
+
+/**
+ * Mengambil daftar wilayah sesuai hak akses pengguna.
+ */
+private function wilayahs(User $user)
+{
+    return $this->wilayahQuery($user)
+        ->orderBy('nama_wilayah')
+        ->get();
+}
+
 
     private function base(Request $request): string
     {

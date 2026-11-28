@@ -39,7 +39,7 @@
             'title' => 'Pilih Puskesmas',
             'url'   => route('superadmin.wilayah-kerja.dropdown.puskesmas'),
             'param' => 'kecamatan_id',
-            'map'   => ['value' => 'id', 'label' => 'nama_puskesmas', 'prefix' => 'Puskesmas '],
+            'map'   => ['value' => 'id', 'label' => 'nama_puskesmas'],
         ],
         [
             'title' => 'Pilih Kelurahan / Desa',

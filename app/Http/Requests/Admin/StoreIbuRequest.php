@@ -77,6 +77,12 @@ class StoreIbuRequest extends FormRequest
                 Rule::exists('rt', 'id'),
             ],
 
+            'alamat_lengkap' => [
+            'nullable',
+            'string',
+            'max:1000',
+            ],
+
             'status_kehamilan' => [
                 'required',
                 Rule::in(StatusKehamilanEnum::values()),

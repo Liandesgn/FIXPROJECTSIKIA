@@ -9,16 +9,17 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('pemeriksaan_ibu', function (Blueprint $table) {
-            $table->string('status_kesehatan', 30)
-                ->default('normal');
-        });
+        if (!Schema::hasColumn('pemeriksaan_ibu', 'status_kesehatan')) {
+            Schema::table('pemeriksaan_ibu', function (Blueprint $table) {
+                $table->string('status_kesehatan', 30)
+                    ->default('normal');
+            });
+        }
     }
 
     public function down(): void
     {
-        Schema::table('pemeriksaan_ibu', function (Blueprint $table) {
-            $table->dropColumn('status_kesehatan');
-        });
+        // Kolom tidak dihapus karena mungkin sudah ada
+        // sebelum migration ini dijalankan.
     }
 };
