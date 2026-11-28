@@ -41,13 +41,8 @@ class WilayahKerjaRequest extends FormRequest
                 'integer',
                 Rule::exists('rw', 'id')
                     ->where('kelurahan_desa_id', $this->input('kelurahan_desa_id')),
-            ],
-
-            'rt_id' => [
-                'required',
-                'integer',
-                Rule::exists('rt', 'id')
-                    ->where('rw_id', $this->input('rw_id')),
+                Rule::unique('wilayah_kerja', 'rw_id')
+                    ->ignore($this->route('wilayah')),
             ],
 
             'deskripsi' => [

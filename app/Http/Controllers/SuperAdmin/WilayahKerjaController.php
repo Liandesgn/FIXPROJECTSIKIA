@@ -10,6 +10,9 @@ use App\Models\Puskesmas;
 use App\Models\KelurahanDesa;
 use App\Models\Rw;
 use App\Models\Rt;
+use App\Models\Ibu;
+use App\Models\Bidan;
+use App\Models\Kader;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,7 +23,7 @@ class WilayahKerjaController extends Controller
     public function index(Request $request): View
     {
         $wilayahs = WilayahKerja::query()
-            ->with('bidan')
+            ->with(['bidan', 'rw'])
             ->withCount('admins')
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = '%' . $request->string('search') . '%';
@@ -44,22 +47,43 @@ class WilayahKerjaController extends Controller
         return view('superadmin.wilayah.create', compact('kecamatans'));
     }
 
+        private function buatNamaWilayah(
+        KelurahanDesa $kelurahan,
+        Rw $rw
+    ): string {
+        $jenis = strtolower(trim($kelurahan->jenis));
+
+        $awalan = match ($jenis) {
+            'kelurahan' => 'Kelurahan',
+            'desa' => 'Desa',
+            default => ucfirst($jenis),
+        };
+
+        $namaKelurahan = trim($kelurahan->nama_kelurahan_desa);
+
+        return $awalan . ' ' . $namaKelurahan
+            . ' RW ' . $rw->nomor_rw;
+    }
+
+
     public function store(WilayahKerjaRequest $request): RedirectResponse
     {
         $data = $request->validated();
 
-        $kelurahan = KelurahanDesa::findOrFail($data['kelurahan_desa_id']);
-        $rw = Rw::findOrFail($data['rw_id']);
-        $rt = Rt::findOrFail($data['rt_id']);
+        $kelurahan = KelurahanDesa::findOrFail(
+            $data['kelurahan_desa_id']
+        );
 
-        $data['nama_wilayah'] = $kelurahan->nama_kelurahan_desa
-            . ' RW ' . $rw->nomor_rw
-            . ' RT ' . $rt->nomor_rt;
+        $rw = Rw::findOrFail($data['rw_id']);
+
+        // Nama wilayah hanya menggunakan Kelurahan/Desa dan RW.
+        $data['nama_wilayah'] = $this->buatNamaWilayah($kelurahan, $rw);
 
         $data['kabupaten'] = 'Gresik';
 
         if (empty($data['deskripsi'])) {
-            $data['deskripsi'] = 'Wilayah kerja ' . $data['nama_wilayah']
+            $data['deskripsi'] = 'Wilayah kerja '
+                . $data['nama_wilayah']
                 . ', Kabupaten Gresik.';
         }
 
@@ -72,7 +96,12 @@ class WilayahKerjaController extends Controller
 
     public function edit(WilayahKerja $wilayah): View
     {
-        return view('superadmin.wilayah.edit', compact('wilayah'));
+        $kecamatans = Kecamatan::orderBy('nama_kecamatan')->get();
+
+        return view('superadmin.wilayah.edit', compact(
+            'wilayah',
+            'kecamatans'
+        ));
     }
 
     public function update(
@@ -81,37 +110,27 @@ class WilayahKerjaController extends Controller
     ): RedirectResponse {
         $data = $request->validated();
 
-        // Ambil data kelurahan/desa berdasarkan ID
         $kelurahan = KelurahanDesa::findOrFail(
             $data['kelurahan_desa_id']
         );
 
-        // Ambil data RW berdasarkan ID
         $rw = Rw::findOrFail($data['rw_id']);
 
-        // Ambil data RT berdasarkan ID
-        $rt = Rt::findOrFail($data['rt_id']);
-
-        // Ambil data kecamatan berdasarkan ID
         $kecamatan = Kecamatan::findOrFail(
             $data['kecamatan_id']
         );
 
-        // Bentuk nama wilayah secara otomatis
-        $data['nama_wilayah'] = $kelurahan->nama_kelurahan_desa
-            . ' RW ' . $rw->nomor_rw
-            . ' RT ' . $rt->nomor_rt;
+        // Nama wilayah hanya menggunakan Kelurahan/Desa dan RW.
+        $data['nama_wilayah'] = $this->buatNamaWilayah($kelurahan, $rw);
 
-        // Tetapkan kabupaten
         $data['kabupaten'] = 'Gresik';
 
-        // Bentuk deskripsi secara otomatis
-        $data['deskripsi'] = 'Wilayah kerja ' . $data['nama_wilayah']
-            . ' yang berada di Kecamatan ' . $kecamatan->nama_kecamatan
-            . ', Kelurahan/Desa ' . $kelurahan->nama_kelurahan_desa
+        $data['deskripsi'] = 'Wilayah kerja '
+            . $data['nama_wilayah']
+            . ' yang berada di Kecamatan '
+            . $kecamatan->nama_kecamatan
             . ', Kabupaten Gresik.';
 
-        // Simpan perubahan
         $wilayah->update($data);
 
         return redirect()
@@ -125,9 +144,9 @@ class WilayahKerjaController extends Controller
             $wilayah->users()->exists()
             || $wilayah->admins()->exists()
             || $wilayah->kegiatanPosyandu()->exists()
-            || \App\Models\Ibu::where('wilayah_kerja_id', $wilayah->id)->exists()
-            || \App\Models\Bidan::where('wilayah_kerja_id', $wilayah->id)->exists()
-            || \App\Models\Kader::where('wilayah_kerja_id', $wilayah->id)->exists()
+            || Ibu::where('wilayah_kerja_id', $wilayah->id)->exists()
+            || Bidan::where('wilayah_kerja_id', $wilayah->id)->exists()
+            || Kader::where('wilayah_kerja_id', $wilayah->id)->exists()
         ) {
             return back()->with(
                 'error',
@@ -142,11 +161,16 @@ class WilayahKerjaController extends Controller
             ->with('success', 'Data wilayah berhasil dihapus.');
     }
 
-    // DROPDOWN PUSKESMAS BERDASARKAN KECAMATAN
+    // DROPDOWN PUSKESMAS BERDASARKAN KECAMATAN.
+
     public function getPuskesmas(Request $request): JsonResponse
     {
         $request->validate([
-            'kecamatan_id' => ['required', 'integer', 'exists:kecamatan,id'],
+            'kecamatan_id' => [
+                'required',
+                'integer',
+                'exists:kecamatan,id',
+            ],
         ]);
 
         return response()->json(
@@ -156,11 +180,16 @@ class WilayahKerjaController extends Controller
         );
     }
 
-    // DROPDOWN KELURAHAN/DESA BERDASARKAN PUSKESMAS
+    // DROPDOWN KELURAHAN/DESA BERDASARKAN PUSKESMAS.
+
     public function getKelurahanDesa(Request $request): JsonResponse
     {
         $request->validate([
-            'puskesmas_id' => ['required', 'integer', 'exists:puskesmas,id'],
+            'puskesmas_id' => [
+                'required',
+                'integer',
+                'exists:puskesmas,id',
+            ],
         ]);
 
         return response()->json(
@@ -170,7 +199,8 @@ class WilayahKerjaController extends Controller
         );
     }
 
-    // DROPDOWN RW BERDASARKAN KELURAHAN/DESA
+    // DROPDOWN RW BERDASARKAN KELURAHAN/DESA.
+
     public function getRw(Request $request): JsonResponse
     {
         $request->validate([
@@ -188,11 +218,16 @@ class WilayahKerjaController extends Controller
         );
     }
 
-    // DROPDOWN RT BERDASARKAN RW
+    // INFORMASI SELURUH RT DI DALAM RW TERPILIH.
+
     public function getRt(Request $request): JsonResponse
     {
         $request->validate([
-            'rw_id' => ['required', 'integer', 'exists:rw,id'],
+            'rw_id' => [
+                'required',
+                'integer',
+                'exists:rw,id',
+            ],
         ]);
 
         return response()->json(

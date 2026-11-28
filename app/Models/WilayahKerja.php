@@ -21,7 +21,6 @@ class WilayahKerja extends Model
         'puskesmas_id',
         'kelurahan_desa_id',
         'rw_id',
-        'rt_id',
     ];
 
     // Relasi master wilayah.
@@ -30,6 +29,7 @@ class WilayahKerja extends Model
     {
         return $this->belongsTo(Kecamatan::class, 'kecamatan_id');
     }
+
     public function kecamatan(): BelongsTo
     {
         return $this->belongsTo(Kecamatan::class, 'kecamatan_id');
@@ -89,14 +89,11 @@ class WilayahKerja extends Model
         return $this->hasMany(KegiatanPosyandu::class, 'id_wilayah');
     }
 
+    // Satu Wilayah Kerja mewakili satu RW.
+
     public function rw(): BelongsTo
     {
         return $this->belongsTo(Rw::class, 'rw_id');
-    }
-
-    public function rt(): BelongsTo
-    {
-        return $this->belongsTo(Rt::class, 'rt_id');
     }
 
     // Label wilayah dari relasi master.
@@ -107,6 +104,9 @@ class WilayahKerja extends Model
             $this->masterKecamatan?->nama_kecamatan,
             $this->puskesmas?->nama_puskesmas,
             $this->kelurahanDesa?->nama_kelurahan_desa,
+            $this->rw?->nomor_rw
+                ? 'RW ' . $this->rw->nomor_rw
+                : null,
         ]));
     }
 }

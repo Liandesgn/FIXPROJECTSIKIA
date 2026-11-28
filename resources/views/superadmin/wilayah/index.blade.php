@@ -9,16 +9,23 @@
     $total     = $pg ? $pg->total() : $wilayahs->count();
     $nomorAwal = $pg ? ($pg->firstItem() ?? 1) : 1;
 
-    if ($pg) { $pg->appends(request()->query()); }
+    if ($pg) {
+        $pg->appends(request()->query());
+    }
 
     // Filter Puskesmas hanya tampil bila controller mengirim daftar puskesmas
     $daftarPuskesmas = collect($puskesmasList ?? $puskesmas ?? []);
     $sedangMencari   = request()->hasAny(['search', 'puskesmas_id']);
 
-    // Relasi aman (bila belum dimuat, diambil satu kali)
+    // Relasi aman: gunakan relasi yang sudah dimuat atau ambil dari model
     $relasi = function ($model, string $nama) {
-        if ($model->relationLoaded($nama)) return $model->getRelation($nama);
-        return method_exists($model, $nama) ? $model->{$nama}()->first() : null;
+        if ($model->relationLoaded($nama)) {
+            return $model->getRelation($nama);
+        }
+
+        return method_exists($model, $nama)
+            ? $model->{$nama}()->first()
+            : null;
     };
 @endphp
 
@@ -26,7 +33,9 @@
 
     {{-- Judul --}}
     <div>
-        <h1 class="text-2xl font-bold tracking-tight text-[#542D3D] sm:text-3xl">Kelola Wilayah</h1>
+        <h1 class="text-2xl font-bold tracking-tight text-[#542D3D] sm:text-3xl">
+            Kelola Wilayah
+        </h1>
     </div>
 
     {{-- Ringkasan + tombol Tambah --}}
@@ -37,6 +46,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 21s-7-6.2-7-11a7 7 0 1 1 14 0c0 4.8-7 11-7 11Zm0-8.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"/>
                 </svg>
             </span>
+
             <div class="leading-tight">
                 <p class="text-xs font-semibold text-slate-700">Total data wilayah</p>
                 <p class="text-xl font-bold text-[#C9517E]">{{ $total }}</p>
@@ -57,8 +67,17 @@
             <form method="GET" action="{{ url()->current() }}" class="flex flex-col gap-3 sm:flex-row">
                 <div class="relative flex-1">
                     <label for="searchInput" class="sr-only">Cari wilayah</label>
-                    <svg class="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-[#C9517E]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="m20 20-3.5-3.5"/></svg>
-                    <input id="searchInput" type="search" name="search" value="{{ request('search') }}" autocomplete="off"
+
+                    <svg class="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-[#C9517E]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <circle cx="11" cy="11" r="7"/>
+                        <path stroke-linecap="round" d="m20 20-3.5-3.5"/>
+                    </svg>
+
+                    <input id="searchInput"
+                           type="search"
+                           name="search"
+                           value="{{ request('search') }}"
+                           autocomplete="off"
                            placeholder="Cari nama wilayah / kelurahan / kecamatan"
                            class="w-full rounded-xl border-2 border-[#C9517E]/60 bg-white py-2.5 pl-11 pr-3 text-sm font-medium text-gray-900 outline-none transition placeholder:text-slate-500 focus:border-[#C9517E] focus:ring-4 focus:ring-[#E99AB7]/40">
                 </div>
@@ -66,11 +85,17 @@
                 @if ($daftarPuskesmas->isNotEmpty())
                     <div class="sm:w-60">
                         <label for="filterPuskesmas" class="sr-only">Filter puskesmas</label>
-                        <select id="filterPuskesmas" name="puskesmas_id" onchange="this.form.submit()"
+
+                        <select id="filterPuskesmas"
+                                name="puskesmas_id"
+                                onchange="this.form.submit()"
                                 class="w-full rounded-xl border-2 border-[#C9517E]/60 bg-white px-3 py-2.5 text-sm font-semibold text-gray-900 outline-none transition focus:border-[#C9517E] focus:ring-4 focus:ring-[#E99AB7]/40">
                             <option value="">Puskesmas</option>
+
                             @foreach ($daftarPuskesmas as $p)
-                                <option value="{{ $p->id }}" @selected((string) request('puskesmas_id') === (string) $p->id)>{{ $p->nama_puskesmas }}</option>
+                                <option value="{{ $p->id }}" @selected((string) request('puskesmas_id') === (string) $p->id)>
+                                    {{ $p->nama_puskesmas }}
+                                </option>
                             @endforeach
                         </select>
                     </div>
@@ -93,7 +118,7 @@
                         <th class="hidden whitespace-nowrap px-4 py-3 md:table-cell">Puskesmas</th>
                         <th class="hidden whitespace-nowrap px-4 py-3 md:table-cell">Kelurahan / Desa</th>
                         <th class="hidden whitespace-nowrap px-4 py-3 lg:table-cell">RW</th>
-                        <th class="hidden whitespace-nowrap px-4 py-3 lg:table-cell">RT</th>
+                        <th class="hidden whitespace-nowrap px-4 py-3 lg:table-cell">Jumlah RT</th>
                         <th class="whitespace-nowrap px-3 py-3 text-center sm:px-4">Aksi</th>
                     </tr>
                 </thead>
@@ -105,34 +130,97 @@
                             $pus  = $relasi($wilayah, 'puskesmas');
                             $desa = $relasi($wilayah, 'kelurahanDesa');
                             $rw   = $relasi($wilayah, 'rw');
-                            $rt   = $relasi($wilayah, 'rt');
 
-                            $kolomKec  = $wilayah->getAttribute('kecamatan');
-                            $kolomDesa = $wilayah->getAttribute('kelurahan');
+                            // Kecamatan
+                            $kolomKec = $wilayah->getAttribute('kecamatan');
 
-                            $namaKec  = $kec?->nama_kecamatan ?? (is_string($kolomKec) && $kolomKec !== '' ? $kolomKec : '-');
-                            $namaPus  = $pus?->nama_puskesmas ?? '-';
-                            $namaDesa = $desa?->nama_kelurahan_desa ?? (is_string($kolomDesa) && $kolomDesa !== '' ? $kolomDesa : '-');
-                            $namaRw   = $rw?->nomor_rw ? 'RW ' . $rw->nomor_rw : '-';
-                            $namaRt   = $rt?->nomor_rt ? 'RT ' . $rt->nomor_rt : '-';
+                            $namaKec = $kec?->nama_kecamatan
+                                ?? (is_string($kolomKec) && $kolomKec !== ''
+                                    ? $kolomKec
+                                    : '-');
 
-                            $labelHapus = trim($namaDesa . ' ' . ($rt?->nomor_rt ? 'RT ' . $rt->nomor_rt : '') . ($rw?->nomor_rw ? '/RW ' . $rw->nomor_rw : ''));
+                            // Puskesmas
+                            $namaPus = $pus?->nama_puskesmas ?? '-';
+
+                        
+                            // Nama Kelurahan / Desa tanpa awalan ganda
+                            $jenis = strtolower(trim($desa?->jenis ?? ''));
+
+                            $awalan = match ($jenis) {
+                                'kelurahan' => 'Kelurahan',
+                                'desa' => 'Desa',
+                                default => '',
+                            };
+
+                            $namaDasarDesa = trim($desa?->nama_kelurahan_desa ?? '');
+
+                            // Hapus awalan jika nama dari database sudah memilikinya
+                            $namaDasarDesa = preg_replace(
+                                '/^(kelurahan|desa)\s+/i',
+                                '',
+                                $namaDasarDesa
+                            );
+
+                            $namaDesa = $desa
+                                ? trim($awalan . ' ' . $namaDasarDesa)
+                                : '-';
+
+                            // RW
+                            $namaRw = $rw?->nomor_rw
+                                ? 'RW ' . $rw->nomor_rw
+                                : '-';
+
+                            // Hitung seluruh RT yang berada di dalam RW
+                            $jumlahRt = $rw
+                                ? \Illuminate\Support\Facades\DB::table('rt')
+                                    ->where('rw_id', $rw->id)
+                                    ->count()
+                                : 0;
+
+                            $namaRt = $jumlahRt . ' RT';
+
+                            // Label konfirmasi hapus
+                            $labelHapus = trim($namaDesa . ' ' . $namaRw);
                         @endphp
 
                         <tr class="transition-colors hover:bg-[#FCE7F0]/50">
-                            <td class="px-3 py-3.5 text-sm font-semibold text-slate-700 sm:px-4">{{ $nomorAwal + $loop->index }}</td>
-
-                            <td class="px-3 py-3.5 sm:px-4">
-                                <p class="break-words text-sm font-bold text-[#542D3D]">{{ $namaKec }}</p>
-                                <p class="text-xs text-slate-700 md:hidden">{{ $namaPus }}</p>
-                                <p class="text-xs text-slate-700 md:hidden">{{ $namaDesa }}</p>
-                                <p class="text-xs font-semibold text-slate-700 lg:hidden">{{ $namaRt }} / {{ $namaRw }}</p>
+                            <td class="px-3 py-3.5 text-sm font-semibold text-slate-700 sm:px-4">
+                                {{ $nomorAwal + $loop->index }}
                             </td>
 
-                            <td class="hidden whitespace-nowrap px-4 py-3.5 text-sm text-slate-800 md:table-cell">{{ $namaPus }}</td>
-                            <td class="hidden whitespace-nowrap px-4 py-3.5 text-sm text-slate-800 md:table-cell">{{ $namaDesa }}</td>
-                            <td class="hidden whitespace-nowrap px-4 py-3.5 text-sm text-slate-800 lg:table-cell">{{ $namaRw }}</td>
-                            <td class="hidden whitespace-nowrap px-4 py-3.5 text-sm text-slate-800 lg:table-cell">{{ $namaRt }}</td>
+                            <td class="px-3 py-3.5 sm:px-4">
+                                <p class="break-words text-sm font-bold text-[#542D3D]">
+                                    {{ $namaKec }}
+                                </p>
+
+                                <p class="text-xs text-slate-700 md:hidden">
+                                    {{ $namaPus }}
+                                </p>
+
+                                <p class="text-xs text-slate-700 md:hidden">
+                                    {{ $namaDesa }}
+                                </p>
+
+                                <p class="text-xs font-semibold text-slate-700 lg:hidden">
+                                    {{ $namaRw }} · {{ $namaRt }}
+                                </p>
+                            </td>
+
+                            <td class="hidden whitespace-nowrap px-4 py-3.5 text-sm text-slate-800 md:table-cell">
+                                {{ $namaPus }}
+                            </td>
+
+                            <td class="hidden whitespace-nowrap px-4 py-3.5 text-sm text-slate-800 md:table-cell">
+                                {{ $namaDesa }}
+                            </td>
+
+                            <td class="hidden whitespace-nowrap px-4 py-3.5 text-sm text-slate-800 lg:table-cell">
+                                {{ $namaRw }}
+                            </td>
+
+                            <td class="hidden whitespace-nowrap px-4 py-3.5 text-sm text-slate-800 lg:table-cell">
+                                {{ $namaRt }}
+                            </td>
 
                             <td class="whitespace-nowrap px-3 py-3.5 sm:px-4">
                                 <div class="flex items-center justify-center gap-2">
@@ -141,7 +229,9 @@
                                         Edit
                                     </a>
 
-                                    <form action="{{ route('superadmin.wilayah-kerja.destroy', $wilayah) }}" method="POST" class="m-0"
+                                    <form action="{{ route('superadmin.wilayah-kerja.destroy', $wilayah) }}"
+                                          method="POST"
+                                          class="m-0"
                                           data-confirm-delete
                                           data-name="{{ $labelHapus }}"
                                           data-title="Apakah akan menghapus wilayah {{ $labelHapus }}?"
@@ -149,6 +239,7 @@
                                           data-confirm-text="Hapus">
                                         @csrf
                                         @method('DELETE')
+
                                         <button type="submit"
                                                 class="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-lg bg-red-600 px-3 text-xs font-bold text-white shadow-sm transition hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-200 active:scale-[0.97] sm:h-8">
                                             Hapus
@@ -160,7 +251,9 @@
                     @empty
                         <tr>
                             <td colspan="7" class="px-5 py-12 text-center">
-                                <p class="font-bold text-[#542D3D]">{{ $sedangMencari ? 'Data tidak ditemukan.' : 'Belum ada data wilayah.' }}</p>
+                                <p class="font-bold text-[#542D3D]">
+                                    {{ $sedangMencari ? 'Data tidak ditemukan.' : 'Belum ada data wilayah.' }}
+                                </p>
                             </td>
                         </tr>
                     @endforelse
@@ -177,6 +270,7 @@
                     $btn    = 'inline-flex h-9 min-w-9 items-center justify-center rounded-lg border border-[#F1D5E0] bg-white px-2 text-sm font-semibold text-[#542D3D] transition hover:bg-[#FCE7F0]';
                     $btnOff = 'inline-flex h-9 w-9 cursor-not-allowed items-center justify-center rounded-lg border border-[#F1D5E0] bg-white text-lg text-slate-300';
                 @endphp
+
                 <nav class="flex flex-col items-center justify-between gap-3 sm:flex-row" aria-label="Navigasi halaman">
                     <p class="text-xs font-medium text-slate-600">
                         Menampilkan {{ $pg->firstItem() ?? 0 }}–{{ $pg->lastItem() ?? 0 }} dari {{ $pg->total() }} data
@@ -187,29 +281,50 @@
                             @if ($pg->onFirstPage())
                                 <span class="{{ $btnOff }}" aria-disabled="true">‹</span>
                             @else
-                                <a href="{{ $pg->previousPageUrl() }}" aria-label="Halaman sebelumnya" class="{{ $btn }} text-lg text-[#C9517E]">‹</a>
+                                <a href="{{ $pg->previousPageUrl() }}"
+                                   aria-label="Halaman sebelumnya"
+                                   class="{{ $btn }} text-lg text-[#C9517E]">
+                                    ‹
+                                </a>
                             @endif
 
                             @if ($awal > 1)
                                 <a href="{{ $pg->url(1) }}" class="{{ $btn }}">1</a>
-                                @if ($awal > 2) <span class="px-1 text-slate-400">…</span> @endif
+
+                                @if ($awal > 2)
+                                    <span class="px-1 text-slate-400">…</span>
+                                @endif
                             @endif
 
                             @for ($i = $awal; $i <= $akhir; $i++)
                                 @if ($i === $pg->currentPage())
-                                    <span aria-current="page" class="inline-flex h-9 min-w-9 items-center justify-center rounded-lg bg-[#C9517E] px-2 text-sm font-bold text-white shadow-sm">{{ $i }}</span>
+                                    <span aria-current="page"
+                                          class="inline-flex h-9 min-w-9 items-center justify-center rounded-lg bg-[#C9517E] px-2 text-sm font-bold text-white shadow-sm">
+                                        {{ $i }}
+                                    </span>
                                 @else
-                                    <a href="{{ $pg->url($i) }}" class="{{ $btn }}">{{ $i }}</a>
+                                    <a href="{{ $pg->url($i) }}" class="{{ $btn }}">
+                                        {{ $i }}
+                                    </a>
                                 @endif
                             @endfor
 
                             @if ($akhir < $pg->lastPage())
-                                @if ($akhir < $pg->lastPage() - 1) <span class="px-1 text-slate-400">…</span> @endif
-                                <a href="{{ $pg->url($pg->lastPage()) }}" class="{{ $btn }}">{{ $pg->lastPage() }}</a>
+                                @if ($akhir < $pg->lastPage() - 1)
+                                    <span class="px-1 text-slate-400">…</span>
+                                @endif
+
+                                <a href="{{ $pg->url($pg->lastPage()) }}" class="{{ $btn }}">
+                                    {{ $pg->lastPage() }}
+                                </a>
                             @endif
 
                             @if ($pg->hasMorePages())
-                                <a href="{{ $pg->nextPageUrl() }}" aria-label="Halaman berikutnya" class="{{ $btn }} text-lg text-[#C9517E]">›</a>
+                                <a href="{{ $pg->nextPageUrl() }}"
+                                   aria-label="Halaman berikutnya"
+                                   class="{{ $btn }} text-lg text-[#C9517E]">
+                                    ›
+                                </a>
                             @else
                                 <span class="{{ $btnOff }}" aria-disabled="true">›</span>
                             @endif
@@ -217,7 +332,9 @@
                     @endif
                 </nav>
             @else
-                <p class="text-xs font-medium text-slate-600">Total {{ $total }} data</p>
+                <p class="text-xs font-medium text-slate-600">
+                    Total {{ $total }} data
+                </p>
             @endif
         </div>
     </div>

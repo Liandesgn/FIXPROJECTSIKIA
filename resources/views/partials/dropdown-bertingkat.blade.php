@@ -148,10 +148,19 @@
                         textEl.classList.toggle('text-[#542D3D]', ok);
                         btn.title = ok ? teks : '';
 
-                        cfg.hidden.forEach(function (h) {
-                            var input = hiddenInput(h.name);
-                            if (input) input.value = ok && committed[h.level] ? committed[h.level].value : '';
-                        });
+            cfg.hidden.forEach(function (h) {
+                var input = hiddenInput(h.name);
+
+                if (input) {
+                    input.value = ok && committed[h.level]
+                        ? committed[h.level].value
+                        : '';
+
+                    input.dispatchEvent(new Event('change', {
+                        bubbles: true
+                    }));
+                }
+            });
 
                         if (ok) msg.classList.add('hidden');
                     }
