@@ -186,28 +186,31 @@ class LaporanController extends Controller
                     ->distinct()
                     ->count('ibu_id');
 
-                $anakPerluPerhatian = PemeriksaanPosyandu::where(
-                    'status_kesehatan',
-                    PemeriksaanPosyandu::PERLU_PERHATIAN
-                )
-                    ->whereHas(
-                        'kegiatan',
-                        function ($query) use (
-                            $tanggalMulai,
-                            $tanggalAkhir,
-                            $wilayahItem
-                        ) {
-                            $query->whereBetween('tanggal', [
-                                $tanggalMulai->toDateString(),
-                                $tanggalAkhir->toDateString(),
-                            ])->where(
-                                'id_wilayah',
-                                $wilayahItem->id
-                            );
-                        }
-                    )
-                    ->distinct()
-                    ->count('anak_id');
+$anakPerluPerhatian = PemeriksaanPosyandu::whereIn(
+    'tingkat_risiko',
+    [
+        PemeriksaanPosyandu::RISIKO_SEDANG,
+        PemeriksaanPosyandu::RISIKO_TINGGI,
+    ]
+)
+    ->whereHas(
+        'kegiatan',
+        function ($query) use (
+            $tanggalMulai,
+            $tanggalAkhir,
+            $wilayahItem
+        ) {
+            $query->whereBetween('tanggal', [
+                $tanggalMulai->toDateString(),
+                $tanggalAkhir->toDateString(),
+            ])->where(
+                'id_wilayah',
+                $wilayahItem->id
+            );
+        }
+    )
+    ->distinct()
+    ->count('anak_id');
 
                 $diperiksa = $ibuDiperiksa + $anakDiperiksa;
                 $perluPerhatian = $ibuPerluPerhatian
@@ -264,47 +267,74 @@ class LaporanController extends Controller
                 })
                 ->count(),
 
-            'anak_normal' => PemeriksaanPosyandu::where(
-                'status_kesehatan',
-                PemeriksaanPosyandu::NORMAL
-            )
-                ->whereHas(
-                    'kegiatan',
-                    function ($query) use (
-                        $tanggalMulai,
-                        $tanggalAkhir,
-                        $filterKegiatanPuskesmas
-                    ) {
-                        $query->whereBetween('tanggal', [
-                            $tanggalMulai->toDateString(),
-                            $tanggalAkhir->toDateString(),
-                        ]);
+'anak_normal' => PemeriksaanPosyandu::where(
+    'tingkat_risiko',
+    PemeriksaanPosyandu::RISIKO_RENDAH
+)
+    ->whereHas(
+        'kegiatan',
+        function ($query) use (
+            $tanggalMulai,
+            $tanggalAkhir,
+            $filterKegiatanPuskesmas
+        ) {
+            $query->whereBetween('tanggal', [
+                $tanggalMulai->toDateString(),
+                $tanggalAkhir->toDateString(),
+            ]);
 
-                        $filterKegiatanPuskesmas($query);
-                    }
-                )
-                ->count(),
+            $filterKegiatanPuskesmas($query);
+        }
+    )
+    ->count(),
 
-            'anak_perhatian' => PemeriksaanPosyandu::where(
-                'status_kesehatan',
-                PemeriksaanPosyandu::PERLU_PERHATIAN
-            )
-                ->whereHas(
-                    'kegiatan',
-                    function ($query) use (
-                        $tanggalMulai,
-                        $tanggalAkhir,
-                        $filterKegiatanPuskesmas
-                    ) {
-                        $query->whereBetween('tanggal', [
-                            $tanggalMulai->toDateString(),
-                            $tanggalAkhir->toDateString(),
-                        ]);
+'anak_perhatian' => PemeriksaanPosyandu::whereIn(
+    'tingkat_risiko',
+    [
+        PemeriksaanPosyandu::RISIKO_SEDANG,
+        PemeriksaanPosyandu::RISIKO_TINGGI,
+    ]
+)
+    ->whereHas(
+        'kegiatan',
+        function ($query) use (
+            $tanggalMulai,
+            $tanggalAkhir,
+            $filterKegiatanPuskesmas
+        ) {
+            $query->whereBetween('tanggal', [
+                $tanggalMulai->toDateString(),
+                $tanggalAkhir->toDateString(),
+            ]);
 
-                        $filterKegiatanPuskesmas($query);
-                    }
-                )
-                ->count(),
+            $filterKegiatanPuskesmas($query);
+        }
+    )
+    ->count(),
+
+'anak_perhatian' => PemeriksaanPosyandu::whereIn(
+    'tingkat_risiko',
+    [
+        PemeriksaanPosyandu::RISIKO_SEDANG,
+        PemeriksaanPosyandu::RISIKO_TINGGI,
+    ]
+)
+    ->whereHas(
+        'kegiatan',
+        function ($query) use (
+            $tanggalMulai,
+            $tanggalAkhir,
+            $filterKegiatanPuskesmas
+        ) {
+            $query->whereBetween('tanggal', [
+                $tanggalMulai->toDateString(),
+                $tanggalAkhir->toDateString(),
+            ]);
+
+            $filterKegiatanPuskesmas($query);
+        }
+    )
+    ->count(),
         ];
 
         /*
@@ -357,31 +387,34 @@ class LaporanController extends Controller
         /*
          * 9. Data risiko Anak.
          */
-        $risikoAnak = PemeriksaanPosyandu::with([
-            'anak.ibu.wilayahKerja',
-            'kegiatan.rw.kelurahanDesa',
-        ])
-            ->terakhirPerAnak()
-            ->where(
-                'status_kesehatan',
-                PemeriksaanPosyandu::PERLU_PERHATIAN
-            )
-            ->whereHas(
-                'kegiatan',
-                function ($query) use (
-                    $tanggalMulai,
-                    $tanggalAkhir,
-                    $filterKegiatanPuskesmas
-                ) {
-                    $query->whereBetween('tanggal', [
-                        $tanggalMulai->toDateString(),
-                        $tanggalAkhir->toDateString(),
-                    ]);
+$risikoAnak = PemeriksaanPosyandu::with([
+    'anak.ibu.wilayahKerja',
+    'kegiatan.rw.kelurahanDesa',
+])
+    ->terakhirPerAnak()
+    ->whereIn(
+        'tingkat_risiko',
+        [
+            PemeriksaanPosyandu::RISIKO_SEDANG,
+            PemeriksaanPosyandu::RISIKO_TINGGI,
+        ]
+    )
+    ->whereHas(
+        'kegiatan',
+        function ($query) use (
+            $tanggalMulai,
+            $tanggalAkhir,
+            $filterKegiatanPuskesmas
+        ) {
+            $query->whereBetween('tanggal', [
+                $tanggalMulai->toDateString(),
+                $tanggalAkhir->toDateString(),
+            ]);
 
-                    $filterKegiatanPuskesmas($query);
-                }
-            )
-            ->get();
+            $filterKegiatanPuskesmas($query);
+        }
+    )
+    ->get();
 
         /*
          * 10. Gabungkan data risiko Ibu dan Anak.
