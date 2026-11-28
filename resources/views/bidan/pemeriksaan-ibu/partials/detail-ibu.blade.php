@@ -1,4 +1,3 @@
-
 @php
     $riwayatPemeriksaanIbu = $riwayatPemeriksaanIbu ?? collect();
     $filterPeriode = $filterPeriode ?? false;
@@ -80,6 +79,21 @@
         'Nomor HP'      => $ibu->user?->phone,
         'Alamat'        => $alamatDari($ibu->wilayahKerja),
     ];
+
+    // Tingkat risiko dan penyebab dari pemeriksaan terakhir (bila dikirim oleh halaman pemanggil).
+    $risikoTerakhir = data_get($pemeriksaanTerakhir ?? null, 'tingkat_risiko');
+
+    $penyebabRisiko = collect(explode(';', (string) data_get($pemeriksaanTerakhir ?? null, 'faktor_risiko', '')))
+        ->map(fn ($f) => trim($f))
+        ->filter()
+        ->implode(', ');
+
+    $warnaRisikoTerakhir = match (strtolower((string) $risikoTerakhir)) {
+        'tinggi' => 'bg-red-100 text-red-700',
+        'sedang' => 'bg-amber-100 text-amber-700',
+        'rendah' => 'bg-green-100 text-green-700',
+        default  => 'bg-slate-100 text-slate-600',
+    };
 
     // Riwayat pemeriksaan terbaru di atas.
     $riwayat = collect($riwayatPemeriksaanIbu)->map(function ($p) use ($ambil) {
@@ -267,6 +281,22 @@
                             {{ $formatTanggal($ibu->hpl) }}
                         </span>
                     </p>
+
+                    @if ($risikoTerakhir)
+                        <p class="text-sm text-slate-700">
+                            Tingkat risiko:
+                            <span class="ml-1 inline-flex rounded-full px-3 py-0.5 text-xs font-bold {{ $warnaRisikoTerakhir }}">
+                                {{ ucfirst($risikoTerakhir) }}
+                            </span>
+                        </p>
+
+                        <p class="text-sm text-slate-700">
+                            Penyebab:
+                            <span class="font-semibold text-[#542D3D]">
+                                {{ $penyebabRisiko !== '' ? $penyebabRisiko : '-' }}
+                            </span>
+                        </p>
+                    @endif
                 @else
                     <p class="text-sm text-slate-600">
                         Ibu saat ini tidak dalam status kehamilan.

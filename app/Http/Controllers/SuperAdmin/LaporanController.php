@@ -107,10 +107,8 @@ class LaporanController extends Controller
                 ->distinct()
                 ->count('ibu_id');
 
-            $anakRisiko = PemeriksaanPosyandu::where(
-                'status_kesehatan',
-                PemeriksaanPosyandu::PERLU_PERHATIAN
-            )
+$anakRisiko = PemeriksaanPosyandu::where('tingkat_risiko', 'tinggi')
+
                 ->whereHas(
                     'kegiatan',
                     fn ($q) => $q->where('id_wilayah', $item->id)
@@ -183,7 +181,7 @@ class LaporanController extends Controller
             'kegiatan',
         ])
             ->terakhirPerAnak()
-            ->where('status_kesehatan', PemeriksaanPosyandu::PERLU_PERHATIAN)
+            ->where('tingkat_risiko', 'tinggi')
             ->whereHas('kegiatan', function ($q) use (
                 $tanggalMulai,
                 $tanggalAkhir,
@@ -218,7 +216,7 @@ class LaporanController extends Controller
                 'tanggal' => $pemeriksaan->kegiatan?->tanggal,
                 'indikator' => 'BB: '.($pemeriksaan->berat_badan ?? '-')
                     .' kg, TB: '.($pemeriksaan->tinggi_badan ?? '-').' cm',
-                'penanda' => 'Perlu Perhatian',
+                'penanda' => 'Risiko Tinggi',
             ]);
         }
 
@@ -229,7 +227,7 @@ class LaporanController extends Controller
                 'wilayah' => $pemeriksaan->ibu?->wilayahKerja?->nama_wilayah ?? '-',
                 'tanggal' => $pemeriksaan->tgl_pemeriksaan,
                 'indikator' => 'Status pemeriksaan: Perlu Perhatian',
-                'penanda' => 'Perlu Perhatian',
+                'penanda' => 'Risiko Tinggi',
             ]);
         }
 

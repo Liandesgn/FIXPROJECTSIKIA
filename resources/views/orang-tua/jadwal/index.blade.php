@@ -1,219 +1,135 @@
-
 @extends('layouts.app')
 
 @section('title', 'Jadwal')
 
 @section('content')
-<div class="min-h-screen bg-white px-4 py-6 sm:px-6">
+@php
+    $kartu = 'overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm';
+    $ikonKosong = '<svg class="mx-auto mb-3 h-10 w-10 text-[#E99AB7]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M7 3v4m10-4v4M4 9h16M5 5h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z"/></svg>';
+@endphp
 
-    <div class="mx-auto max-w-7xl">
+<div class="mx-auto w-full max-w-7xl space-y-5">
 
-        {{-- Judul --}}
-        <div class="mb-7">
-            <h1 class="text-2xl font-bold text-gray-800">
-                Jadwal
-            </h1>
-        </div>
+    {{-- Judul --}}
+    <div>
+        <h1 class="text-2xl font-bold tracking-tight text-[#542D3D] sm:text-3xl">Jadwal</h1>
+    </div>
 
-        {{-- Tab Navigasi --}}
-        <div class="border-b border-gray-200">
-            <div class="flex gap-6" role="tablist">
+    {{-- Tab navigasi --}}
+    <div class="flex w-full gap-2 rounded-2xl border border-[#F1D5E0] bg-white p-1.5 shadow-sm sm:w-fit" role="tablist" aria-label="Jenis jadwal">
+        <button type="button" id="tab-pemeriksaan" role="tab" aria-selected="true"
+                aria-controls="panel-pemeriksaan" onclick="ubahTabJadwal('pemeriksaan')"
+                class="flex-1 whitespace-nowrap rounded-xl bg-[#C9517E] px-4 py-2 text-sm font-semibold text-white shadow-sm transition sm:flex-none">
+            Pemeriksaan Ibu Hamil
+        </button>
 
-                <button
-                    type="button"
-                    id="tab-pemeriksaan"
-                    role="tab"
-                    aria-selected="true"
-                    aria-controls="panel-pemeriksaan"
-                    onclick="ubahTabJadwal('pemeriksaan')"
-                    class="tab-jadwal border-b-2 border-[#C9517E] px-3 py-3 text-sm font-semibold text-[#542D3D]"
-                >
-                    Pemeriksaan Ibu Hamil
-                </button>
+        <button type="button" id="tab-posyandu" role="tab" aria-selected="false"
+                aria-controls="panel-posyandu" onclick="ubahTabJadwal('posyandu')"
+                class="flex-1 whitespace-nowrap rounded-xl px-4 py-2 text-sm font-semibold text-[#542D3D] transition hover:bg-[#FCE7F0] sm:flex-none">
+            Posyandu
+        </button>
+    </div>
 
-                <button
-                    type="button"
-                    id="tab-posyandu"
-                    role="tab"
-                    aria-selected="false"
-                    aria-controls="panel-posyandu"
-                    onclick="ubahTabJadwal('posyandu')"
-                    class="tab-jadwal border-b-2 border-transparent px-3 py-3 text-sm font-semibold text-gray-500 hover:text-[#C9517E]"
-                >
-                    Posyandu
-                </button>
+    {{-- Konten Pemeriksaan Ibu Hamil --}}
+    <div id="panel-pemeriksaan" role="tabpanel" aria-labelledby="tab-pemeriksaan" class="tab-panel space-y-4">
 
-            </div>
-        </div>
+        @forelse ($jadwalPemeriksaan as $jadwal)
+            @php
+                $baris = [
+                    'Tanggal'         => $jadwal->tanggal?->translatedFormat('d F Y') ?? '-',
+                    'Waktu'           => $jadwal->waktu ? \Carbon\Carbon::parse($jadwal->waktu)->format('H:i') . ' WIB' : '-',
+                    'Lokasi'          => $jadwal->lokasi ?: '-',
+                    'Bidan Pemeriksa' => $jadwal->jadwalPemeriksaan?->bidan?->user?->name ?? 'Belum ditentukan',
+                ];
 
-        {{-- Konten Pemeriksaan Ibu Hamil --}}
-        <div
-            id="panel-pemeriksaan"
-            role="tabpanel"
-            aria-labelledby="tab-pemeriksaan"
-            class="tab-panel py-5"
-        >
+                $catatan = $jadwal->jadwalPemeriksaan?->catatan;
+            @endphp
 
-            @forelse ($jadwalPemeriksaan as $jadwal)
-                <div class="mb-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div class="{{ $kartu }}">
+                <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[#F1D5E0] bg-[#FCE7F0] px-5 py-3.5">
+                    <h3 class="text-base font-bold text-[#542D3D]">{{ $jadwal->jenis_kegiatan }}</h3>
 
-                    <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
-                        <h3 class="text-base font-semibold text-[#542D3D]">
-                            {{ $jadwal->jenis_kegiatan }}
-                        </h3>
+                    <span class="rounded-full bg-white px-3 py-1 text-xs font-bold text-[#C9517E] ring-1 ring-[#E99AB7]">
+                        Pemeriksaan Ibu Hamil
+                    </span>
+                </div>
 
-                        <span class="rounded-full bg-pink-50 px-3 py-1 text-xs font-medium text-[#C9517E]">
-                            Pemeriksaan Ibu Hamil
-                        </span>
-                    </div>
+                <dl class="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2">
+                    @foreach ($baris as $label => $nilai)
+                        <div class="min-w-0">
+                            <dt class="text-xs font-semibold text-slate-600">{{ $label }}</dt>
+                            <dd class="mt-1 break-words text-sm font-bold text-[#542D3D]">{{ $nilai }}</dd>
+                        </div>
+                    @endforeach
 
-                    <div class="grid gap-3 text-sm text-gray-600 sm:grid-cols-2">
-
-                        <p>
-                            <span class="font-medium text-gray-700">Tanggal:</span>
-                            {{ $jadwal->tanggal?->translatedFormat('d F Y') }}
-                        </p>
-
-                        <p>
-                            <span class="font-medium text-gray-700">Waktu:</span>
-                            {{ \Carbon\Carbon::parse($jadwal->waktu)->format('H:i') }} WIB
-                        </p>
-
-                        <p>
-                            <span class="font-medium text-gray-700">Lokasi:</span>
-                            {{ $jadwal->lokasi }}
-                        </p>
-
-                        <p>
-                            <span class="font-medium text-gray-700">Bidan Pemeriksa:</span>
-                            {{ $jadwal->jadwalPemeriksaan?->bidan?->user?->name ?? 'Belum ditentukan' }}
-                        </p>
-
-                    </div>
-
-                    @if ($jadwal->jadwalPemeriksaan?->catatan)
-                        <div class="mt-4 border-t border-gray-100 pt-3 text-sm text-gray-600">
-                            <span class="font-medium text-gray-700">Catatan:</span>
-                            {{ $jadwal->jadwalPemeriksaan->catatan }}
+                    @if ($catatan)
+                        <div class="min-w-0 border-t border-[#F7E6ED] pt-4 sm:col-span-2">
+                            <dt class="text-xs font-semibold text-slate-600">Catatan</dt>
+                            <dd class="mt-1 break-words text-sm font-bold text-[#542D3D]">{{ $catatan }}</dd>
                         </div>
                     @endif
-
-                </div>
-            @empty
-
-                <div class="flex min-h-[230px] flex-col items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-10">
-
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="mb-3 h-10 w-10 text-slate-300"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        stroke-width="1.5"
-                    >
-                        <rect x="3" y="5" width="18" height="16" rx="2"/>
-                        <path stroke-linecap="round" d="M16 3v4M8 3v4M3 10h18"/>
-                    </svg>
-
-                    <p class="text-sm text-slate-400">
-                        Belum ada jadwal
-                    </p>
-
-                </div>
-
-            @endforelse
-
-        </div>
-
-        {{-- Konten Posyandu --}}
-        <div
-            id="panel-posyandu"
-            role="tabpanel"
-            aria-labelledby="tab-posyandu"
-            class="tab-panel hidden py-5"
-        >
-
-            @forelse ($jadwalPosyandu as $jadwal)
-                <div class="mb-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-
-                    <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
-                        <h3 class="text-base font-semibold text-[#542D3D]">
-                            {{ $jadwal->jenis_kegiatan }}
-                        </h3>
-
-                        <span class="rounded-full bg-pink-50 px-3 py-1 text-xs font-medium text-[#C9517E]">
-                            Posyandu
-                        </span>
-                    </div>
-
-                    <div class="grid gap-3 text-sm text-gray-600 sm:grid-cols-2">
-
-                        <p>
-                            <span class="font-medium text-gray-700">Tanggal:</span>
-                            {{ $jadwal->tanggal?->translatedFormat('d F Y') }}
-                        </p>
-
-                        <p>
-                            <span class="font-medium text-gray-700">Waktu:</span>
-                            {{ \Carbon\Carbon::parse($jadwal->waktu)->format('H:i') }} WIB
-                        </p>
-
-                        <p>
-                            <span class="font-medium text-gray-700">Lokasi:</span>
-                            {{ $jadwal->lokasi }}
-                        </p>
-
-                        <p>
-                            <span class="font-medium text-gray-700">RW:</span>
-                            {{ $jadwal->jadwalPosyandu?->kegiatan?->rw?->nomor_rw ?? '-' }}
-                        </p>
-
-                        <p>
-                            <span class="font-medium text-gray-700">Bidan:</span>
-                            {{ $jadwal->jadwalPosyandu?->bidan?->user?->name ?? 'Belum ditentukan' }}
-                        </p>
-
-                        <p>
-                            <span class="font-medium text-gray-700">Kader:</span>
-                            {{ $jadwal->jadwalPosyandu?->kader?->user?->name ?? 'Belum ditentukan' }}
-                        </p>
-
-                    </div>
-
-                </div>
-            @empty
-
-                <div class="flex min-h-[230px] flex-col items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-10">
-
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="mb-3 h-10 w-10 text-slate-300"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        stroke-width="1.5"
-                    >
-                        <rect x="3" y="5" width="18" height="16" rx="2"/>
-                        <path stroke-linecap="round" d="M16 3v4M8 3v4M3 10h18"/>
-                    </svg>
-
-                    <p class="text-sm text-slate-400">
-                        Belum ada jadwal
-                    </p>
-
-                </div>
-
-            @endforelse
-
-        </div>
+                </dl>
+            </div>
+        @empty
+            <div class="{{ $kartu }} px-4 py-12 text-center">
+                {!! $ikonKosong !!}
+                <p class="font-bold text-[#542D3D]">Belum ada jadwal</p>
+            </div>
+        @endforelse
 
     </div>
+
+    {{-- Konten Posyandu --}}
+    <div id="panel-posyandu" role="tabpanel" aria-labelledby="tab-posyandu" class="tab-panel hidden space-y-4">
+
+        @forelse ($jadwalPosyandu as $jadwal)
+            @php
+                $baris = [
+                    'Tanggal'         => $jadwal->tanggal?->translatedFormat('d F Y') ?? '-',
+                    'Waktu'           => $jadwal->waktu ? \Carbon\Carbon::parse($jadwal->waktu)->format('H:i') . ' WIB' : '-',
+                    'Lokasi'          => $jadwal->lokasi ?: '-',
+                    'RW'              => $jadwal->jadwalPosyandu?->kegiatan?->rw?->nomor_rw ?? '-',
+                    'Bidan'           => $jadwal->jadwalPosyandu?->bidan?->user?->name ?? 'Belum ditentukan',
+                    'Kader'           => $jadwal->jadwalPosyandu?->kader?->user?->name ?? 'Belum ditentukan',
+                ];
+            @endphp
+
+            <div class="{{ $kartu }}">
+                <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[#F1D5E0] bg-[#FCE7F0] px-5 py-3.5">
+                    <h3 class="text-base font-bold text-[#542D3D]">{{ $jadwal->jenis_kegiatan }}</h3>
+
+                    <span class="rounded-full bg-white px-3 py-1 text-xs font-bold text-[#C9517E] ring-1 ring-[#E99AB7]">
+                        Posyandu
+                    </span>
+                </div>
+
+                <dl class="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2">
+                    @foreach ($baris as $label => $nilai)
+                        <div class="min-w-0">
+                            <dt class="text-xs font-semibold text-slate-600">{{ $label }}</dt>
+                            <dd class="mt-1 break-words text-sm font-bold text-[#542D3D]">{{ $nilai }}</dd>
+                        </div>
+                    @endforeach
+                </dl>
+            </div>
+        @empty
+            <div class="{{ $kartu }} px-4 py-12 text-center">
+                {!! $ikonKosong !!}
+                <p class="font-bold text-[#542D3D]">Belum ada jadwal</p>
+            </div>
+        @endforelse
+
+    </div>
+
 </div>
 
 {{-- Script Tab --}}
 <script>
     function ubahTabJadwal(tab) {
         const tabs = ['pemeriksaan', 'posyandu'];
+
+        const kelasAktif = ['bg-[#C9517E]', 'text-white', 'shadow-sm'];
+        const kelasNonaktif = ['text-[#542D3D]', 'hover:bg-[#FCE7F0]'];
 
         tabs.forEach(function (nama) {
             const tombol = document.getElementById('tab-' + nama);
@@ -222,11 +138,8 @@
 
             tombol.setAttribute('aria-selected', aktif ? 'true' : 'false');
 
-            tombol.classList.toggle('border-[#C9517E]', aktif);
-            tombol.classList.toggle('text-[#542D3D]', aktif);
-
-            tombol.classList.toggle('border-transparent', !aktif);
-            tombol.classList.toggle('text-gray-500', !aktif);
+            kelasAktif.forEach(function (c) { tombol.classList.toggle(c, aktif); });
+            kelasNonaktif.forEach(function (c) { tombol.classList.toggle(c, !aktif); });
 
             panel.classList.toggle('hidden', !aktif);
         });

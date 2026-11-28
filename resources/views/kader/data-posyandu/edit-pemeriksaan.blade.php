@@ -1,243 +1,159 @@
-
 @extends('layouts.app')
 
 @section('title', 'Edit Pemeriksaan Anak')
 
 @section('content')
-<div class="min-h-screen bg-white px-4 py-6 sm:px-6 lg:px-8">
-    <div class="mx-auto max-w-4xl">
+@php
+    $fieldClass = 'mt-1.5 w-full rounded-xl border border-[#E99AB7] bg-white px-3.5 py-2.5 text-sm font-medium text-gray-900 outline-none transition placeholder:text-slate-400 focus:border-[#C9517E] focus:ring-4 focus:ring-[#E99AB7]/40';
+    $errorFieldClass = 'mt-1.5 w-full rounded-xl border border-red-400 bg-red-50 px-3.5 py-2.5 text-sm font-medium text-gray-900 outline-none transition placeholder:text-slate-400 focus:border-red-500 focus:ring-4 focus:ring-red-200';
+    $labelClass = 'text-sm font-semibold text-[#542D3D]';
+    $errorClass = 'mt-1 text-xs font-medium text-red-600';
+    $star = '<span class="text-[#C9517E]">*</span>';
 
-        {{-- Header --}}
-        <div class="mb-6">
-            <a href="{{ route('kader.data-posyandu.show', $kegiatan->id) }}"
-               class="inline-flex items-center gap-2 text-sm font-medium text-[#64748B] hover:text-[#C9517E]">
-                <span aria-hidden="true">←</span>
-                Kembali ke daftar anak
-            </a>
+    // Kolom yang gagal validasi diberi garis merah
+    $field = fn (string $nama) => $errors->has($nama) ? $errorFieldClass : $fieldClass;
 
-            <h1 class="mt-4 text-2xl font-bold tracking-tight text-[#222222]">
-                Edit Pemeriksaan Anak
-            </h1>
+    $identitas = [
+        'Nama Anak'     => $anak->nama_anak ?? '-',
+        'NIK Anak'      => $anak->nik_anak ?? '-',
+        'Tanggal Lahir' => $anak->tgl_lahir ? \Carbon\Carbon::parse($anak->tgl_lahir)->format('d/m/Y') : '-',
+        'Jenis Kelamin' => $anak->jenis_kelamin === 'L' ? 'Laki-laki' : ($anak->jenis_kelamin === 'P' ? 'Perempuan' : '-'),
+    ];
+@endphp
 
-            <p class="mt-1 text-sm text-[#64748B]">
-                Perbarui hasil pengukuran anak.
-            </p>
+<div class="mx-auto w-full max-w-4xl space-y-5">
+
+    {{-- Judul --}}
+    <div>
+        <h1 class="text-2xl font-bold tracking-tight text-[#542D3D] sm:text-3xl">
+            Edit Pengukuran {{ $anak->nama_anak }}
+        </h1>
+        <p class="mt-1 text-sm font-medium text-slate-700">Pendataan Posyandu / Edit</p>
+    </div>
+
+    {{-- Pesan validasi --}}
+    @if ($errors->any())
+        <div class="flex gap-3 rounded-xl border-2 border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+            <svg class="mt-0.5 h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.3 3.9 2.4 17.5A2 2 0 0 0 4.1 20.5h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
+            <div>
+                <p class="font-semibold">Data belum valid. Mohon perbaiki isian yang ditandai.</p>
+            </div>
+        </div>
+    @endif
+
+    {{-- Identitas anak --}}
+    <div class="overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm">
+        <div class="border-b border-[#F1D5E0] bg-[#FCE7F0] px-6 py-4">
+            <h2 class="text-lg font-bold text-[#542D3D]">Identitas Anak</h2>
         </div>
 
-        {{-- Identitas Anak --}}
-        <section class="mb-5 rounded-xl border border-[#D9D9D9] bg-white p-5">
-            <h2 class="text-base font-semibold text-[#333333]">
-                Identitas Anak
-            </h2>
+        <dl class="grid grid-cols-1 gap-4 p-4 text-sm sm:grid-cols-2 sm:p-6">
+            @foreach ($identitas as $label => $nilai)
+                <div class="min-w-0">
+                    <dt class="text-xs font-semibold text-slate-600">{{ $label }}</dt>
+                    <dd class="mt-1 break-words text-sm font-bold text-[#542D3D]">{{ $nilai }}</dd>
+                </div>
+            @endforeach
+        </dl>
+    </div>
 
-            <div class="mt-4 grid gap-4 sm:grid-cols-2">
+    {{-- Form pemeriksaan --}}
+    <div class="overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm">
+        <div class="border-b border-[#F1D5E0] bg-[#FCE7F0] px-6 py-4">
+            <h2 class="text-lg font-bold text-[#542D3D]">Data Pemeriksaan</h2>
+            <p class="mt-0.5 text-sm text-slate-600">Periksa kembali data sebelum menyimpan perubahan.</p>
+        </div>
+
+        <form method="POST"
+              action="{{ route('kader.data-posyandu.pemeriksaan.update', [
+                  'kegiatan' => $kegiatan->id,
+                  'anak' => $anak->id,
+                  'pemeriksaan' => $pemeriksaan->id,
+              ]) }}"
+              class="space-y-5 p-4 sm:p-6">
+
+            @csrf
+            @method('PUT')
+
+            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+
                 <div>
-                    <p class="text-sm text-[#64748B]">Nama Anak</p>
-                    <p class="mt-1 text-sm font-medium text-[#333333]">
-                        {{ $anak->nama_anak ?? '-' }}
-                    </p>
+                    <label for="tgl_pemeriksaan" class="{{ $labelClass }}">Tanggal Pemeriksaan {!! $star !!}</label>
+                    <input type="date" id="tgl_pemeriksaan" name="tgl_pemeriksaan"
+                           value="{{ old('tgl_pemeriksaan', optional($pemeriksaan->tgl_pemeriksaan)->format('Y-m-d') ?? $pemeriksaan->tgl_pemeriksaan) }}"
+                           required class="{{ $field('tgl_pemeriksaan') }}">
+                    @error('tgl_pemeriksaan')
+                        <p class="{{ $errorClass }}">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 <div>
-                    <p class="text-sm text-[#64748B]">NIK Anak</p>
-                    <p class="mt-1 text-sm font-medium text-[#333333]">
-                        {{ $anak->nik_anak ?? '-' }}
-                    </p>
+                    <label for="berat_badan" class="{{ $labelClass }}">Berat Badan (kg) {!! $star !!}</label>
+                    <input type="number" step="0.01" min="0.1" max="100"
+                           id="berat_badan" name="berat_badan"
+                           value="{{ old('berat_badan', $pemeriksaan->berat_badan) }}" required
+                           class="{{ $field('berat_badan') }}">
+                    @error('berat_badan')
+                        <p class="{{ $errorClass }}">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 <div>
-                    <p class="text-sm text-[#64748B]">Tanggal Lahir</p>
-                    <p class="mt-1 text-sm font-medium text-[#333333]">
-                        {{ $anak->tgl_lahir ? \Carbon\Carbon::parse($anak->tgl_lahir)->format('d/m/Y') : '-' }}
-                    </p>
+                    <label for="tinggi_badan" class="{{ $labelClass }}">Tinggi Badan (cm) {!! $star !!}</label>
+                    <input type="number" step="0.01" min="1" max="200"
+                           id="tinggi_badan" name="tinggi_badan"
+                           value="{{ old('tinggi_badan', $pemeriksaan->tinggi_badan) }}" required
+                           class="{{ $field('tinggi_badan') }}">
+                    @error('tinggi_badan')
+                        <p class="{{ $errorClass }}">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 <div>
-                    <p class="text-sm text-[#64748B]">Jenis Kelamin</p>
-                    <p class="mt-1 text-sm font-medium text-[#333333]">
-                        {{ $anak->jenis_kelamin === 'L' ? 'Laki-laki' : ($anak->jenis_kelamin === 'P' ? 'Perempuan' : '-') }}
-                    </p>
+                    <label for="lingkar_kepala" class="{{ $labelClass }}">Lingkar Kepala (cm)</label>
+                    <input type="number" step="0.01" min="1" max="100"
+                           id="lingkar_kepala" name="lingkar_kepala"
+                           value="{{ old('lingkar_kepala', $pemeriksaan->lingkar_kepala) }}"
+                           class="{{ $field('lingkar_kepala') }}">
+                    @error('lingkar_kepala')
+                        <p class="{{ $errorClass }}">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="lila" class="{{ $labelClass }}">LILA (cm)</label>
+                    <input type="number" step="0.01" min="1" max="100"
+                           id="lila" name="lila"
+                           value="{{ old('lila', $pemeriksaan->lila) }}"
+                           class="{{ $field('lila') }}">
+                    @error('lila')
+                        <p class="{{ $errorClass }}">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div class="sm:col-span-2">
+                    <label for="catatan" class="{{ $labelClass }}">Catatan Pemeriksaan</label>
+                    <textarea id="catatan" name="catatan" rows="4"
+                              class="{{ $field('catatan') }}">{{ old('catatan', $pemeriksaan->catatan) }}</textarea>
+                    @error('catatan')
+                        <p class="{{ $errorClass }}">{{ $message }}</p>
+                    @enderror
                 </div>
             </div>
-        </section>
 
-        {{-- Form Pemeriksaan --}}
-        <section class="rounded-xl border border-[#D9D9D9] bg-white p-5 sm:p-6">
-            <div class="mb-5">
-                <h2 class="text-base font-semibold text-[#333333]">
-                    Data Pemeriksaan
-                </h2>
-
-                <p class="mt-1 text-sm text-[#64748B]">
-                    Periksa kembali data sebelum menyimpan perubahan.
-                </p>
+            {{-- Tombol --}}
+            <div class="flex flex-col-reverse gap-3 border-t border-[#F1D5E0] pt-5 sm:flex-row sm:justify-end">
+                <a href="{{ route('kader.data-posyandu.show', $kegiatan->id) }}"
+                   class="inline-flex w-full justify-center rounded-xl border-2 border-[#E99AB7] bg-white px-6 py-3 text-sm font-semibold text-[#C9517E] transition hover:bg-[#FCE7F0] sm:w-auto">
+                    Batal
+                </a>
+                <button type="submit"
+                        class="inline-flex w-full justify-center rounded-xl bg-[#C9517E] px-8 py-3 text-sm font-semibold text-white shadow-md shadow-[#C9517E]/25 transition hover:bg-[#B7436D] focus:outline-none focus:ring-4 focus:ring-[#E99AB7]/40 sm:w-auto">
+                    Simpan
+                </button>
             </div>
 
-            <form method="POST"
-                  action="{{ route('kader.data-posyandu.pemeriksaan.update', [
-                      'kegiatan' => $kegiatan->id,
-                      'anak' => $anak->id,
-                      'pemeriksaan' => $pemeriksaan->id,
-                  ]) }}">
-
-                @csrf
-                @method('PUT')
-
-                <div class="grid gap-5 sm:grid-cols-2">
-
-                    {{-- Tanggal Pemeriksaan --}}
-                    <div>
-                        <label for="tgl_pemeriksaan"
-                               class="mb-1.5 block text-sm font-medium text-[#333333]">
-                            Tanggal Pemeriksaan
-                        </label>
-
-                        <input
-                            type="date"
-                            id="tgl_pemeriksaan"
-                            name="tgl_pemeriksaan"
-                            value="{{ old('tgl_pemeriksaan', optional($pemeriksaan->tgl_pemeriksaan)->format('Y-m-d') ?? $pemeriksaan->tgl_pemeriksaan) }}"
-                            required
-                            class="w-full rounded-lg border border-[#D1D5DB] px-3 py-2.5 text-sm text-[#333333] outline-none transition focus:border-[#C9517E] focus:ring-2 focus:ring-[#E99AB7]/30"
-                        >
-
-                        @error('tgl_pemeriksaan')
-                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    {{-- Berat Badan --}}
-                    <div>
-                        <label for="berat_badan"
-                               class="mb-1.5 block text-sm font-medium text-[#333333]">
-                            Berat Badan (kg)
-                        </label>
-
-                        <input
-                            type="number"
-                            step="0.01"
-                            min="0.1"
-                            max="100"
-                            id="berat_badan"
-                            name="berat_badan"
-                            value="{{ old('berat_badan', $pemeriksaan->berat_badan) }}"
-                            required
-                            class="w-full rounded-lg border border-[#D1D5DB] px-3 py-2.5 text-sm text-[#333333] outline-none transition focus:border-[#C9517E] focus:ring-2 focus:ring-[#E99AB7]/30"
-                        >
-
-                        @error('berat_badan')
-                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    {{-- Tinggi Badan --}}
-                    <div>
-                        <label for="tinggi_badan"
-                               class="mb-1.5 block text-sm font-medium text-[#333333]">
-                            Tinggi Badan (cm)
-                        </label>
-
-                        <input
-                            type="number"
-                            step="0.01"
-                            min="1"
-                            max="200"
-                            id="tinggi_badan"
-                            name="tinggi_badan"
-                            value="{{ old('tinggi_badan', $pemeriksaan->tinggi_badan) }}"
-                            required
-                            class="w-full rounded-lg border border-[#D1D5DB] px-3 py-2.5 text-sm text-[#333333] outline-none transition focus:border-[#C9517E] focus:ring-2 focus:ring-[#E99AB7]/30"
-                        >
-
-                        @error('tinggi_badan')
-                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    {{-- Lingkar Kepala --}}
-                    <div>
-                        <label for="lingkar_kepala"
-                               class="mb-1.5 block text-sm font-medium text-[#333333]">
-                            Lingkar Kepala (cm)
-                        </label>
-
-                        <input
-                            type="number"
-                            step="0.01"
-                            min="1"
-                            max="100"
-                            id="lingkar_kepala"
-                            name="lingkar_kepala"
-                            value="{{ old('lingkar_kepala', $pemeriksaan->lingkar_kepala) }}"
-                            class="w-full rounded-lg border border-[#D1D5DB] px-3 py-2.5 text-sm text-[#333333] outline-none transition focus:border-[#C9517E] focus:ring-2 focus:ring-[#E99AB7]/30"
-                        >
-
-                        @error('lingkar_kepala')
-                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    {{-- LILA --}}
-                    <div>
-                        <label for="lila"
-                               class="mb-1.5 block text-sm font-medium text-[#333333]">
-                            LILA (cm)
-                        </label>
-
-                        <input
-                            type="number"
-                            step="0.01"
-                            min="1"
-                            max="100"
-                            id="lila"
-                            name="lila"
-                            value="{{ old('lila', $pemeriksaan->lila) }}"
-                            class="w-full rounded-lg border border-[#D1D5DB] px-3 py-2.5 text-sm text-[#333333] outline-none transition focus:border-[#C9517E] focus:ring-2 focus:ring-[#E99AB7]/30"
-                        >
-
-                        @error('lila')
-                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    {{-- Catatan --}}
-                    <div class="sm:col-span-2">
-                        <label for="catatan"
-                               class="mb-1.5 block text-sm font-medium text-[#333333]">
-                            Catatan Pemeriksaan
-                        </label>
-
-                        <textarea
-                            id="catatan"
-                            name="catatan"
-                            rows="4"
-                            class="w-full rounded-lg border border-[#D1D5DB] px-3 py-2.5 text-sm text-[#333333] outline-none transition focus:border-[#C9517E] focus:ring-2 focus:ring-[#E99AB7]/30"
-                        >{{ old('catatan', $pemeriksaan->catatan) }}</textarea>
-
-                        @error('catatan')
-                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-                </div>
-
-                {{-- Tombol --}}
-                <div class="mt-7 flex flex-wrap justify-end gap-3 border-t border-[#EEEEEE] pt-5">
-                    <a href="{{ route('kader.data-posyandu.show', $kegiatan->id) }}"
-                       class="inline-flex items-center justify-center rounded-lg border border-[#D1D5DB] bg-white px-5 py-2.5 text-sm font-medium text-[#475569] transition hover:bg-[#F8FAFC]">
-                        Batal
-                    </a>
-
-                    <button
-                        type="submit"
-                        class="inline-flex items-center justify-center rounded-lg bg-[#C9517E] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#B74470] focus:outline-none focus:ring-2 focus:ring-[#E99AB7]/40"
-                    >
-                        Simpan Perubahan
-                    </button>
-                </div>
-
-            </form>
-        </section>
-
+        </form>
     </div>
 </div>
 @endsection

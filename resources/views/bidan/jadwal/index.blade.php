@@ -1,275 +1,220 @@
-
 @extends('layouts.app')
 
 @section('title', 'Jadwal')
 
 @section('content')
-<div class="min-h-screen bg-[#FFF8FA] px-4 py-6 sm:px-6 lg:px-8">
-    <div class="mx-auto max-w-7xl">
+@php
+    $kartu     = 'overflow-hidden rounded-2xl border border-[#F1D5E0] bg-white shadow-sm';
+    $band      = 'rounded-2xl border border-[#F1D5E0] bg-[#FCE7F0] p-3 sm:p-4';
+    $cariClass = 'w-full rounded-xl border-2 border-[#C9517E]/60 bg-white py-2.5 pl-11 pr-3 text-sm font-medium text-gray-900 outline-none transition placeholder:text-slate-500 focus:border-[#C9517E] focus:ring-4 focus:ring-[#E99AB7]/40';
+    $pilihClass = 'w-full rounded-xl border-2 border-[#C9517E]/60 bg-white px-3 py-2.5 text-sm font-semibold text-gray-900 outline-none transition focus:border-[#C9517E] focus:ring-4 focus:ring-[#E99AB7]/40';
+    $ikonCari  = '<svg class="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-[#C9517E]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="m20 20-3.5-3.5"/></svg>';
+    $ikonKosong = '<svg class="mx-auto mb-3 h-10 w-10 text-[#E99AB7]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M7 3v4m10-4v4M4 9h16M5 5h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z"/></svg>';
 
-        {{-- Header --}}
-        <div class="mb-6">
-            <h1 class="text-2xl font-bold text-[#542D3D]">Jadwal</h1>
-            <p class="mt-1 text-sm text-gray-500">
-                Informasi jadwal pemeriksaan ibu hamil dan kegiatan Posyandu
-                di wilayah kerja Anda.
-            </p>
-        </div>
+    $daftarBulan = collect(range(1, 12))->mapWithKeys(fn ($b) => [
+        sprintf('%02d', $b) => \Carbon\Carbon::create(2000, $b, 1)->translatedFormat('F'),
+    ]);
+@endphp
 
-        {{-- Tab --}}
-        <div class="mb-5 flex gap-6 border-b border-pink-200">
-            <button type="button"
-                onclick="gantiTab('pemeriksaan')"
-                id="tab-pemeriksaan"
-                class="border-b-2 border-[#C9517E] px-1 pb-3 text-sm font-semibold text-[#C9517E]">
-                Pemeriksaan Ibu Hamil
-            </button>
+<div class="mx-auto w-full max-w-7xl space-y-5">
 
-            <button type="button"
-                onclick="gantiTab('posyandu')"
-                id="tab-posyandu"
-                class="border-b-2 border-transparent px-1 pb-3 text-sm font-semibold text-gray-500">
-                Posyandu
-            </button>
-        </div>
+    {{-- Judul --}}
+    <div>
+        <h1 class="text-2xl font-bold tracking-tight text-[#542D3D] sm:text-3xl">Jadwal</h1>
+        <p class="mt-1 text-sm font-medium text-slate-700">
+            Informasi jadwal pemeriksaan ibu hamil dan kegiatan Posyandu di wilayah kerja Anda.
+        </p>
+    </div>
 
-        {{-- TAB PEMERIKSAAN IBU HAMIL --}}
-        <div id="konten-pemeriksaan">
+    {{-- Tab --}}
+    <div class="flex w-full gap-2 rounded-2xl border border-[#F1D5E0] bg-white p-1.5 shadow-sm sm:w-fit" role="tablist" aria-label="Jenis jadwal">
+        <button type="button" id="tab-pemeriksaan" role="tab" onclick="gantiTab('pemeriksaan')"
+                class="flex-1 whitespace-nowrap rounded-xl bg-[#C9517E] px-4 py-2 text-sm font-semibold text-white shadow-sm transition sm:flex-none">
+            Pemeriksaan Ibu Hamil
+        </button>
 
-            {{-- Filter Pemeriksaan --}}
-            <div class="mb-5 flex flex-col gap-3 sm:flex-row">
+        <button type="button" id="tab-posyandu" role="tab" onclick="gantiTab('posyandu')"
+                class="flex-1 whitespace-nowrap rounded-xl px-4 py-2 text-sm font-semibold text-[#542D3D] transition hover:bg-[#FCE7F0] sm:flex-none">
+            Posyandu
+        </button>
+    </div>
+
+    {{-- ================= TAB PEMERIKSAAN IBU HAMIL ================= --}}
+    <div id="konten-pemeriksaan" class="space-y-4">
+
+        <div class="{{ $band }}">
+            <div class="flex flex-col gap-3 sm:flex-row">
                 <div class="relative flex-1">
-                    <input type="text"
-                        id="cari-pemeriksaan"
-                        oninput="filterJadwal('pemeriksaan')"
-                        placeholder="Cari pemeriksaan..."
-                        class="w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-10 pr-4 text-sm focus:border-[#C9517E] focus:outline-none focus:ring-1 focus:ring-[#C9517E]">
-
-                    <span class="absolute left-3 top-2.5 text-gray-400">⌕</span>
+                    <label for="cari-pemeriksaan" class="sr-only">Cari pemeriksaan</label>
+                    {!! $ikonCari !!}
+                    <input type="text" id="cari-pemeriksaan" oninput="filterJadwal('pemeriksaan')"
+                           autocomplete="off" placeholder="Cari Pemeriksaan" class="{{ $cariClass }}">
                 </div>
 
-                <select id="bulan-pemeriksaan"
-                    onchange="filterJadwal('pemeriksaan')"
-                    class="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-[#C9517E] focus:outline-none">
-                    <option value="">Semua Bulan</option>
-                    @foreach(range(1, 12) as $bulan)
-                        <option value="{{ sprintf('%02d', $bulan) }}">
-                            {{ \Carbon\Carbon::create()->month($bulan)->translatedFormat('F') }}
-                        </option>
-                    @endforeach
-                </select>
+                <div class="sm:w-56">
+                    <label for="bulan-pemeriksaan" class="sr-only">Filter bulan</label>
+                    <select id="bulan-pemeriksaan" onchange="filterJadwal('pemeriksaan')" class="{{ $pilihClass }}">
+                        <option value="">Semua Bulan</option>
+                        @foreach ($daftarBulan as $kode => $nama)
+                            <option value="{{ $kode }}">{{ $nama }}</option>
+                        @endforeach
+                    </select>
+                </div>
             </div>
+        </div>
 
-            {{-- Daftar Jadwal Pemeriksaan --}}
-            <div id="daftar-pemeriksaan" class="space-y-4">
-                @forelse($jadwalPemeriksaan as $jadwal)
-                    @php
-                        $detail = $jadwal->jadwalPemeriksaan;
-                        $namaBidan = $detail?->bidan?->user?->name ?? '-';
-                        $tanggal = $jadwal->tanggal;
-                    @endphp
+        <div id="daftar-pemeriksaan" class="space-y-4">
+            @forelse ($jadwalPemeriksaan as $jadwal)
+                @php
+                    $detail    = $jadwal->jadwalPemeriksaan;
+                    $namaBidan = $detail?->bidan?->user?->name ?? '-';
+                    $tanggal   = $jadwal->tanggal;
 
-                    <div class="item-jadwal-pemeriksaan rounded-xl border border-pink-100 bg-white p-5 shadow-sm"
-                        data-cari="{{ strtolower(($jadwal->jenis_kegiatan ?? '') . ' ' . ($jadwal->lokasi ?? '') . ' ' . $namaBidan) }}"
-                        data-bulan="{{ $tanggal ? $tanggal->format('m') : '' }}">
+                    $baris = [
+                        'Tanggal'         => $tanggal ? $tanggal->translatedFormat('d F Y') : '-',
+                        'Waktu'           => $jadwal->waktu ? \Carbon\Carbon::parse($jadwal->waktu)->format('H:i') : '-',
+                        'Lokasi'          => $jadwal->lokasi ?? '-',
+                        'Bidan Pemeriksa' => $namaBidan,
+                        'Catatan'         => $detail?->catatan ?: '-',
+                    ];
+                @endphp
 
-                        <h3 class="mb-4 font-semibold text-[#542D3D]">
+                <div class="item-jadwal-pemeriksaan {{ $kartu }}"
+                     data-cari="{{ strtolower(($jadwal->jenis_kegiatan ?? '') . ' ' . ($jadwal->lokasi ?? '') . ' ' . $namaBidan) }}"
+                     data-bulan="{{ $tanggal ? $tanggal->format('m') : '' }}">
+
+                    <div class="border-b border-[#F1D5E0] bg-[#FCE7F0] px-5 py-3.5">
+                        <h3 class="text-base font-bold text-[#542D3D]">
                             {{ $jadwal->jenis_kegiatan ?? 'Pemeriksaan Ibu Hamil' }}
                         </h3>
-
-                        <div class="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
-                            <div>
-                                <p class="text-gray-500">Tanggal</p>
-                                <p class="font-medium text-gray-800">
-                                    {{ $tanggal ? $tanggal->translatedFormat('d F Y') : '-' }}
-                                </p>
-                            </div>
-
-                            <div>
-                                <p class="text-gray-500">Waktu</p>
-                                <p class="font-medium text-gray-800">
-                                    {{ $jadwal->waktu ? \Carbon\Carbon::parse($jadwal->waktu)->format('H:i') : '-' }}
-                                </p>
-                            </div>
-
-                            <div>
-                                <p class="text-gray-500">Lokasi</p>
-                                <p class="font-medium text-gray-800">
-                                    {{ $jadwal->lokasi ?? '-' }}
-                                </p>
-                            </div>
-
-                            <div>
-                                <p class="text-gray-500">Bidan Pemeriksa</p>
-                                <p class="font-medium text-gray-800">
-                                    {{ $namaBidan }}
-                                </p>
-                            </div>
-
-                            <div class="sm:col-span-2">
-                                <p class="text-gray-500">Catatan</p>
-                                <p class="font-medium text-gray-800">
-                                    {{ $detail?->catatan ?: '-' }}
-                                </p>
-                            </div>
-                        </div>
                     </div>
-                @empty
-                    <div class="rounded-xl border border-dashed border-pink-200 bg-white px-4 py-10 text-center">
-                        <p class="font-medium text-gray-600">
-                            Belum ada jadwal pemeriksaan ibu hamil.
-                        </p>
-                    </div>
-                @endforelse
-            </div>
 
-            <p id="kosong-pemeriksaan"
-                class="hidden rounded-xl bg-white p-6 text-center text-sm text-gray-500">
-                Jadwal yang dicari tidak ditemukan.
-            </p>
+                    <dl class="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2">
+                        @foreach ($baris as $label => $nilai)
+                            <div class="min-w-0 {{ $label === 'Catatan' ? 'sm:col-span-2' : '' }}">
+                                <dt class="text-xs font-semibold text-slate-600">{{ $label }}</dt>
+                                <dd class="mt-1 break-words text-sm font-bold text-[#542D3D]">{{ $nilai }}</dd>
+                            </div>
+                        @endforeach
+                    </dl>
+                </div>
+            @empty
+                <div class="{{ $kartu }} px-4 py-12 text-center">
+                    {!! $ikonKosong !!}
+                    <p class="font-bold text-[#542D3D]">Belum ada jadwal pemeriksaan ibu hamil.</p>
+                </div>
+            @endforelse
         </div>
 
-        {{-- TAB POSYANDU --}}
-        <div id="konten-posyandu" class="hidden">
+        <p id="kosong-pemeriksaan" class="{{ $kartu }} hidden px-4 py-12 text-center font-bold text-[#542D3D]">
+            Jadwal yang dicari tidak ditemukan.
+        </p>
+    </div>
 
-            {{-- Filter Posyandu --}}
-            <div class="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    {{-- ================= TAB POSYANDU ================= --}}
+    <div id="konten-posyandu" class="hidden space-y-4">
 
-                {{-- Pencarian --}}
-                <div class="relative">
-                    <input type="text"
-                        id="cari-posyandu"
-                        oninput="filterJadwal('posyandu')"
-                        placeholder="Cari Posyandu..."
-                        class="w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-10 pr-4 text-sm focus:border-[#C9517E] focus:outline-none focus:ring-1 focus:ring-[#C9517E]">
-
-                    <span class="absolute left-3 top-2.5 text-gray-400">⌕</span>
+        <div class="{{ $band }}">
+            <div class="flex flex-col gap-3 sm:flex-row">
+                <div class="relative flex-1">
+                    <label for="cari-posyandu" class="sr-only">Cari Posyandu</label>
+                    {!! $ikonCari !!}
+                    <input type="text" id="cari-posyandu" oninput="filterJadwal('posyandu')"
+                           autocomplete="off" placeholder="Cari Posyandu" class="{{ $cariClass }}">
                 </div>
 
-                {{-- Filter RW --}}
-                <select id="rw-rt-posyandu"
-                    onchange="filterJadwal('posyandu')"
-                    class="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-[#C9517E] focus:outline-none">
+                <div class="sm:w-40">
+                    <label for="rw-rt-posyandu" class="sr-only">Filter RW/RT</label>
+                    <select id="rw-rt-posyandu" onchange="filterJadwal('posyandu')" class="{{ $pilihClass }}">
+                        <option value="">RW/RT</option>
+                        @foreach ($daftarRw ?? collect() as $rw)
+                            <option value="{{ $rw->nomor_rw }}">RW {{ $rw->nomor_rw }}</option>
+                        @endforeach
+                    </select>
+                </div>
 
-                    <option value="">RW/RT</option>
-
-                    @foreach($daftarRw ?? collect() as $rw)
-                        <option value="{{ $rw->nomor_rw }}">
-                            RW {{ $rw->nomor_rw }}
-                        </option>
-                    @endforeach
-                </select>
-
-                {{-- Filter Bulan --}}
-                <select id="bulan-posyandu"
-                    onchange="filterJadwal('posyandu')"
-                    class="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-[#C9517E] focus:outline-none">
-                    <option value="">Semua Bulan</option>
-
-                    @foreach(range(1, 12) as $bulan)
-                        <option value="{{ sprintf('%02d', $bulan) }}">
-                            {{ \Carbon\Carbon::create()->month($bulan)->translatedFormat('F') }}
-                        </option>
-                    @endforeach
-                </select>
+                <div class="sm:w-56">
+                    <label for="bulan-posyandu" class="sr-only">Filter bulan</label>
+                    <select id="bulan-posyandu" onchange="filterJadwal('posyandu')" class="{{ $pilihClass }}">
+                        <option value="">Semua Bulan</option>
+                        @foreach ($daftarBulan as $kode => $nama)
+                            <option value="{{ $kode }}">{{ $nama }}</option>
+                        @endforeach
+                    </select>
+                </div>
             </div>
-
-            {{-- Jadwal Posyandu Mendatang --}}
-            <div id="daftar-posyandu" class="space-y-4">
-                @forelse($jadwalPosyandu as $jadwal)
-                    @php
-                        $detail = $jadwal->jadwalPosyandu;
-                        $kegiatan = $detail?->kegiatan;
-                        $rw = $kegiatan?->rw;
-                        $namaKader = $detail?->kader?->user?->name ?? '-';
-                        $namaBidan = $detail?->bidan?->user?->name ?? '-';
-                        $tanggal = $jadwal->tanggal;
-                    @endphp
-
-                    <div class="item-jadwal-posyandu rounded-xl border border-pink-100 bg-white p-5 shadow-sm"
-                        data-cari="{{ strtolower(($jadwal->jenis_kegiatan ?? '') . ' ' . ($jadwal->lokasi ?? '') . ' ' . $namaKader . ' ' . $namaBidan) }}"
-                        data-rw="{{ $rw?->nomor_rw ?? '' }}"
-                        data-bulan="{{ $tanggal ? $tanggal->format('m') : '' }}">
-
-                        <h3 class="mb-4 font-semibold text-[#542D3D]">
-                            {{ $jadwal->jenis_kegiatan ?? 'Kegiatan Posyandu' }}
-                        </h3>
-
-                        <div class="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
-                            <div>
-                                <p class="text-gray-500">Tanggal</p>
-                                <p class="font-medium text-gray-800">
-                                    {{ $tanggal ? $tanggal->translatedFormat('d F Y') : '-' }}
-                                </p>
-                            </div>
-
-                            <div>
-                                <p class="text-gray-500">Waktu</p>
-                                <p class="font-medium text-gray-800">
-                                    {{ $jadwal->waktu ? \Carbon\Carbon::parse($jadwal->waktu)->format('H:i') : '-' }}
-                                </p>
-                            </div>
-
-                            <div>
-                                <p class="text-gray-500">Lokasi</p>
-                                <p class="font-medium text-gray-800">
-                                    {{ $jadwal->lokasi ?? '-' }}
-                                </p>
-                            </div>
-
-                            <div>
-                                <p class="text-gray-500">Kader</p>
-                                <p class="font-medium text-gray-800">
-                                    {{ $namaKader }}
-                                </p>
-                            </div>
-
-                            <div>
-                                <p class="text-gray-500">Bidan Pemeriksa</p>
-                                <p class="font-medium text-gray-800">
-                                    {{ $namaBidan }}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                @empty
-                    <div class="rounded-xl border border-dashed border-pink-200 bg-white px-4 py-10 text-center">
-                        <p class="font-medium text-gray-600">
-                            Belum ada jadwal Posyandu mendatang.
-                        </p>
-                    </div>
-                @endforelse
-            </div>
-
-            <p id="kosong-posyandu"
-                class="hidden rounded-xl bg-white p-6 text-center text-sm text-gray-500">
-                Jadwal yang dicari tidak ditemukan.
-            </p>
-
         </div>
 
+        <div id="daftar-posyandu" class="space-y-4">
+            @forelse ($jadwalPosyandu as $jadwal)
+                @php
+                    $detail    = $jadwal->jadwalPosyandu;
+                    $kegiatan  = $detail?->kegiatan;
+                    $rw        = $kegiatan?->rw;
+                    $namaKader = $detail?->kader?->user?->name ?? '-';
+                    $namaBidan = $detail?->bidan?->user?->name ?? '-';
+                    $tanggal   = $jadwal->tanggal;
+
+                    $baris = [
+                        'Tanggal'         => $tanggal ? $tanggal->translatedFormat('d F Y') : '-',
+                        'Waktu'           => $jadwal->waktu ? \Carbon\Carbon::parse($jadwal->waktu)->format('H:i') : '-',
+                        'Lokasi'          => $jadwal->lokasi ?? '-',
+                        'Kader'           => $namaKader,
+                        'Bidan Pemeriksa' => $namaBidan,
+                    ];
+                @endphp
+
+                <div class="item-jadwal-posyandu {{ $kartu }}"
+                     data-cari="{{ strtolower(($jadwal->jenis_kegiatan ?? '') . ' ' . ($jadwal->lokasi ?? '') . ' ' . $namaKader . ' ' . $namaBidan) }}"
+                     data-rw="{{ $rw?->nomor_rw ?? '' }}"
+                     data-bulan="{{ $tanggal ? $tanggal->format('m') : '' }}">
+
+                    <div class="border-b border-[#F1D5E0] bg-[#FCE7F0] px-5 py-3.5">
+                        <h3 class="text-base font-bold text-[#542D3D]">
+                            {{ $jadwal->jenis_kegiatan ?? 'Kegiatan Posyandu' }}
+                        </h3>
+                    </div>
+
+                    <dl class="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2">
+                        @foreach ($baris as $label => $nilai)
+                            <div class="min-w-0">
+                                <dt class="text-xs font-semibold text-slate-600">{{ $label }}</dt>
+                                <dd class="mt-1 break-words text-sm font-bold text-[#542D3D]">{{ $nilai }}</dd>
+                            </div>
+                        @endforeach
+                    </dl>
+                </div>
+            @empty
+                <div class="{{ $kartu }} px-4 py-12 text-center">
+                    {!! $ikonKosong !!}
+                    <p class="font-bold text-[#542D3D]">Belum ada jadwal Posyandu mendatang.</p>
+                </div>
+            @endforelse
+        </div>
+
+        <p id="kosong-posyandu" class="{{ $kartu }} hidden px-4 py-12 text-center font-bold text-[#542D3D]">
+            Jadwal yang dicari tidak ditemukan.
+        </p>
     </div>
+
 </div>
 
 <script>
+    const kelasTabAktif = ['bg-[#C9517E]', 'text-white', 'shadow-sm'];
+    const kelasTabNonaktif = ['text-[#542D3D]', 'hover:bg-[#FCE7F0]'];
+
+    function aturTabJadwal(tombol, aktif) {
+        kelasTabAktif.forEach(function (c) { tombol.classList.toggle(c, aktif); });
+        kelasTabNonaktif.forEach(function (c) { tombol.classList.toggle(c, !aktif); });
+        tombol.setAttribute('aria-selected', String(aktif));
+    }
+
     function gantiTab(tab) {
-        const pemeriksaan = document.getElementById('konten-pemeriksaan');
-        const posyandu = document.getElementById('konten-posyandu');
-        const tabPemeriksaan = document.getElementById('tab-pemeriksaan');
-        const tabPosyandu = document.getElementById('tab-posyandu');
+        document.getElementById('konten-pemeriksaan').classList.toggle('hidden', tab !== 'pemeriksaan');
+        document.getElementById('konten-posyandu').classList.toggle('hidden', tab !== 'posyandu');
 
-        pemeriksaan.classList.toggle('hidden', tab !== 'pemeriksaan');
-        posyandu.classList.toggle('hidden', tab !== 'posyandu');
-
-        tabPemeriksaan.classList.toggle('border-[#C9517E]', tab === 'pemeriksaan');
-        tabPemeriksaan.classList.toggle('text-[#C9517E]', tab === 'pemeriksaan');
-        tabPemeriksaan.classList.toggle('border-transparent', tab !== 'pemeriksaan');
-        tabPemeriksaan.classList.toggle('text-gray-500', tab !== 'pemeriksaan');
-
-        tabPosyandu.classList.toggle('border-[#C9517E]', tab === 'posyandu');
-        tabPosyandu.classList.toggle('text-[#C9517E]', tab === 'posyandu');
-        tabPosyandu.classList.toggle('border-transparent', tab !== 'posyandu');
-        tabPosyandu.classList.toggle('text-gray-500', tab !== 'posyandu');
+        aturTabJadwal(document.getElementById('tab-pemeriksaan'), tab === 'pemeriksaan');
+        aturTabJadwal(document.getElementById('tab-posyandu'), tab === 'posyandu');
     }
 
     function filterJadwal(jenis) {
@@ -302,5 +247,7 @@
         document.getElementById('kosong-' + jenis)
             .classList.toggle('hidden', jumlahTampil > 0);
     }
+
+    gantiTab('pemeriksaan');
 </script>
 @endsection
